@@ -62,7 +62,8 @@ Paths below are relative to that root unless absolute.
   coordinates, `label`, and `approved`. Preserve these names in tool results and
   add the requested convenience fields, `bbox` and `kind`.
 - Persist the baseline URL in a plugin-owned sidecar because engine metadata
-  does not store URLs. Explicit compare URL overrides do not change that default.
+  does not store URLs. Explicit compare URL overrides do not change that default
+  until accept promotes the latest capture and its URL to the new baseline.
 - Reject invalid target names rather than silently mapping distinct names to
   one directory. Limit ASCII letters/digits/dash/underscore to 40 characters,
   retaining the engine's leading-character and Windows reserved-name checks.
@@ -74,8 +75,94 @@ Paths below are relative to that root unless absolute.
   An arbitrary local page can itself load network resources. Do not advertise
   this as a browser-level network sandbox; the embedded demo is fully offline.
 
-## UNVERIFIED / pending validation
+## Verification results (2026-11-06)
 
-- macOS/Linux browser paths and execution are untested on this Windows machine.
-- Test counts, CLI admission validation, runtime doctor, slash doctor/demo and
-  installed-package imports will be recorded after implementation.
+- Before changes: Python 3.12.10, **52 tests passed** (14.554 s).
+- Final Python 3.12.10 run: **73 tests run, OK, 1 skipped** (20.110 s).
+  The skip is a real symlink creation test: Windows returns WinError 1314
+  without the necessary privilege. Hard-link rejection is tested successfully.
+- Final Python 3.14.9 run: **73 tests run, OK, 1 skipped** (20.198 s),
+  with the same Windows symlink-privilege skip.
+- An isolated package import with the repository absent from `sys.path` passes,
+  including registering all handlers and importing the packaged engine CLI.
+  Direct `python -m engine.cli --help` also passes without Hermes imports.
+- Real handler workflow passes: baseline (1280x720), unchanged compare, changed
+  fixture compare, approve all, accept, compare against the accepted URL.
+- `/sightdiff doctor` via its handler, in Hermes Python, reports:
+
+```text
+✓ Python 3.14.9
+✓ Pillow 13.0.0
+✓ Data directory writable: C:\Users\User\Documents\ChatGPT\Orphic SightDiff\.stage5\handler-home\orphic-sightdiff
+✓ Engine importable
+✓ Browser: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe — 156.0.4314.58
+```
+
+- `/sightdiff demo` via its handler passes offline: `Demo: check — Start trial
+  moved 40 px right.`, `Changed: 0.515%`. Baseline/current/diff PNGs and input
+  pages exist under the disposable home inside `.stage5/`; no HTML report exists.
+- Catalog validation succeeds: `ok: true`, all 15 checks pass, no warnings,
+  capability probe matches all five tools and zero hooks, security scan `safe`,
+  no core overrides, isolation `host_ready: true`.
+
+### Hermes launcher limitation (not a plugin failure)
+
+Invoking the `hermes` launcher with a new temporary `HERMES_HOME` unexpectedly
+starts dependency/runtime preparation. The attempt exited 1 after failing to
+copy Hermes' own long conformance paths (WinError 3). It did not install/enable
+this plugin. The scratch runtime was removed, after verifying its absolute path
+was the repository's `.stage5/` directory. Visible output excerpts, verbatim:
+
+```text
+hermes: preparing dependencies for this data root (the checkout's updates belong to C:\Users\User\AppData\Local\hermes)...
+Preparing the isolated Hermes runtime…
+  → Installing Python dependencies…
+  ✓ Installing Python dependencies
+hermes: no dependency environment is committed for this install; run `hermes pm repair`
+```
+
+Subsequent checks invoke the **existing installed Hermes interpreter** with
+`-B -m hermes_cli.main plugins ...`. This runs the same CLI implementation without
+the launcher's environment setup, uses the existing Pillow installation, and
+does not modify Hermes source or install dependencies. `PYTHONDONTWRITEBYTECODE=1`
+is inherited by child probes; `HERMES_HOME`, `TEMP`, `TMP`, and `TMPDIR` point
+inside `.stage5/` to respect the user's no-outside-repo-writes instruction.
+
+### Runtime doctor limitation / permission pending
+
+`plugins doctor --ci` rejects a temporary directory inside the plugin, by design:
+`hermes_cli/plugin_dev.py:31-56` refuses the resulting recursive staging copy.
+The following is the exact output (exit 1) from the installed-interpreter CLI:
+
+```text
+Plugin Doctor: C:\Users\User\Documents\ChatGPT\Orphic SightDiff
+  ERROR: Refusing to stage C:\Users\User\Documents\ChatGPT\Orphic SightDiff:
+C:\Users\User\Documents\ChatGPT\Orphic SightDiff leads into Doctor's temporary
+directory C:\Users\User\Documents\ChatGPT\Orphic
+SightDiff\.stage5\tmp\hermes-plugin-doctor-xjfpukt6\plugins, so the copy would
+recurse into itself. Point TMPDIR outside the plugin and remove links to it.
+  registrations: 0 tool(s), 0 hook(s)
+```
+
+No workaround or Hermes modification was applied. Asked the user whether to
+permit doctor's automatically removed temporary staging folder outside the repo;
+this exception is needed to complete the runtime check on the actual checkout.
+The catalog validator and plugin's own `/sightdiff doctor` are independently green.
+
+## Additive engine changes
+
+- Only `engine/store.py:baseline` changed: optional keyword-only `width=1280`,
+  `height=800`, dimension validation, forwarding those values to capture and
+  metadata. Existing calls, CLI defaults, statuses, JSON names, exit codes and
+  all 52 original tests remain unchanged. Store roots were already configurable.
+- Browser detection already includes Windows, macOS and Linux candidates; no
+  detection changes were needed. macOS/Linux execution remains **UNVERIFIED**.
+
+## Remaining UNVERIFIED / open question
+
+- Runtime doctor awaits the requested temporary-directory exception; no plugin
+  is installed or enabled in the user's Hermes.
+- Real symlink behavior could not be exercised without Windows symlink privilege;
+  confinement checks and real hard-link rejection are covered.
+- No network install of Pillow was attempted. Its existing 13.0.0 installation
+  imports and runs image/browser tests under Hermes Python 3.14.9.
