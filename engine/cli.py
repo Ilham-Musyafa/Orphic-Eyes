@@ -64,7 +64,7 @@ def main(argv=None):
                 with open(args.requests, encoding="utf-8") as handle:
                     requests = validate_requests(json.load(handle))
             result = compare(args.name, args.url, args.store, args.tolerance, args.expect,
-                             requests=requests)
+                             requests=requests, shift_hints=requests is not None)
         elif args.command == "ignore":
             if args.action == "add":
                 result = ignore_add(args.name, args.store, args.region, args.label)

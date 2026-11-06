@@ -145,13 +145,15 @@ def compare_images(before_png, after_png, diff_png, tolerance=0,
         return {"status": "error", "error": str(exc)}
 
 
-def compare(name, url, store_dir, tolerance=0, expected_regions=None, *, requests=None, focus=False):
+def compare(name, url, store_dir, tolerance=0, expected_regions=None, *, requests=None, focus=False,
+            shift_hints=False):
     """Capture against a baseline and persist report.json; never raise."""
     from .capture import capture, validate_url
     from .report_json import build_report, write_report
     from .store import _case_dir, _metadata, _read_metadata, _read_options
     from .requests import check_bounds, expected_for_requests, validate_requests, verify_requests
     from .crops import validate_crops, write_crops
+    from .shifts import add_shift_hints
 
     try:
         _tolerance(tolerance)
@@ -159,6 +161,8 @@ def compare(name, url, store_dir, tolerance=0, expected_regions=None, *, request
         intents = validate_requests(requests) if requests is not None else None
         if not isinstance(focus, bool):
             raise ValueError("focus must be a boolean")
+        if not isinstance(shift_hints, bool):
+            raise ValueError("shift_hints must be a boolean")
         validation = validate_url(url)
         if validation is not None:
             raise ValueError(validation)
@@ -187,12 +191,15 @@ def compare(name, url, store_dir, tolerance=0, expected_regions=None, *, request
         report = build_report(name, result, metadata)
         if report.get("status") == "error":
             return report
-        if intents is not None or focus:
+        if intents is not None or focus or shift_hints:
             with Image.open(case / "baseline.png") as before, Image.open(case / "current.png") as after:
                 before, after = before.convert("RGB"), after.convert("RGB")
                 if intents is not None:
                     report.update(verify_requests(before, after, intents))
-                report["crops"] = write_crops(case, before, after, report)
+                if shift_hints:
+                    add_shift_hints(before, after, report["boxes"])
+                if intents is not None or focus:
+                    report["crops"] = write_crops(case, before, after, report)
         saved = write_report(report, case / "report.json")
         if saved.get("status") == "error":
             return saved

@@ -204,7 +204,7 @@ def _compare(args, name, root):
         raise ValueError("expect must be a list of x,y,w,h objects")
     regions = [_rectangle(region) for region in expected]
     result = _module("compare").compare(name, url, root, expected_regions=regions,
-                                        requests=intents, focus=True)
+                                        requests=intents, focus=True, shift_hints=True)
     if result["status"] != "error":
         _module("store")._atomic_json(state_file, {**state, "latest_url": url})
     return result

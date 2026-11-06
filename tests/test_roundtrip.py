@@ -253,6 +253,28 @@ class RequestTests(unittest.TestCase):
             validate_crops(self.case)
         self.assertEqual(sentinel.read_text(), "keep")
 
+    def test_shift_hint_minus_30(self):
+        self.before = Image.new("RGB", (400, 300), "white")
+        needle = texture(190, 48)
+        self.before.paste(needle, (104, 180))
+        self.before.save(self.case / "baseline.png")
+        self.after = Image.new("RGB", self.before.size, "white")
+        self.after.paste(needle, (74, 180))
+        result = compare("case", "http://localhost", self.root, shift_hints=True)
+        self.assertNotEqual(result["status"], "error", result)
+        shifts = [box["shift"] for box in result["boxes"] if "shift" in box]
+        self.assertIn({"dx": -30, "dy": 0}, shifts)
+        self.assertEqual(json.loads((self.case / "report.json").read_text()), result)
+
+    def test_flat_diff_has_no_shift_hint(self):
+        self.before = Image.new("RGB", (400, 300), "white")
+        self.before.paste("blue", (104, 180, 294, 228))
+        self.before.save(self.case / "baseline.png")
+        self.after = Image.new("RGB", self.before.size, "white")
+        self.after.paste("blue", (74, 180, 264, 228))
+        result = compare("case", "http://localhost", self.root, shift_hints=True)
+        self.assertTrue(all("shift" not in box for box in result["boxes"]))
+
 
 if __name__ == "__main__":
     unittest.main()

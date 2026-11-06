@@ -167,6 +167,10 @@ def approve(name, store_dir, boxes=None, all_boxes=False):
         for key in ("requests", "request_results", "requests_ok", "request_counts", "crops"):
             if key in previous:
                 report[key] = previous[key]
+        prior_boxes = {_key(box): box for box in previous["boxes"]}
+        for box in report["boxes"]:
+            if "shift" in prior_boxes[_key(box)]:
+                box["shift"] = prior_boxes[_key(box)]["shift"]
         _atomic_json(case / "approvals.json", proposed)
         diff.save(case / "diff.png", format="PNG")
         return write_report(report, case / "report.json")
