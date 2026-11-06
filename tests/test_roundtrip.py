@@ -276,5 +276,66 @@ class RequestTests(unittest.TestCase):
         self.assertTrue(all("shift" not in box for box in result["boxes"]))
 
 
+class ViewportTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix="sightdiff-presets-")
+        self.addCleanup(self.temp.cleanup)
+        for patcher in (patch.dict(os.environ, {"HERMES_HOME": self.temp.name}),
+                        patch.dict(__import__("sys").modules, {"hermes_constants": None})):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_preset_dimensions_and_accept_preserve_name(self):
+        def capture(url, output, **kwargs):
+            Image.new("RGB", (kwargs["width"], kwargs["height"]), "white").save(output)
+            return True
+        with patch("engine.store.detect_browser", return_value="browser.exe"), \
+                patch("engine.store.capture", side_effect=capture), patch("engine.capture.capture", side_effect=capture):
+            for preset, size in tools.VIEWPORT_PRESETS.items():
+                result = json.loads(tools.handle_baseline({"url": "http://localhost", "name": preset, "viewport": preset}))
+                self.assertTrue(result["success"], result)
+                self.assertEqual(result["viewport"], {"width": size[0], "height": size[1], "dpr": 1, "preset": preset})
+                result = json.loads(tools.handle_compare({"name": preset}))
+                self.assertTrue(result["success"], result)
+                self.assertEqual(result["meta"]["viewport"]["preset"], preset)
+                result = json.loads(tools.handle_accept({"name": preset}))
+                self.assertEqual(result["viewport"]["preset"], preset)
+                state = json.loads((tools.resolve_data_dir() / preset / tools.STATE_FILE).read_text())
+                self.assertEqual(state["viewport_preset"], preset)
+
+    def test_preset_conflicts_and_invalid_values(self):
+        for args in ({"viewport": "mobile", "width": 390}, {"viewport": "desktop", "height": 720},
+                     {"viewport": None}, {"viewport": []}, {"viewport": "watch"}):
+            result = json.loads(tools.handle_baseline({"url": "http://localhost", **args}))
+            self.assertFalse(result["success"])
+            if "width" in args or "height" in args:
+                self.assertIn("never both", result["fix"])
+
+    def test_mismatched_png_size_is_error_not_a_fake_mobile_capture(self):
+        def capture(url, output, **kwargs):
+            Image.new("RGB", (500, 844)).save(output)
+            return True
+        with patch("engine.store.detect_browser", return_value="browser.exe"), \
+                patch("engine.store.capture", side_effect=capture):
+            result = json.loads(tools.handle_baseline({"url": "http://localhost", "viewport": "mobile"}))
+        self.assertFalse(result["success"])
+        self.assertIn("requested 390x844, got 500x844", result["error"])
+        self.assertIn("do not resize", result["fix"])
+
+    def test_real_mobile_png_width_390(self):
+        if detect_browser() is None:
+            self.skipTest("Real mobile capture requires Edge, Chrome or Chromium")
+        result = json.loads(tools.handle_baseline({"url": (FIXTURES / "move_104.html").as_uri(), "viewport": "mobile"}))
+        self.assertTrue(result["success"], result)
+        with Image.open(result["paths"]["baseline"]) as image:
+            self.assertEqual(image.size, (390, 844))
+        result = json.loads(tools.handle_compare({}))
+        self.assertTrue(result["success"], result)
+        with Image.open(result["paths"]["after"]) as image:
+            self.assertEqual(image.size, (390, 844))
+        result = json.loads(tools.handle_accept({}))
+        self.assertEqual(result["viewport"]["preset"], "mobile")
+
+
 if __name__ == "__main__":
     unittest.main()

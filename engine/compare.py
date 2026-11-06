@@ -187,7 +187,8 @@ def compare(name, url, store_dir, tolerance=0, expected_regions=None, *, request
                                 case / "diff.png", tolerance, ignored, expected, approvals)
         if result["status"] == "error":
             return result
-        metadata = _metadata(browser, viewport["width"], viewport["height"], tolerance)
+        metadata = _metadata(browser, viewport["width"], viewport["height"], tolerance,
+                             preset=viewport.get("preset"))
         report = build_report(name, result, metadata)
         if report.get("status") == "error":
             return report

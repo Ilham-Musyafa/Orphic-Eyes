@@ -160,7 +160,8 @@ def approve(name, store_dir, boxes=None, all_boxes=False):
                 proposed.append(record)
         result, diff = _analyze(before, after, tolerance, ignored, [], proposed, expected_labels)
         meta = _metadata(metadata["browser"], metadata["viewport"]["width"],
-                         metadata["viewport"]["height"], tolerance)
+                         metadata["viewport"]["height"], tolerance,
+                         preset=metadata["viewport"].get("preset"))
         report = build_report(name, result, meta)
         if report["status"] == "error":
             return report
@@ -198,7 +199,8 @@ def accept(name, store_dir):
             os.fsync(handle.fileno())
         os.replace(temporary, case / "baseline.png")
         _atomic_json(case / "approvals.json", [])
-        metadata = _metadata(metadata["browser"], width, height, metadata["tolerance"])
+        metadata = _metadata(metadata["browser"], width, height, metadata["tolerance"],
+                             preset=metadata["viewport"].get("preset"))
         _atomic_json(case / "metadata.json", metadata)
         return {"status": "pass", "name": name, "meta": metadata}
     except Exception as exc:
@@ -211,11 +213,14 @@ def accept(name, store_dir):
                 pass
 
 
-def _metadata(browser, width, height, tolerance):
-    return {"browser": browser, "os": platform.system(),
+def _metadata(browser, width, height, tolerance, *, preset=None):
+    result = {"browser": browser, "os": platform.system(),
             "viewport": {"width": width, "height": height},
             "created_at": datetime.now().astimezone().isoformat(),
             "tolerance": tolerance}
+    if preset is not None:
+        result["viewport"]["preset"] = preset
+    return result
 
 
 def _read_metadata(path):

@@ -10,6 +10,7 @@ import re
 logger = logging.getLogger(__name__)
 MAX_RESULT_BYTES = 4000
 STATE_FILE = "plugin-state.json"
+VIEWPORT_PRESETS = {"desktop": (1280, 720), "mobile": (390, 844), "tablet": (768, 1024)}
 
 
 def _module(name):
@@ -77,7 +78,11 @@ def _url(value):
 def _failure(exc):
     message = " ".join(str(exc).split())[:600] or type(exc).__name__
     lower = message.lower()
-    if "url" in lower:
+    if "viewport" in lower and "width/height" in lower:
+        fix = "Pass either viewport (desktop/mobile/tablet) or width/height, never both."
+    elif "capture size mismatch" in lower:
+        fix = "Use a supported browser or viewport; do not resize the PNG to fake the requested viewport."
+    elif "url" in lower:
         fix = "Use http://localhost:PORT/, http://127.0.0.1:PORT/ or a local absolute file:// URL."
     elif "browser" in lower:
         fix = "Install an Edge, Chrome or Chromium browser locally, then run /sightdiff doctor."
@@ -170,20 +175,41 @@ def _run(args, allowed, action, operation):
 def _baseline(args, name, root):
     url = _url(args.get("url"))
     width, height = args.get("width", 1280), args.get("height", 720)
+    preset = None
+    if "viewport" in args:
+        preset = args["viewport"]
+        if not isinstance(preset, str) or preset not in VIEWPORT_PRESETS:
+            raise ValueError("viewport must be desktop, mobile or tablet")
+        if "width" in args or "height" in args:
+            raise ValueError("viewport cannot be combined with width/height")
+        width, height = VIEWPORT_PRESETS[preset]
     if any(isinstance(v, bool) or not isinstance(v, int) or v <= 0 for v in (width, height)):
         raise ValueError("width and height must be positive integers")
     case = _case(root, name, create=True)
     result = _module("store").baseline(name, url, root, width=width, height=height)
     if result["status"] != "error":
+        _check_capture_size(case / "baseline.png", width, height)
         # A fresh baseline invalidates previous captures/reports/approvals.
         for filename in ("current.png", "diff.png", "report.json", "approvals.json"):
             _safe_file(case, filename).unlink(missing_ok=True)
-        _module("store")._atomic_json(_safe_file(case, STATE_FILE), {"url": url})
+        state = {"url": url}
+        if preset is not None:
+            state["viewport_preset"] = preset
+            result["meta"]["viewport"]["preset"] = preset
+            _module("store")._atomic_json(_safe_file(case, "metadata.json"), result["meta"])
+        _module("store")._atomic_json(_safe_file(case, STATE_FILE), state)
     return result
 
 
 def handle_baseline(args: dict, **_kw) -> str:
-    return _run(args, ("url", "name", "width", "height"), "baseline", _baseline)
+    return _run(args, ("url", "name", "width", "height", "viewport"), "baseline", _baseline)
+
+
+def _check_capture_size(path, width, height):
+    from PIL import Image
+    with Image.open(path) as image:
+        if image.size != (width, height):
+            raise ValueError(f"capture size mismatch: requested {width}x{height}, got {image.width}x{image.height}; --window-size={width},{height}, DPR=1")
 
 
 def _compare(args, name, root):
@@ -206,6 +232,8 @@ def _compare(args, name, root):
     result = _module("compare").compare(name, url, root, expected_regions=regions,
                                         requests=intents, focus=True, shift_hints=True)
     if result["status"] != "error":
+        viewport = result["meta"]["viewport"]
+        _check_capture_size(case / "current.png", viewport["width"], viewport["height"])
         _module("store")._atomic_json(state_file, {**state, "latest_url": url})
     return result
 
@@ -298,7 +326,9 @@ LIMITS = " Only http://localhost, http://127.0.0.1 and local file:// URLs; image
 TOOL_DEFINITIONS = (
     ("sightdiff_baseline", _schema("sightdiff_baseline",
         "Call first, before editing a local web app's UI, to save a baseline screenshot. Returns JSON status, paths and viewport; replacing a baseline clears prior comparison/approvals." + LIMITS,
-        {"url": URL, "width": {"type": "integer", "minimum": 1, "default": 1280,
+        {"url": URL, "viewport": {"type": "string", "enum": ["desktop", "mobile", "tablet"],
+                                  "description": "Optional preset, e.g. mobile=390x844; do not combine with width/height."},
+         "width": {"type": "integer", "minimum": 1, "default": 1280,
                                "description": "Viewport width in pixels, e.g. 1280."},
          "height": {"type": "integer", "minimum": 1, "default": 720,
                     "description": "Viewport height in pixels, e.g. 720."}}, ("url",)), handle_baseline),
