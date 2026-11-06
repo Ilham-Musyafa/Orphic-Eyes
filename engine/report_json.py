@@ -15,13 +15,14 @@ def build_report(name, comparison, metadata):
             "summary": {
                 "changed_px": comparison["changed_px"],
                 "changed_percent": comparison["changed_percent"],
-                "box_count": len(boxes), "unexpected_count": len(boxes),
+                "box_count": len(boxes), "unexpected_count": sum(
+                    box["label"] == "unexpected" and not box["approved"] for box in boxes),
             },
             "size": comparison["size"],
             "images": {"before": "baseline.png", "after": "current.png",
                        "diff": "diff.png"},
             "boxes": boxes,
-            "ignore_regions": [],
+            "ignore_regions": comparison.get("ignore_regions", []),
             "meta": {key: metadata[key] for key in (
                 "browser", "os", "viewport", "created_at", "tolerance")},
         }

@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from engine import baseline, capture, compare
+from engine import accept, approve, baseline, capture, compare, ignore_add, ignore_remove
 from engine.capture import detect_browser
 from engine.compare import compare_images
 
@@ -74,6 +74,37 @@ class BrowserTests(unittest.TestCase):
         self.assertEqual(report["status"], "pass", report)
         self.assertEqual(report["summary"]["changed_px"], 0)
         self.assertEqual(json.loads((self.folder / "workflow" / "report.json").read_text()), report)
+
+    def test_stage3_shifted_button_workflow(self):
+        before_url = (FIXTURES / "page_a.html").as_uri()
+        after_url = (FIXTURES / "page_b.html").as_uri()
+        self.assertEqual(baseline("regions", before_url, self.folder)["status"], "pass")
+        ignored = ignore_add("regions", self.folder, (30, 150, 330, 190), "button")
+        self.assertEqual(ignored["status"], "pass")
+        result = compare("regions", after_url, self.folder)
+        self.assertEqual(result["status"], "pass", result)
+        self.assertEqual(result["summary"]["changed_px"], 0)
+        self.assertEqual(result["boxes"], [])
+        self.assertEqual(result["ignore_regions"], ignored["ignore_regions"])
+        ignore_remove("regions", self.folder, "button")
+        ignore_add("regions", self.folder, (1000, 700, 10, 10), "elsewhere")
+        self.assertEqual(compare("regions", after_url, self.folder)["status"], "check")
+        expected = compare("regions", after_url, self.folder,
+                           expected_regions=[(30, 150, 330, 190)])
+        self.assertEqual(expected["status"], "pass", expected)
+        self.assertEqual(expected["note"], "only_expected_changes")
+        self.assertEqual(expected["summary"]["unexpected_count"], 0)
+        self.assertTrue(all(box["label"] == "expected" for box in expected["boxes"]))
+        unexpected = compare("regions", after_url, self.folder,
+                             expected_regions=[(1000, 700, 10, 10)])
+        self.assertEqual(unexpected["status"], "check")
+        approved = approve("regions", self.folder, all_boxes=True)
+        self.assertEqual(approved["status"], "pass", approved)
+        matched = compare("regions", after_url, self.folder)
+        self.assertEqual(matched["status"], "pass", matched)
+        self.assertTrue(all(box["approved"] for box in matched["boxes"]))
+        self.assertEqual(accept("regions", self.folder)["status"], "pass")
+        self.assertEqual(compare("regions", after_url, self.folder)["status"], "pass")
 
 
 if __name__ == "__main__":
