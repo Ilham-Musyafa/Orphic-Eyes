@@ -97,7 +97,9 @@ def _result(raw, name, root, action):
         raise RuntimeError(raw.get("error", "engine operation failed"))
     case = _case(root, name)
     metadata = _module("store")._read_metadata(case / "metadata.json")
-    result = {key: value for key, value in raw.items() if key != "requests"}
+    result = {key: value for key, value in raw.items() if key not in ("requests", "crops")}
+    if "crops" in raw:
+        result["crops_dir"] = str(_module("crops").validate_crops(case))
     if "request_results" in result:
         result["request_results"] = [dict(row) for row in result["request_results"]]
     result.setdefault("name", name)
@@ -201,7 +203,8 @@ def _compare(args, name, root):
     if not isinstance(expected, list):
         raise ValueError("expect must be a list of x,y,w,h objects")
     regions = [_rectangle(region) for region in expected]
-    result = _module("compare").compare(name, url, root, expected_regions=regions, requests=intents)
+    result = _module("compare").compare(name, url, root, expected_regions=regions,
+                                        requests=intents, focus=True)
     if result["status"] != "error":
         _module("store")._atomic_json(state_file, {**state, "latest_url": url})
     return result

@@ -191,6 +191,68 @@ class RequestTests(unittest.TestCase):
         self.assertNotIn("base64", text.lower())
         self.assertTrue(all("found" in r for r in raw["request_results"]))
 
+    def test_focus_crops_coordinates_and_stale_removal(self):
+        self.moved()
+        result = self.compare([self.request(), self.request("comment", id="PT-2")])
+        folder = self.case / "crops"
+        self.assertTrue((folder / "req-PT-1-before.png").is_file())
+        self.assertFalse((folder / "req-PT-2-before.png").exists())
+        request = next(item for item in result["crops"]["items"] if item["id"] == "req-PT-1")
+        self.assertEqual(request["after"]["bbox"], {"x": 84, "y": 54, "w": 80, "h": 64})
+        for item in result["crops"]["items"]:
+            for side in ("before", "after"):
+                with Image.open(self.case / item[side]["path"]) as image:
+                    self.assertLessEqual(max(image.size), 640)
+        stale = folder / "old-after.png"
+        stale.write_bytes(b"stale")
+        self.compare([self.request("comment")])
+        self.assertFalse(stale.exists())
+        self.assertFalse((folder / "req-PT-1-before.png").exists())
+
+    def test_large_focus_crop_caps_size_and_records_scale(self):
+        from engine.crops import write_crops
+        image = Image.new("RGB", (1200, 900), "white")
+        report = {"boxes": [{"id": 1, "x": 0, "y": 0, "w": 1000, "h": 700}]}
+        crops = write_crops(self.case, image, image, report)
+        info = crops["items"][0]["before"]
+        with Image.open(self.case / info["path"]) as saved:
+            self.assertEqual(max(saved.size), 640)
+            self.assertEqual(saved.size, (info["size"]["width"], info["size"]["height"]))
+        self.assertLess(info["scale"], 1)
+        self.assertEqual(info["bbox"], {"x": 0, "y": 0, "w": 1016, "h": 716})
+
+    def test_crop_hard_link_blocks_capture_and_preserves_sentinel(self):
+        self.compare([])
+        sentinel = self.root / "sentinel.png"
+        sentinel.write_bytes(b"do not overwrite")
+        link = self.case / "crops" / "stale.png"
+        os.link(sentinel, link)
+        with patch("engine.capture.capture") as capture:
+            result = compare("case", "http://localhost", self.root, requests=[])
+        self.assertEqual(result["status"], "error")
+        capture.assert_not_called()
+        self.assertEqual(sentinel.read_bytes(), b"do not overwrite")
+
+    def test_crop_directory_and_file_symlinks_rejected(self):
+        from engine.crops import validate_crops
+        external = self.root / "other"
+        external.mkdir()
+        folder = self.case / "crops"
+        try:
+            folder.symlink_to(external, target_is_directory=True)
+        except OSError as exc:
+            self.skipTest("Windows symlink privilege unavailable: " + str(exc))
+        with self.assertRaises(ValueError):
+            validate_crops(self.case)
+        folder.unlink()
+        folder.mkdir()
+        sentinel = external / "sentinel"
+        sentinel.write_text("keep")
+        (folder / "old.png").symlink_to(sentinel)
+        with self.assertRaises(ValueError):
+            validate_crops(self.case)
+        self.assertEqual(sentinel.read_text(), "keep")
+
 
 if __name__ == "__main__":
     unittest.main()
