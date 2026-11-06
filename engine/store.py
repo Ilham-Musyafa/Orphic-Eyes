@@ -223,9 +223,12 @@ def _read_metadata(path):
     return metadata
 
 
-def baseline(name, url, store_dir):
-    """Save a 1280x800 baseline and metadata, or return an error dictionary."""
+def baseline(name, url, store_dir, *, width=1280, height=800):
+    """Save a baseline and metadata (1280x800 by default), or return an error."""
     try:
+        if any(isinstance(v, bool) or not isinstance(v, int) or v <= 0
+               for v in (width, height)):
+            raise ValueError("viewport dimensions must be positive integers")
         validation = validate_url(url)
         if validation is not None:
             raise ValueError(validation)
@@ -233,9 +236,9 @@ def baseline(name, url, store_dir):
         if browser is None:
             raise RuntimeError("no installed Edge or Chrome browser found")
         case = _case_dir(store_dir, name, create=True)
-        if not capture(url, case / "baseline.png", browser=browser):
+        if not capture(url, case / "baseline.png", browser=browser, width=width, height=height):
             raise RuntimeError("browser capture failed")
-        metadata = _metadata(browser, 1280, 800, 0)
+        metadata = _metadata(browser, width, height, 0)
         with (case / "metadata.json").open("w", encoding="utf-8", newline="\n") as handle:
             json.dump(metadata, handle, indent=2, ensure_ascii=True)
             handle.write("\n")
