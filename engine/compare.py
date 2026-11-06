@@ -145,20 +145,29 @@ def compare_images(before_png, after_png, diff_png, tolerance=0,
         return {"status": "error", "error": str(exc)}
 
 
-def compare(name, url, store_dir, tolerance=0, expected_regions=None):
+def compare(name, url, store_dir, tolerance=0, expected_regions=None, *, requests=None):
     """Capture against a baseline and persist report.json; never raise."""
     from .capture import capture, validate_url
     from .report_json import build_report, write_report
     from .store import _case_dir, _metadata, _read_metadata, _read_options
+    from .requests import check_bounds, expected_for_requests, validate_requests, verify_requests
 
     try:
         _tolerance(tolerance)
         expected = _regions(expected_regions)
+        intents = validate_requests(requests) if requests is not None else None
         validation = validate_url(url)
         if validation is not None:
             raise ValueError(validation)
         case = _case_dir(store_dir, name, create=False)
         old_meta = _read_metadata(case / "metadata.json")
+        if intents is not None:
+            with Image.open(case / "baseline.png") as source:
+                for intent in intents:
+                    if intent["type"] != "comment":
+                        check_bounds(intent["from"], source.size, "from")
+                        check_bounds(intent.get("to", intent["from"]), source.size, "to")
+                expected += expected_for_requests(intents, source.size)
         ignored, approvals = _read_options(case)
         viewport = old_meta["viewport"]
         browser = old_meta["browser"]
@@ -173,6 +182,9 @@ def compare(name, url, store_dir, tolerance=0, expected_regions=None):
         report = build_report(name, result, metadata)
         if report.get("status") == "error":
             return report
+        if intents is not None:
+            with Image.open(case / "baseline.png") as before, Image.open(case / "current.png") as after:
+                report.update(verify_requests(before.convert("RGB"), after.convert("RGB"), intents))
         saved = write_report(report, case / "report.json")
         if saved.get("status") == "error":
             return saved

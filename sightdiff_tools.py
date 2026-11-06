@@ -97,7 +97,9 @@ def _result(raw, name, root, action):
         raise RuntimeError(raw.get("error", "engine operation failed"))
     case = _case(root, name)
     metadata = _module("store")._read_metadata(case / "metadata.json")
-    result = dict(raw)  # Keep the engine's schema, summary, labels and coordinates.
+    result = {key: value for key, value in raw.items() if key != "requests"}
+    if "request_results" in result:
+        result["request_results"] = [dict(row) for row in result["request_results"]]
     result.setdefault("name", name)
     result.setdefault("summary", {"changed_px": 0, "changed_percent": 0, "box_count": 0,
                                   "unexpected_count": 0})
@@ -121,6 +123,10 @@ def _result(raw, name, root, action):
                                                ("diff", "diff.png"))},
                   hint=hints.get(action, "Review the boxes; call sightdiff_approve if intended, otherwise fix the code and call sightdiff_compare again."))
     result["paths"]["report"] = None  # Stage 4 owns HTML reports.
+    if "request_results" in result:
+        failing = [row["id"] for row in result["request_results"] if row["status"] in ("not_done", "unknown")]
+        if failing:
+            result["hint"] = "Check " + ", ".join(failing) + "; fix or clarify these intents, then call sightdiff_compare again."
     result["boxes_omitted"] = original_count - len(result["boxes"])
     # Byte budget, not character count: long paths and additive schema fields
     # mean fewer than 20 boxes can fit. Full data remains in report.json.
@@ -128,7 +134,13 @@ def _result(raw, name, root, action):
         encoded = json.dumps(result, ensure_ascii=True, separators=(",", ":"), allow_nan=False)
         if len(encoded.encode("utf-8")) < MAX_RESULT_BYTES:
             return encoded
-        if result["boxes"]:
+        if any(row.get("why") for row in result.get("request_results", [])):
+            for row in result["request_results"]:
+                row["why"] = ""
+        elif any("found" in row for row in result.get("request_results", [])):
+            for row in result["request_results"]:
+                row.pop("found", None)
+        elif result["boxes"]:
             result["boxes"].pop()
             result["boxes_omitted"] += 1
         elif result.get("ignore_regions"):
@@ -173,6 +185,9 @@ def handle_baseline(args: dict, **_kw) -> str:
 
 
 def _compare(args, name, root):
+    intents = None
+    if "requests" in args:
+        intents = _module("requests").validate_requests(args["requests"])
     case = _case(root, name)
     state_file = _safe_file(case, STATE_FILE)
     state = _module("store")._read_json(state_file, {})
@@ -186,14 +201,14 @@ def _compare(args, name, root):
     if not isinstance(expected, list):
         raise ValueError("expect must be a list of x,y,w,h objects")
     regions = [_rectangle(region) for region in expected]
-    result = _module("compare").compare(name, url, root, expected_regions=regions)
+    result = _module("compare").compare(name, url, root, expected_regions=regions, requests=intents)
     if result["status"] != "error":
         _module("store")._atomic_json(state_file, {**state, "latest_url": url})
     return result
 
 
 def handle_compare(args: dict, **_kw) -> str:
-    return _run(args, ("name", "url", "expect"), "compare", _compare)
+    return _run(args, ("name", "url", "expect", "requests"), "compare", _compare)
 
 
 def _approve(args, name, root):
@@ -261,6 +276,13 @@ REGION = {"type": "object", "additionalProperties": False,
           "properties": {key: {"type": "integer", "minimum": 0 if key in ("x", "y") else 1,
                                 "description": f"Screenshot pixels: {key}, e.g. {8 if key in ('x', 'y') else 40}."}
                          for key in ("x", "y", "w", "h")}, "required": ["x", "y", "w", "h"]}
+REQUEST = {"type": "object", "additionalProperties": False,
+           "properties": {"id": {"type": "string", "pattern": "^PT-[1-9][0-9]{0,2}$",
+                                  "description": "Unique intent ID, e.g. PT-1."},
+                          "type": {"type": "string", "enum": ["move", "hide", "revert", "comment"]},
+                          "from": REGION, "to": REGION,
+                          "precision": {"type": "string", "enum": ["exact", "approximate"], "default": "approximate"}},
+           "required": ["id", "type"]}
 
 
 def _schema(name, description, properties, required=()):
@@ -279,7 +301,9 @@ TOOL_DEFINITIONS = (
                     "description": "Viewport height in pixels, e.g. 720."}}, ("url",)), handle_baseline),
     ("sightdiff_compare", _schema("sightdiff_compare",
         "Call after editing UI files of a local web app. Captures using the baseline viewport/browser; returns pass/check/fail, percentages, numbered boxes and image paths (no HTML yet). Omitted url reuses the baseline URL; expect classifies regions without approving them." + LIMITS,
-        {"url": URL, "expect": {"type": "array", "items": REGION,
+        {"url": URL, "requests": {"type": "array", "maxItems": 8, "items": REQUEST,
+                                   "description": "Point & Tell intents; from is in BASELINE pixels, to in AFTER pixels; same size; exact=2px, approximate=8px."},
+         "expect": {"type": "array", "items": REGION,
                                  "description": "Expected changed areas, e.g. [{x:8,y:8,w:100,h:40}]."}}), handle_compare),
     ("sightdiff_approve", _schema("sightdiff_approve",
         "After reviewing the latest comparison, approve intended unexpected box IDs or all boxes. Returns updated metrics and classifications; approvals match image content and do not replace the baseline." + LIMITS,

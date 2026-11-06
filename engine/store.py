@@ -164,6 +164,9 @@ def approve(name, store_dir, boxes=None, all_boxes=False):
         report = build_report(name, result, meta)
         if report["status"] == "error":
             return report
+        for key in ("requests", "request_results", "requests_ok", "request_counts"):
+            if key in previous:
+                report[key] = previous[key]
         _atomic_json(case / "approvals.json", proposed)
         diff.save(case / "diff.png", format="PNG")
         return write_report(report, case / "report.json")

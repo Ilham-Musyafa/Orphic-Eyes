@@ -33,6 +33,7 @@ def main(argv=None):
         if command == "compare":
             sub.add_argument("--tolerance", type=int, default=0)
             sub.add_argument("--expect", type=_region, action="append", default=[])
+            sub.add_argument("--requests", help="Local JSON file containing up to 8 Point & Tell intents")
     ignore = commands.add_parser("ignore")
     actions = ignore.add_subparsers(dest="action", required=True)
     for action in ("add", "list", "remove"):
@@ -57,7 +58,13 @@ def main(argv=None):
         if args.command == "baseline":
             result = baseline(args.name, args.url, args.store)
         elif args.command == "compare":
-            result = compare(args.name, args.url, args.store, args.tolerance, args.expect)
+            requests = None
+            if args.requests is not None:
+                from .requests import validate_requests
+                with open(args.requests, encoding="utf-8") as handle:
+                    requests = validate_requests(json.load(handle))
+            result = compare(args.name, args.url, args.store, args.tolerance, args.expect,
+                             requests=requests)
         elif args.command == "ignore":
             if args.action == "add":
                 result = ignore_add(args.name, args.store, args.region, args.label)
