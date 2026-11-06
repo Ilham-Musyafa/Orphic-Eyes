@@ -152,7 +152,7 @@ def compare(name, url, store_dir, tolerance=0, expected_regions=None, *, request
     from .report_json import build_report, write_report
     from .store import _case_dir, _metadata, _read_metadata, _read_options
     from .requests import check_bounds, expected_for_requests, validate_requests, verify_requests
-    from .crops import validate_crops, write_crops
+    from .crops import clear_crops, validate_crops, write_crops
     from .shifts import add_shift_hints
 
     try:
@@ -167,8 +167,7 @@ def compare(name, url, store_dir, tolerance=0, expected_regions=None, *, request
         if validation is not None:
             raise ValueError(validation)
         case = _case_dir(store_dir, name, create=False)
-        if focus or intents is not None:
-            validate_crops(case)
+        validate_crops(case)
         old_meta = _read_metadata(case / "metadata.json")
         if intents is not None:
             with Image.open(case / "baseline.png") as source:
@@ -201,6 +200,8 @@ def compare(name, url, store_dir, tolerance=0, expected_regions=None, *, request
                     add_shift_hints(before, after, report["boxes"])
                 if intents is not None or focus:
                     report["crops"] = write_crops(case, before, after, report)
+        if intents is None and not focus:
+            clear_crops(case)
         saved = write_report(report, case / "report.json")
         if saved.get("status") == "error":
             return saved

@@ -6,6 +6,32 @@ order as `reference_capture_test.py`.
 
 ## Hermes plugin
 
+### Point & Tell round trip
+
+Pass up to eight `requests` to `sightdiff_compare` to verify `move`, `hide` or
+`revert` intents deterministically from baseline/after pixels; `comment` is
+skipped. IDs are `PT-1` through `PT-999`. Boxes are user-drawn hints, not DOM
+elements. Read `request_results` and `requests_ok` separately from visual
+`status`: an unmet request can coexist with `pass`, and a completed request can
+coexist with unexpected side effects (`check`/`fail`). Matching is grayscale,
+local and conservative; repeated/flat content, changed appearance and moves
+outside the bounded search cannot establish a unique location. Hide proves only
+absence of a matching crop inside the search window, not DOM removal. Focus PNGs
+live in `crops_dir`; no HTML report is produced. See
+[the report contract](docs/report-contract.md) for shapes, thresholds and examples.
+
+Baseline additionally accepts `viewport="desktop"` (1280x720), `"mobile"`
+(390x844), or `"tablet"` (768x1024), mutually exclusive with width/height.
+Actual PNG dimensions are checked. Explicit presets are returned as
+`viewport.preset` and retained by accept. Omitted preset preserves legacy output.
+
+Standalone Python callers can pass `requests=[...]` to `engine.compare`;
+`focus=True` enables box crops without requests and `shift_hints=True` enables
+shift hints. Omitting all three retains the original engine report shape.
+CLI: `python -m engine.cli compare demo file:///path/to/after.html --store ./store --requests requests.json`.
+Request-enabled CLI calls generate focus crops and shift hints; exit codes still
+follow visual status, so always inspect the independent request verdicts.
+
 `plugin.yaml` declares the five tools registered by `register(ctx)`, in toolset
 `sightdiff`. No hooks are registered. The only declared dependency is
 `Pillow>=10,<14`. This stage does not install or enable the plugin automatically.
@@ -29,7 +55,10 @@ Successful tool calls return JSON with `success`, engine `status`, `message`,
 `target`, `changed_percent`, up to 20 numbered `boxes`, `boxes_omitted`,
 `paths`, `viewport` (DPR 1), and a next-step `hint`. Existing engine field names
 (`name`, `summary`, flat box coordinates, `label`, `approved`, etc.) remain;
-`bbox` and `kind` are additive conveniences. Fewer boxes may be returned to keep
+`bbox` and `kind` are additive conveniences. Request input and detailed crop
+metadata remain in report.json; tool output carries verdicts and one crops_dir.
+The byte budget first clears request why strings, then omits found rectangles,
+then removes boxes, retaining every request ID and status. Fewer boxes may be returned to keep
 the encoded result below 4,000 bytes; `boxes_omitted` counts every omitted box.
 If necessary, `ignore_regions_omitted` counts omitted region entries. Full engine
 comparison data remains in the target's `report.json`. Baseline/accept/ignore

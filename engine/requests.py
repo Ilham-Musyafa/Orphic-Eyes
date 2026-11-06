@@ -1,13 +1,15 @@
 """Point & Tell validation and deterministic per-request pixel verdicts."""
 
 import re
+import time
 
-from .locate import MATCH_MIN, SEARCH_PAD, UNIQUE_GAP, find_crop
+from .locate import MATCH_MIN, SEARCH_PAD, UNIQUE_GAP, SearchBudgetExceeded, find_crop
 from .regions import _rectangle
 
 EXACT_TOLERANCE = 2  # Exact intent allows a two-pixel top-left discrepancy per axis.
 APPROXIMATE_TOLERANCE = 8  # Approximate intent allows a small visual placement discrepancy.
 MAX_REQUESTS = 8  # Bound matching work and preserve all IDs in compact tool output.
+REQUEST_BUDGET_SECONDS = 1.2  # Leave headroom within 2s for shifts, crop files and serialization.
 
 
 def validate_requests(value):
@@ -70,6 +72,7 @@ def _bounds(region):
 
 def verify_requests(before, after, requests):
     results = []
+    deadline = time.perf_counter() + REQUEST_BUDGET_SECONDS
     for request in requests:
         verdict = {"id": request["id"], "status": "unknown", "found": None,
                    "moved": {"dx": None, "dy": None}, "off": {"dx": None, "dy": None},
@@ -98,8 +101,13 @@ def verify_requests(before, after, requests):
                                 "h": max(first["y"] + first["h"], other["y"] + other["h"]) - y}]
                 else:
                     windows.append(other)
-            matches = sorted((find_crop(after, needle, window) for window in windows),
-                             key=lambda item: item[1], reverse=True)
+            try:
+                matches = sorted((find_crop(after, needle, window, deadline=deadline) for window in windows),
+                                 key=lambda item: item[1], reverse=True)
+            except SearchBudgetExceeded:
+                verdict["why"] = "Search time budget exceeded; no pixel verdict"
+                results.append(verdict)
+                continue
             position, score, unique = matches[0]
             if len(matches) > 1 and matches[1][1] > score - UNIQUE_GAP:
                 unique = False

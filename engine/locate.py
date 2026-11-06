@@ -1,5 +1,7 @@
 """Bounded, deterministic grayscale crop matching; no semantic recognition."""
 
+import time
+
 from PIL import Image, ImageChops, ImageFilter, ImageStat
 
 from .regions import _rectangle
@@ -14,11 +16,20 @@ COARSE_MARGIN = 0.12  # Allow downsampling/phase error before rejecting a coarse
 BOUND_GRID = 4  # Disjoint block means cheaply bound full-resolution absolute error.
 
 
+class SearchBudgetExceeded(RuntimeError):
+    """No location or absence claim is safe when a bounded search is unfinished."""
+
+
+def _check_deadline(deadline):
+    if deadline is not None and time.perf_counter() >= deadline:
+        raise SearchBudgetExceeded("crop search time budget exceeded")
+
+
 def _score(source, needle):
     return 1.0 - ImageStat.Stat(ImageChops.difference(source, needle)).mean[0] / 255.0
 
 
-def _potential(gray, target, cutoff):
+def _potential(gray, target, cutoff, deadline=None):
     """Candidates whose score could reach cutoff, by a conservative MAE bound.
 
     Jensen's inequality bounds pixel MAE by disjoint block-mean differences.
@@ -37,6 +48,7 @@ def _potential(gray, target, cutoff):
     for row in range(rows):
         y = row * (nh - bh) // max(1, rows - 1)
         for col in range(cols):
+            _check_deadline(deadline)
             x = col * (nw - bw) // max(1, cols - 1)
             mean = ImageStat.Stat(target.crop((x, y, x + bw, y + bh))).mean[0]
             cx, cy = x + bw // 2, y + bh // 2
@@ -47,7 +59,7 @@ def _potential(gray, target, cutoff):
     return ((index % pw, index // pw) for index, error in enumerate(lower) if error <= maximum_error)
 
 
-def find_crop(haystack, needle, window):
+def find_crop(haystack, needle, window, *, deadline=None):
     """Return (best (x,y) or None, score in [0,1], unique).
 
     Coordinates are absolute image pixels; window is an x/y/w/h object. The
@@ -57,6 +69,7 @@ def find_crop(haystack, needle, window):
     """
     if not isinstance(haystack, Image.Image) or not isinstance(needle, Image.Image):
         raise ValueError("haystack and needle must be Pillow images")
+    _check_deadline(deadline)
     region = _rectangle(window)
     left, top = region["x"], region["y"]
     right = min(haystack.width, left + region["w"])
@@ -75,6 +88,7 @@ def find_crop(haystack, needle, window):
     cw, ch = small.size
     ranked = []
     for y in range(coarse.height - ch + 1):
+        _check_deadline(deadline)
         for x in range(coarse.width - cw + 1):
             score = _score(coarse.crop((x, y, x + cw, y + ch)), small)
             ranked.append((score, x, y))
@@ -94,6 +108,7 @@ def find_crop(haystack, needle, window):
         radius = factor + UNIQUE_DISTANCE
         for px, py in peaks:
             for y in range(max(0, py * factor - radius), min(sh - nh, py * factor + radius) + 1):
+                _check_deadline(deadline)
                 for x in range(max(0, px * factor - radius), min(sw - nw, px * factor + radius) + 1):
                     if (x, y) not in candidates:
                         candidates[x, y] = _score(gray.crop((x, y, x + nw, y + nh)), target)
@@ -103,7 +118,8 @@ def find_crop(haystack, needle, window):
     # that threshold are best observed scores, not a location claim.
     cutoff = max(MATCH_MIN, best_so_far - UNIQUE_GAP) if best_so_far < MATCH_MIN else best_so_far - UNIQUE_GAP
     if factor > 1:
-        for x, y in _potential(gray, target, cutoff):
+        for x, y in _potential(gray, target, cutoff, deadline):
+            _check_deadline(deadline)
             if (x, y) not in candidates:
                 candidates[x, y] = _score(gray.crop((x, y, x + nw, y + nh)), target)
     if not candidates:

@@ -66,3 +66,12 @@ def write_crops(case, before, after, report):
         items.append({"id": ident, "before": _save(folder, ident + "-before.png", before, request["from"]),
                       "after": _save(folder, ident + "-after.png", after, destination)})
     return {"pad": CROP_PAD, "max_side": CROP_MAX_SIDE, "items": items}
+
+
+def clear_crops(case):
+    """An unenhanced legacy compare also invalidates any prior focus images."""
+    folder = validate_crops(case)
+    if folder.exists():
+        stale = [_safe_file(folder, child.name) for child in folder.iterdir()]
+        for path in stale:
+            path.unlink()

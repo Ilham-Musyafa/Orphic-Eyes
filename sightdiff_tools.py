@@ -94,7 +94,11 @@ def _failure(exc):
         fix = "Call sightdiff_compare for this target before approving or accepting."
     else:
         fix = "Check the tool arguments and saved target; run /sightdiff help or /sightdiff doctor."
-    return json.dumps({"success": False, "error": message, "fix": fix}, ensure_ascii=True)
+    while True:
+        encoded = json.dumps({"success": False, "error": message, "fix": fix}, ensure_ascii=True)
+        if len(encoded.encode("utf-8")) < MAX_RESULT_BYTES:
+            return encoded
+        message = message[:max(1, len(message) // 2)]
 
 
 def _result(raw, name, root, action):
@@ -325,7 +329,7 @@ def _schema(name, description, properties, required=()):
 LIMITS = " Only http://localhost, http://127.0.0.1 and local file:// URLs; image-only, no DOM access."
 TOOL_DEFINITIONS = (
     ("sightdiff_baseline", _schema("sightdiff_baseline",
-        "Call first, before editing a local web app's UI, to save a baseline screenshot. Returns JSON status, paths and viewport; replacing a baseline clears prior comparison/approvals." + LIMITS,
+        "Call first, before editing a local web app's UI, to save a baseline screenshot. Optional viewport: desktop=1280x720, mobile=390x844, tablet=768x1024; do not combine with width/height. Verifies actual PNG dimensions, DPR=1. Returns JSON status, paths and viewport; replacing a baseline clears prior comparison/approvals." + LIMITS,
         {"url": URL, "viewport": {"type": "string", "enum": ["desktop", "mobile", "tablet"],
                                   "description": "Optional preset, e.g. mobile=390x844; do not combine with width/height."},
          "width": {"type": "integer", "minimum": 1, "default": 1280,
@@ -333,7 +337,7 @@ TOOL_DEFINITIONS = (
          "height": {"type": "integer", "minimum": 1, "default": 720,
                     "description": "Viewport height in pixels, e.g. 720."}}, ("url",)), handle_baseline),
     ("sightdiff_compare", _schema("sightdiff_compare",
-        "Call after editing UI files of a local web app. Captures using the baseline viewport/browser; returns pass/check/fail, percentages, numbered boxes and image paths (no HTML yet). Omitted url reuses the baseline URL; expect classifies regions without approving them." + LIMITS,
+        "Call after editing UI files of a local web app. Captures using the baseline viewport/browser; returns pass/check/fail, percentages, numbered boxes, optional shift hints and image paths (no HTML yet). Optional requests verify up to 8 Point & Tell intents: read request_results and requests_ok separately from visual status; expected areas never prove completion. Omitted url reuses the baseline URL; expect classifies regions without approving them. crops_dir contains box-<id>-before/after.png (first 8 boxes) and req-PT-<n>-before/after.png (non-comment requests); full coordinates/scales and verdicts are in report.json next to the screenshots." + LIMITS,
         {"url": URL, "requests": {"type": "array", "maxItems": 8, "items": REQUEST,
                                    "description": "Point & Tell intents; from is in BASELINE pixels, to in AFTER pixels; same size; exact=2px, approximate=8px."},
          "expect": {"type": "array", "items": REGION,

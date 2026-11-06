@@ -1,10 +1,10 @@
 """Stage 5c synthetic and local-browser regression checks."""
 
 import json
-import copy
 import contextlib
 import io
 import os
+import sys
 from pathlib import Path
 import tempfile
 import unittest
@@ -221,6 +221,27 @@ class RequestTests(unittest.TestCase):
         self.assertLess(info["scale"], 1)
         self.assertEqual(info["bbox"], {"x": 0, "y": 0, "w": 1016, "h": 716})
 
+    def test_legacy_compare_clears_old_focus_crops(self):
+        self.compare([self.request()])
+        folder = self.case / "crops"
+        self.assertTrue(list(folder.iterdir()))
+        result = compare("case", "http://localhost", self.root)
+        self.assertNotEqual(result["status"], "error", result)
+        self.assertEqual(list(folder.iterdir()), [])
+        self.assertNotIn("crops", result)
+
+    def test_expired_budget_never_marks_hide_done(self):
+        self.after = Image.new("RGB", self.before.size, "white")
+        with patch("engine.requests.REQUEST_BUDGET_SECONDS", 0):
+            result = self.compare([self.request("hide"), self.request(id="PT-2")])
+        self.assertEqual([row["status"] for row in result["request_results"]], ["unknown", "unknown"])
+        self.assertFalse(result["requests_ok"])
+
+    def test_unicode_failure_is_also_under_byte_budget(self):
+        text = tools._failure(ValueError("\U0001f4a5" * 600))
+        self.assertLess(len(text.encode("utf-8")), 4000)
+        self.assertEqual(set(json.loads(text)), {"success", "error", "fix"})
+
     def test_crop_hard_link_blocks_capture_and_preserves_sentinel(self):
         self.compare([])
         sentinel = self.root / "sentinel.png"
@@ -281,7 +302,7 @@ class ViewportTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix="sightdiff-presets-")
         self.addCleanup(self.temp.cleanup)
         for patcher in (patch.dict(os.environ, {"HERMES_HOME": self.temp.name}),
-                        patch.dict(__import__("sys").modules, {"hermes_constants": None})):
+                        patch.dict(sys.modules, {"hermes_constants": None})):
             patcher.start()
             self.addCleanup(patcher.stop)
 
@@ -335,6 +356,33 @@ class ViewportTests(unittest.TestCase):
             self.assertEqual(image.size, (390, 844))
         result = json.loads(tools.handle_accept({}))
         self.assertEqual(result["viewport"]["preset"], "mobile")
+
+
+class RealRequestTests(unittest.TestCase):
+    def test_file_pages_move_done_wrong_target_and_flat_unknown(self):
+        if detect_browser() is None:
+            self.skipTest("Real Point & Tell verification requires an installed local browser")
+        with tempfile.TemporaryDirectory(prefix="sightdiff-real-intents-") as home, \
+                patch.dict(os.environ, {"HERMES_HOME": home}), \
+                patch.dict(sys.modules, {"hermes_constants": None}):
+            before = json.loads(tools.handle_baseline({"url": (FIXTURES / "pattern_104.html").as_uri()}))
+            self.assertTrue(before["success"], before)
+            request = {"id": "PT-1", "type": "move", "precision": "exact",
+                       "from": {"x": 104, "y": 180, "w": 190, "h": 48},
+                       "to": {"x": 74, "y": 180, "w": 190, "h": 48}}
+            result = json.loads(tools.handle_compare({"url": (FIXTURES / "pattern_74.html").as_uri(), "requests": [request]}))
+            self.assertTrue(result["success"], result)
+            self.assertTrue(result["requests_ok"], result)
+            self.assertEqual(result["request_results"][0]["moved"], {"dx": -30, "dy": 0})
+            self.assertTrue((Path(result["crops_dir"]) / "req-PT-1-after.png").is_file())
+            request["to"]["x"] = 40
+            result = json.loads(tools.handle_compare({"url": (FIXTURES / "pattern_74.html").as_uri(), "requests": [request]}))
+            self.assertEqual(result["request_results"][0]["status"], "not_done")
+            self.assertEqual(result["request_results"][0]["off"], {"dx": 34, "dy": 0})
+            self.assertTrue(json.loads(tools.handle_baseline({"url": (FIXTURES / "move_104.html").as_uri()}))["success"])
+            result = json.loads(tools.handle_compare({"url": (FIXTURES / "move_74.html").as_uri(), "requests": [request]}))
+            self.assertEqual(result["request_results"][0]["status"], "unknown")
+            self.assertTrue(all("shift" not in box for box in result["boxes"]))
 
 
 if __name__ == "__main__":

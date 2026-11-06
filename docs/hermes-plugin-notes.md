@@ -1,5 +1,9 @@
 # Hermes plugin discovery (Stage 5)
 
+Historical Stage 5 record. Stage 5c verification supersedes the pending runtime
+doctor restriction below: both normal-shell validator and doctor now pass;
+see [stage-5c-notes.md](stage-5c-notes.md).
+
 ## Confirmed before implementation
 
 Source root on this machine: `C:/Users/User/AppData/Local/hermes/hermes-agent`.
