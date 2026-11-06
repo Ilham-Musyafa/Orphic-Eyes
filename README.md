@@ -1,8 +1,73 @@
 # Orphic SightDiff engine
 
-Python 3.12 or later, with Pillow as the only dependency. No Hermes integration.
+Python 3.12 or later, with Pillow as the only dependency. Includes a standalone Hermes plugin.
 Use an installed Edge or Chrome; automatic detection prefers Edge in the same
 order as `reference_capture_test.py`.
+
+## Hermes plugin
+
+`plugin.yaml` declares the five tools registered by `register(ctx)`, in toolset
+`sightdiff`. No hooks are registered. The only declared dependency is
+`Pillow>=10,<14`. This stage does not install or enable the plugin automatically.
+
+| Tool | When to call / arguments |
+| --- | --- |
+| `sightdiff_baseline` | Before editing UI: required `url`; optional `name="default"`, `width=1280`, `height=720`. Replaces that target's baseline and clears its previous comparison and approvals; ignore regions remain. |
+| `sightdiff_compare` | After UI edits: optional `name`, `url` (defaults to the baseline URL), `expect=[{x,y,w,h}]`. Uses the baseline browser and viewport. A URL override affects this capture only until accepted. |
+| `sightdiff_approve` | After reviewing changes: `name`, either `boxes=[1,2]` or `all=true`. Approves content fingerprints; does not replace the baseline. |
+| `sightdiff_accept` | After reviewing the latest capture: `name`. Replaces the baseline with that capture, adopts its URL as the baseline URL and clears approvals. |
+| `sightdiff_ignore` | After baseline creation: `name`, `action="add"` or `"remove"`, `region={x,y,w,h}`. Remove matches one stored rectangle (including engine clipping); compare again to recalculate. |
+
+Use `/sightdiff help` for commands, `/sightdiff doctor` for Python/Pillow,
+browser path and version, data-directory write access and engine imports, or
+`/sightdiff demo` for two offline embedded-CSS pages whose **Start trial** button
+moves 40 px right. Demo replaces only target `demo` and returns image paths/status.
+It creates HTML **input pages**, not an HTML report. All `paths.report` values
+remain `null` until Stage 4.
+
+Successful tool calls return JSON with `success`, engine `status`, `message`,
+`target`, `changed_percent`, up to 20 numbered `boxes`, `boxes_omitted`,
+`paths`, `viewport` (DPR 1), and a next-step `hint`. Existing engine field names
+(`name`, `summary`, flat box coordinates, `label`, `approved`, etc.) remain;
+`bbox` and `kind` are additive conveniences. Fewer boxes may be returned to keep
+the encoded result below 4,000 bytes; `boxes_omitted` counts every omitted box.
+If necessary, `ignore_regions_omitted` counts omitted region entries. Full engine
+comparison data remains in the target's `report.json`. Baseline/accept/ignore
+responses have zero comparison metrics because they do not perform a comparison.
+Failures return only `success=false`, `error` and actionable `fix`. No image data
+is embedded in tool results.
+
+Storage resolves via `hermes_constants.get_hermes_home()` when importable,
+otherwise `HERMES_HOME`, otherwise `~/.hermes`. All plugin writes go under
+`<home>/orphic-sightdiff/<target>/`; demo pages go under `demo/`. Target names
+are validated rather than silently renamed: 1–40 ASCII letters/digits/dash/
+underscore, starting with a letter or digit, excluding Windows device names.
+Linked/redirected output files and target directories are rejected. Do not
+concurrently mutate or replace the same target's storage while a call is running.
+The plugin stores the baseline URL in `plugin-state.json` so compare can reuse it.
+
+**DISCLOSURES**
+
+- Capture calls (`baseline`, `compare`, and the two captures in `demo`) start a
+  headless local browser subprocess (Edge/Chrome/Chromium) per capture. Other
+  tools do not capture. Commands use argument lists, never a shell or `shell=True`.
+- Plugin data reads and writes stay under `HERMES_HOME/orphic-sightdiff` (or the
+  home fallback above). Browser profiles and child-process temporary files are
+  created there and cleaned up after capture. Runtime code, installed packages
+  and browser executables are necessarily read outside it; explicitly supplied
+  local `file://` input pages may also be read outside it.
+- No network calls are made by the adapter. Initial page URLs are limited to
+  `http://localhost`, `http://127.0.0.1` and local `file://` pages. The browser may
+  load their resources or follow redirects: URL validation is **not** network
+  isolation. The included demo has no external resources and works offline.
+- No telemetry, persistent background processes, background threads, credentials
+  or compiled binaries are supplied by this plugin. Capture waits for the local
+  browser and cleans up its profile; a browser installation is required separately.
+- Dependency: Pillow. No other new Python dependencies. Hermes provides its own
+  plugin loader. Baselines are not portable across machines: browser, fonts and
+  OS rendering affect pixels; recreate baselines on each machine.
+- Screenshots, source URLs, ignore regions and approvals persist locally until
+  you remove the target's data. Input pages may themselves contain private data.
 
 ```powershell
 python -m engine.cli baseline demo file:///C:/path/to/page.html --store ./store
@@ -25,6 +90,9 @@ The package exports `capture`, `baseline`, and `compare`. Capture returns a bool
 baseline and compare return dictionaries, with `{"status": "error", "error":
 "reason"}` on failure. Pixel comparison is also available as
 `engine.compare.compare_images(before_png, after_png, diff_png, tolerance=0)`.
+
+The Python `baseline` API additionally accepts keyword-only `width` and `height`;
+its defaults remain 1280x800. The CLI defaults and exit codes are unchanged.
 
 Each case is stored in `<store>/<name>/`. Names contain ASCII letters, digits,
 underscores, and hyphens, start with a letter or digit, and cannot be Windows
