@@ -131,9 +131,8 @@ def _result(raw, name, root, action):
                   viewport={**metadata["viewport"], "dpr": 1},
                   paths={key: str(case / filename) if (case / filename).is_file() else None
                          for key, filename in (("baseline", "baseline.png"), ("after", "current.png"),
-                                               ("diff", "diff.png"))},
+                                               ("diff", "diff.png"), ("report", "report.json"))},
                   hint=hints.get(action, "Review the boxes; call sightdiff_approve if intended, otherwise fix the code and call sightdiff_compare again."))
-    result["paths"]["report"] = None  # Stage 4 owns HTML reports.
     if "request_results" in result:
         failing = [row["id"] for row in result["request_results"] if row["status"] in ("not_done", "unknown")]
         if failing:

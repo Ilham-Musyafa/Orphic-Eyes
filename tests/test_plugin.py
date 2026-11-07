@@ -86,6 +86,7 @@ class PluginTests(unittest.TestCase):
     def baseline(self, **kwargs):
         result = self.call(tools.handle_baseline, {"url": "http://localhost:3000/", **kwargs})
         self.assertTrue(result["success"], result)
+        self.assertIsNone(result["paths"]["report"])
         return result
 
     def test_register_matches_manifest_and_schemas(self):
@@ -202,7 +203,8 @@ assert 'engine' not in sys.modules
             self.assertTrue(result["success"], result)
             self.assertEqual(capture.call_args.args[0], "http://localhost:3000/")
             self.assertEqual(capture.call_args.kwargs["width"], 960)
-        self.assertIsNone(result["paths"]["report"])
+        self.assertEqual(result["paths"]["report"],
+                         str(tools.resolve_data_dir() / "default" / "report.json"))
 
     def test_url_override_changes_default_only_when_accepted(self):
         self.baseline()
@@ -243,6 +245,8 @@ assert 'engine' not in sys.modules
         result = self.call(tools.handle_approve, {"boxes": [result["boxes"][0]["id"]]})
         self.assertEqual(result["status"], "pass", result)
         self.assertEqual(result["boxes"][0]["kind"], "approved")
+        self.assertEqual(result["paths"]["report"],
+                         str(tools.resolve_data_dir() / "default" / "report.json"))
 
     def test_result_budget_with_many_boxes(self):
         self.baseline()
