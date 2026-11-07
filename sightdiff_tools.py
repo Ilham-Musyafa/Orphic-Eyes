@@ -123,6 +123,7 @@ def _result(raw, name, root, action):
                 "ignore": "Ignore regions updated"}
     message = messages.get(action, {"pass": "No unexpected changes", "check": "Check these changes",
                                     "fail": "Review these visual regressions"}[raw["status"]])
+    message = _module("report_json").result_message(raw, message)
     hints = {"baseline": "After editing UI files, call sightdiff_compare with this target name.",
              "accept": "Call sightdiff_compare after the next UI edit to check the new baseline.",
              "ignore": "Call sightdiff_compare again to apply the updated ignore regions."}

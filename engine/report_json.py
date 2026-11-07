@@ -4,6 +4,21 @@ import json
 from pathlib import Path
 
 
+def result_message(report, visual_text=None):
+    """Combine independent visual and request verdicts without implying success."""
+    visual = visual_text or {"pass": "No unexpected changes", "check": "Check these changes",
+                             "fail": "Review these visual regressions"}[report["status"]]
+    counts = report.get("request_counts", {})
+    if not any(counts.values()):
+        return visual
+    if report["requests_ok"]:
+        detail = ", ".join(f"{counts[key]} {key}" for key in
+                           ("done", "not_done", "unknown", "skipped") if counts.get(key))
+        return visual + " | Requests: " + detail
+    detail = ", ".join(f"{counts[key]} {key}" for key in ("not_done", "unknown") if counts.get(key))
+    return "Requests incomplete (" + detail + ") | " + visual
+
+
 def build_report(name, comparison, metadata):
     """Return the exact report schema, or a clear error dictionary."""
     try:
@@ -37,6 +52,8 @@ def write_report(report, out_json):
     """Write UTF-8 JSON at the supplied store path, returning report or error."""
     try:
         path = Path(out_json)
+        if "message" in report:
+            report["message"] = result_message(report)
         if path.is_symlink() or (path.exists() and path.stat().st_nlink > 1):
             raise ValueError("report output must not be a link")
         with path.open("w", encoding="utf-8", newline="\n") as handle:

@@ -144,6 +144,14 @@ arbitrary hardware. Positive verdicts still require completed pixel checks.
 
 ## Compact tool results
 
+`success: true` means the tool ran without error; it does not mean visual pass
+or completed requests. Without requests, existing messages stay unchanged.
+With nonempty requests and `requests_ok: true`, append ` | Requests: ` and
+nonzero `N done, N not_done, N unknown, N skipped` counts in that order.
+With `requests_ok: false`, use `Requests incomplete (N not_done, N unknown) | `
+before the visual text, omitting zero counts. Existing hints remain independent.
+The same rules apply to a report's optional `message` when present.
+
 Success retains existing engine field names and adds:
 `success`, `target`, `message`, `changed_percent`, boxes' `bbox`/`kind`,
 `boxes_omitted`, `paths:{baseline,after,diff,report:null}`,
