@@ -59,6 +59,10 @@ def write_report(report, out_json):
         with path.open("w", encoding="utf-8", newline="\n") as handle:
             json.dump(report, handle, indent=2, ensure_ascii=True, allow_nan=False)
             handle.write("\n")
+        from .report_html import write_report_html
+        html = write_report_html(path.parent)
+        if html is not None:
+            return {**report, "paths": {"html": str(html)}}
         return report
     except Exception as exc:
         return {"status": "error", "error": str(exc)}

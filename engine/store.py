@@ -69,6 +69,16 @@ def _atomic_json(path, value):
             temporary.unlink(missing_ok=True)
 
 
+def _refresh_html(case, result):
+    from .report_html import write_report_html
+
+    if (case / "report.json").is_file():
+        html = write_report_html(case)
+        if html is not None:
+            return {**result, "paths": {"html": str(html)}}
+    return result
+
+
 def ignore_add(name, store_dir, region, label=None):
     """Add a persistent clipped ignore rectangle, or return an error."""
     try:
@@ -88,7 +98,7 @@ def ignore_add(name, store_dir, region, label=None):
             raise ValueError("ignore region must intersect the image")
         proposed[-1] = clipped[0]
         _atomic_json(case / "config.json", proposed)
-        return {"status": "pass", "ignore_regions": proposed}
+        return _refresh_html(case, {"status": "pass", "ignore_regions": proposed})
     except Exception as exc:
         return {"status": "error", "error": str(exc)}
 
@@ -113,7 +123,7 @@ def ignore_remove(name, store_dir, label):
         if len(remaining) == len(ignored):
             raise ValueError("ignore label not found: " + label)
         _atomic_json(case / "config.json", remaining)
-        return {"status": "pass", "ignore_regions": remaining}
+        return _refresh_html(case, {"status": "pass", "ignore_regions": remaining})
     except Exception as exc:
         return {"status": "error", "error": str(exc)}
 
@@ -203,6 +213,7 @@ def accept(name, store_dir):
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, case / "baseline.png")
+        (case / "report.html").unlink(missing_ok=True)
         _atomic_json(case / "approvals.json", [])
         metadata = _metadata(metadata["browser"], width, height, metadata["tolerance"],
                              preset=metadata["viewport"].get("preset"))
@@ -216,12 +227,8 @@ def accept(name, store_dir):
         clear_crops(case)
         (case / "diff.png").unlink(missing_ok=True)
         _atomic_json(case / "report.json", report)
-        from .report_html import write_report_html
-        html = write_report_html(case)
         result = {"status": "pass", "name": name, "meta": metadata}
-        if html is not None:
-            result["paths"] = {"html": str(html)}
-        return result
+        return _refresh_html(case, result)
     except Exception as exc:
         return {"status": "error", "error": str(exc)}
     finally:
@@ -269,6 +276,8 @@ def baseline(name, url, store_dir, *, width=1280, height=800):
         case = _case_dir(store_dir, name, create=True)
         if not capture(url, case / "baseline.png", browser=browser, width=width, height=height):
             raise RuntimeError("browser capture failed")
+        for filename in ("report.json", "report.html"):
+            (case / filename).unlink(missing_ok=True)
         metadata = _metadata(browser, width, height, 0)
         with (case / "metadata.json").open("w", encoding="utf-8", newline="\n") as handle:
             json.dump(metadata, handle, indent=2, ensure_ascii=True)
