@@ -206,6 +206,10 @@ class StoreTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.folder = Path(self.temp.name)
         self.current = Image.new("RGB", (1280, 800), "white")
+        # Legacy schema checks exercise the supported no-template path.
+        template = patch("engine.report_html.DEFAULT_TEMPLATE", self.folder / "missing.html")
+        template.start()
+        self.addCleanup(template.stop)
 
         def fake_capture(url, output, **kwargs):
             self.current.save(output)

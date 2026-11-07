@@ -45,12 +45,12 @@ class ContractTests(unittest.TestCase):
         case = self.home / "nonexistent"
         with patch("engine.report_html.DEFAULT_TEMPLATE", self.home / "missing.html"):
             self.assertIsNone(write_report_html(case))
-        self.assertFalse(case.exists())
-        self.baseline()
-        result = self.call(tools.handle_compare, {})
-        self.assertNotIn("html", result["paths"])
-        result = self.call(tools.handle_accept, {})
-        self.assertNotIn("html", result["paths"])
+            self.assertFalse(case.exists())
+            self.baseline()
+            result = self.call(tools.handle_compare, {})
+            self.assertNotIn("html", result["paths"])
+            result = self.call(tools.handle_accept, {})
+            self.assertNotIn("html", result["paths"])
 
     def test_html_requires_one_placeholder(self):
         self.baseline()
@@ -83,6 +83,7 @@ class ContractTests(unittest.TestCase):
         case = tools.resolve_data_dir() / "default"
         target = self.home / "protected.html"
         target.write_text("keep")
+        (case / "report.html").unlink(missing_ok=True)
         os.link(target, case / "report.html")
         with self.assertRaisesRegex(ValueError, "without links"):
             write_report_html(case, test_plugin.FIXTURES / "report_embed.html")

@@ -25,6 +25,10 @@ class Stage3Tests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(dir=ROOT, prefix="test_stage3_")
         self.addCleanup(self.temp.cleanup)
         self.store = Path(self.temp.name)
+        # Keep legacy result-schema checks independent of optional HTML output.
+        template = patch("engine.report_html.DEFAULT_TEMPLATE", self.store / "missing.html")
+        template.start()
+        self.addCleanup(template.stop)
         self.current = Image.new("RGB", (256, 256), "white")
 
         def fake_capture(url, output, **kwargs):

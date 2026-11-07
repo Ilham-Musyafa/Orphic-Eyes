@@ -42,6 +42,10 @@ class RequestTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix="orphic-requests-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        # These equality checks cover report data without optional HTML paths.
+        template = patch("engine.report_html.DEFAULT_TEMPLATE", self.root / "missing.html")
+        template.start()
+        self.addCleanup(template.stop)
         self.before = Image.new("RGB", (400, 300), "white")
         self.needle = texture()
         self.source = {"x": 40, "y": 70, "w": 48, "h": 32}

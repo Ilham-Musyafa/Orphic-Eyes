@@ -352,7 +352,8 @@ class PluginBrowserTests(unittest.TestCase):
         self.assertTrue((folder / "baseline.png").is_file())
         self.assertTrue((folder / "current.png").is_file())
         self.assertTrue((folder / "diff.png").is_file())
-        self.assertFalse((folder / "report.html").exists())
+        from engine.report_html import DEFAULT_TEMPLATE
+        self.assertEqual((folder / "report.html").is_file(), DEFAULT_TEMPLATE.is_file())
         report = json.loads((folder / "report.json").read_text())
         self.assertEqual(report["status"], "check")
 

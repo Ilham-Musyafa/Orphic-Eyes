@@ -73,7 +73,8 @@ class BrowserTests(unittest.TestCase):
         report = compare("workflow", url, self.folder)
         self.assertEqual(report["status"], "pass", report)
         self.assertEqual(report["summary"]["changed_px"], 0)
-        self.assertEqual(json.loads((self.folder / "workflow" / "report.json").read_text()), report)
+        self.assertEqual(json.loads((self.folder / "workflow" / "report.json").read_text()),
+                         {key: value for key, value in report.items() if key != "paths"})
 
     def test_stage3_shifted_button_workflow(self):
         before_url = (FIXTURES / "page_a.html").as_uri()
