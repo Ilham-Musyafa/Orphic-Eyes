@@ -57,7 +57,7 @@ def _atomic_json(path, value):
     temporary = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", newline="\n",
-                                         prefix=".sightdiff_", suffix=".tmp",
+                                         prefix=".orphic_", suffix=".tmp",
                                          dir=path.parent, delete=False) as handle:
             temporary = Path(handle.name)
             handle.write(content)
@@ -196,7 +196,7 @@ def accept(name, store_dir):
             image.load()
             width, height = image.size
         # Preserve the exact captured PNG rather than recompressing its pixels.
-        with tempfile.NamedTemporaryFile(prefix=".sightdiff_", suffix=".tmp",
+        with tempfile.NamedTemporaryFile(prefix=".orphic_", suffix=".tmp",
                                          dir=case, delete=False) as handle:
             temporary = Path(handle.name)
             handle.write((case / "current.png").read_bytes())

@@ -90,9 +90,9 @@ class PluginTests(unittest.TestCase):
         return result
 
     def test_register_matches_manifest_and_schemas(self):
-        plugin = load_package("_sightdiff_registration_test")
+        plugin = load_package("_orphic_registration_test")
         self.addCleanup(lambda: [sys.modules.pop(key, None) for key in list(sys.modules)
-                                if key.startswith("_sightdiff_registration_test")])
+                                if key.startswith("_orphic_registration_test")])
         ctx = FakeContext()
         plugin.register(ctx)
         # JSON is valid YAML 1.2; parse this simple list without adding PyYAML.
@@ -102,10 +102,10 @@ class PluginTests(unittest.TestCase):
         self.assertEqual(set(ctx.tools), names)
         self.assertIn("provides_hooks: []", manifest)
         self.assertEqual(ctx.hooks, [])
-        self.assertEqual(set(ctx.commands), {"sightdiff"})
-        self.assertIn("doctor", ctx.commands["sightdiff"]("help"))
+        self.assertEqual(set(ctx.commands), {"orphic"})
+        self.assertIn("doctor", ctx.commands["orphic"]("help"))
         for name, (toolset, schema, handler) in ctx.tools.items():
-            self.assertEqual(toolset, "sightdiff")
+            self.assertEqual(toolset, "orphic")
             self.assertEqual(schema["name"], name)
             self.assertEqual(schema["parameters"]["type"], "object")
             self.assertEqual(schema["parameters"]["additionalProperties"], False)
@@ -121,7 +121,7 @@ sys.modules[spec.name] = p
 spec.loader.exec_module(p)
 class C:
  def register_tool(self, **kw):
-  assert kw['toolset'] == 'sightdiff'
+  assert kw['toolset'] == 'orphic'
   assert isinstance(kw['handler'](None), str)
  def register_command(self, *args, **kw): pass
 p.register(C())
@@ -134,17 +134,17 @@ assert 'engine' not in sys.modules
         self.assertEqual(proc.stdout, "")
 
     def test_env_and_fallback_home_resolution_without_writes(self):
-        self.assertEqual(tools.resolve_data_dir(), self.home / "orphic-sightdiff")
+        self.assertEqual(tools.resolve_data_dir(), self.home / "orphic-eyes")
         self.assertFalse(tools.resolve_data_dir().exists())
         with patch.dict(os.environ, {}, clear=True), patch.object(Path, "home", return_value=self.home):
-            self.assertEqual(tools.resolve_data_dir(), self.home / ".hermes" / "orphic-sightdiff")
+            self.assertEqual(tools.resolve_data_dir(), self.home / ".hermes" / "orphic-eyes")
 
     def test_hermes_context_home_precedes_environment(self):
         from types import SimpleNamespace
         selected = self.home / "selected-profile"
         module = SimpleNamespace(get_hermes_home=lambda: selected)
         with patch.dict(sys.modules, {"hermes_constants": module}):
-            self.assertEqual(tools.resolve_data_dir(), selected / "orphic-sightdiff")
+            self.assertEqual(tools.resolve_data_dir(), selected / "orphic-eyes")
 
     def test_all_handlers_invalid_inputs_never_raise(self):
         for handler in HANDLERS:
@@ -169,7 +169,7 @@ assert 'engine' not in sys.modules
         # A root that is a file is an actual OS failure, not just a mocked ACL.
         other = self.home / "blocked"
         other.mkdir()
-        (other / "orphic-sightdiff").write_text("blocked")
+        (other / "orphic-eyes").write_text("blocked")
         with patch.dict(os.environ, {"HERMES_HOME": str(other)}):
             for handler, args in zip(HANDLERS, arguments):
                 self.assertFalse(self.call(handler, args)["success"])
@@ -269,7 +269,7 @@ assert 'engine' not in sys.modules
     def test_redirected_data_root_is_rejected(self):
         outside = self.home / "other"
         outside.mkdir()
-        link = self.home / "orphic-sightdiff"
+        link = self.home / "orphic-eyes"
         try:
             link.symlink_to(outside, target_is_directory=True)
         except OSError as exc:
@@ -300,7 +300,7 @@ assert 'engine' not in sys.modules
         self.assertIn("baseline", proc.stdout)
 
     def test_commands_help_unknown_and_doctor_failures(self):
-        self.assertIn("/sightdiff demo", commands.handle_command("help"))
+        self.assertIn("/orphic demo", commands.handle_command("help"))
         self.assertIn("Unknown command", commands.handle_command("unknown"))
         with patch.object(tools, "resolve_data_dir", side_effect=PermissionError("denied")), \
                 patch("engine.capture.detect_browser", return_value=None):

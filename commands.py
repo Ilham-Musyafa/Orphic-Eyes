@@ -1,4 +1,4 @@
-"""Synchronous /sightdiff commands; diagnostics never print to stdout."""
+"""Synchronous /orphic commands; diagnostics never print to stdout."""
 
 import importlib
 import json
@@ -13,12 +13,12 @@ if __package__:
 else:
     import orphic_tools as tools
 
-HELP = """/sightdiff help    Show commands
-/sightdiff doctor  Check Python, Pillow, browser, data directory and engine
-/sightdiff demo    Capture two offline demo pages and compare a 40 px button move
+HELP = """/orphic help    Show commands
+/orphic doctor  Check Python, Pillow, browser, data directory and engine
+/orphic demo    Capture two offline demo pages and compare a 40 px button move
 
-Tools: sightdiff_baseline, sightdiff_compare, sightdiff_approve,
-sightdiff_accept, sightdiff_ignore. Only local http://localhost,
+Tools: orphic_baseline, orphic_compare, orphic_approve,
+orphic_accept, orphic_ignore. Only local http://localhost,
 http://127.0.0.1 and local file:// input URLs. No HTML report in Stage 5.
 Demo replaces only the target named demo; its files live under the data directory.
 """
@@ -74,7 +74,7 @@ def doctor():
         root = tools.resolve_data_dir()
         root.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryFile(dir=root) as probe:
-            probe.write(b"sightdiff doctor")
+            probe.write(b"orphic doctor")
             probe.flush()
         lines.append("✓ Data directory writable: " + str(root))
     except Exception as exc:
@@ -103,13 +103,13 @@ def demo():
     root = tools.resolve_data_dir()
     folder = tools._case(root, "demo", create=True)
     page = """<!doctype html><html lang="en"><meta charset="utf-8">
-<title>SightDiff offline demo</title><style>
+<title>Orphic Eyes offline demo</title><style>
 *{box-sizing:border-box}body{margin:0;background:#f4f6fb;font-family:Arial,sans-serif}
 main{padding:64px}h1{margin:0;color:#202939;font-size:32px}
 p{color:#526078}button{position:absolute;left:LEFTpx;top:180px;width:160px;
 height:48px;background:#5145cd;color:white;border:0;border-radius:12px;
 font:700 16px Arial,sans-serif}
-</style><main><h1>Orphic SightDiff</h1><p>A local, offline visual check.</p>
+</style><main><h1>Orphic Eyes</h1><p>A local, offline visual check.</p>
 <button>Start trial</button></main></html>"""
     before = tools._safe_file(folder, "before.html")
     after = tools._safe_file(folder, "after.html")
@@ -143,4 +143,4 @@ def handle_command(raw_args: str, **_kw) -> str:
         return "Unknown command.\n" + HELP
     except Exception as exc:
         failure = json.loads(tools._failure(exc))
-        return "SightDiff: " + failure["error"] + "\nFix: " + failure["fix"]
+        return "Orphic Eyes: " + failure["error"] + "\nFix: " + failure["fix"]

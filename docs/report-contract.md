@@ -1,4 +1,4 @@
-# Orphic SightDiff report contract (Stage 5d)
+# Orphic Eyes report contract (Stage 5d)
 
 The engine remains image-only, local and offline. No target DOM, CSS selector,
 source-code analysis or report UI is provided. `schema_version` remains **1**;
@@ -9,7 +9,7 @@ captures. Diff boxes are changed-pixel clusters, **not element bounds**.
 
 ## Inputs: requests
 
-Optional `sightdiff_compare.requests` / `engine.compare(..., requests=...)` is a
+Optional `orphic_compare.requests` / `engine.compare(..., requests=...)` is a
 list of at most 8 objects. CLI `--requests path.json` reads the same JSON list.
 Explicit null, duplicate IDs, unsupported fields/types, malformed/out-of-image
 rectangles, booleans as coordinates and unequal move crop sizes are rejected.
@@ -174,12 +174,12 @@ return that path. `paths.html` is optional and appears only when HTML was writte
   "images":{"before":"baseline.png","after":"current.png","diff":"diff.png"},
   "boxes":[],"boxes_omitted":0,"ignore_regions":[],
   "meta":{"browser":"/path/to/browser","os":"Windows","viewport":{"width":390,"height":844,"preset":"mobile"},"created_at":"2026-11-06T19:00:00+07:00","tolerance":0},
-  "paths":{"baseline":"/home/.hermes/orphic-sightdiff/login/baseline.png","after":"/home/.hermes/orphic-sightdiff/login/current.png","diff":"/home/.hermes/orphic-sightdiff/login/diff.png","report":"/home/.hermes/orphic-sightdiff/login/report.json"},
+  "paths":{"baseline":"/home/.hermes/orphic-eyes/login/baseline.png","after":"/home/.hermes/orphic-eyes/login/current.png","diff":"/home/.hermes/orphic-eyes/login/diff.png","report":"/home/.hermes/orphic-eyes/login/report.json"},
   "viewport":{"width":390,"height":844,"dpr":1,"preset":"mobile"},
-  "crops_dir":"/home/.hermes/orphic-sightdiff/login/crops",
+  "crops_dir":"/home/.hermes/orphic-eyes/login/crops",
   "request_results":[{"id":"PT-1","status":"not_done","found":{"x":104,"y":180,"w":190,"h":48},"moved":{"dx":0,"dy":0},"off":{"dx":30,"dy":0},"match":1.0,"why":"Found outside target tolerance"}],
   "requests_ok":false,"request_counts":{"done":0,"not_done":1,"unknown":0,"skipped":0},
-  "hint":"Check PT-1; fix or clarify these intents, then call sightdiff_compare again."
+  "hint":"Check PT-1; fix or clarify these intents, then call orphic_compare again."
 }
 ```
 

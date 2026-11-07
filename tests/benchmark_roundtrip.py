@@ -30,7 +30,7 @@ def main():
         return True
 
     measurements = []
-    with tempfile.TemporaryDirectory(prefix="sightdiff-benchmark-") as folder, \
+    with tempfile.TemporaryDirectory(prefix="orphic-benchmark-") as folder, \
             patch("engine.store.detect_browser", return_value="browser.exe"), \
             patch("engine.store.capture", side_effect=capture), \
             patch("engine.capture.capture", side_effect=capture):

@@ -99,17 +99,17 @@ Paths below are relative to that root unless absolute.
   Direct `python -m engine.cli --help` also passes without Hermes imports.
 - Real handler workflow passes: baseline (1280x720), unchanged compare, changed
   fixture compare, approve all, accept, compare against the accepted URL.
-- `/sightdiff doctor` via its handler, in Hermes Python, reports:
+- `/orphic doctor` via its handler, in Hermes Python, reports:
 
 ```text
 ✓ Python 3.14.9
 ✓ Pillow 13.0.0
-✓ Data directory writable: C:\Users\User\Documents\ChatGPT\Orphic SightDiff\.stage5\handler-home\orphic-sightdiff
+✓ Data directory writable: C:\Users\User\Documents\ChatGPT\Orphic Eyes\.stage5\handler-home\orphic-eyes
 ✓ Engine importable
 ✓ Browser: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe — 156.0.4314.58
 ```
 
-- `/sightdiff demo` via its handler passes offline: `Demo: check — Start trial
+- `/orphic demo` via its handler passes offline: `Demo: check — Start trial
   moved 40 px right.`, `Changed: 0.515%`. Baseline/current/diff PNGs and input
   pages exist under the disposable home inside `.stage5/`; no HTML report exists.
 - Catalog validation succeeds: `ok: true`, all 15 checks pass, no warnings,
@@ -146,11 +146,11 @@ inside `.stage5/` to respect the user's no-outside-repo-writes instruction.
 The following is the exact output (exit 1) from the installed-interpreter CLI:
 
 ```text
-Plugin Doctor: C:\Users\User\Documents\ChatGPT\Orphic SightDiff
-  ERROR: Refusing to stage C:\Users\User\Documents\ChatGPT\Orphic SightDiff:
-C:\Users\User\Documents\ChatGPT\Orphic SightDiff leads into Doctor's temporary
+Plugin Doctor: C:\Users\User\Documents\ChatGPT\Orphic Eyes
+  ERROR: Refusing to stage C:\Users\User\Documents\ChatGPT\Orphic Eyes:
+C:\Users\User\Documents\ChatGPT\Orphic Eyes leads into Doctor's temporary
 directory C:\Users\User\Documents\ChatGPT\Orphic
-SightDiff\.stage5\tmp\hermes-plugin-doctor-xjfpukt6\plugins, so the copy would
+Orphic Eyes\.stage5\tmp\hermes-plugin-doctor-xjfpukt6\plugins, so the copy would
 recurse into itself. Point TMPDIR outside the plugin and remove links to it.
   registrations: 0 tool(s), 0 hook(s)
 ```
@@ -158,7 +158,7 @@ recurse into itself. Point TMPDIR outside the plugin and remove links to it.
 No workaround or Hermes modification was applied. Asked the user whether to
 permit doctor's automatically removed temporary staging folder outside the repo;
 this exception is needed to complete the runtime check on the actual checkout.
-The catalog validator and plugin's own `/sightdiff doctor` are independently green.
+The catalog validator and plugin's own `/orphic doctor` are independently green.
 
 ## Additive engine changes
 

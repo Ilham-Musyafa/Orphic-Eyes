@@ -88,7 +88,7 @@ def capture(url, out_png, browser=None, width=1280, height=800):
         output.parent.mkdir(parents=True, exist_ok=True)
         if output.exists():
             output.unlink()
-        profile = tempfile.mkdtemp(prefix="sightdiff_profile_", dir=output.parent)
+        profile = tempfile.mkdtemp(prefix="orphic_profile_", dir=output.parent)
         cmd = [
             executable,
             "--headless=new",

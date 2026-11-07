@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Tes kelayakan SightDiff (tanpa Hermes).
+Tes kelayakan Orphic Eyes (tanpa Hermes).
 
 Yang diuji:
   Tes 1 (kembar)      : halaman SAMA dipotret 2x -> selisih harus PERSIS 0 piksel.
@@ -11,10 +11,10 @@ Yang diuji:
 
 Cara pakai (PowerShell / terminal):
   pip install pillow
-  python sightdiff_test.py
-  python sightdiff_test.py --browser "C:\\Path\\ke\\msedge.exe"   (jika tidak terdeteksi)
+  python reference_capture_test.py
+  python reference_capture_test.py --browser "C:\\Path\\ke\\msedge.exe"   (jika tidak terdeteksi)
 
-Skrip ini hanya membuat berkas di folder 'sightdiff_out' di samping skrip,
+Skrip ini hanya membuat berkas di folder 'orphic_out' di samping skrip,
 membuka peramban lokal tanpa jendela (headless), dan tidak memakai internet.
 """
 import argparse
@@ -32,7 +32,7 @@ except ImportError:
     sys.exit(2)
 
 HERE = Path(__file__).resolve().parent
-OUT = HERE / "sightdiff_out"
+OUT = HERE / "orphic_out"
 
 W, H = 1280, 800
 SHIFT = 8  # piksel
@@ -48,7 +48,7 @@ PAGE_TMPL = """<!doctype html>
   .btn{{position:relative;left:{shift}px;display:inline-block;padding:14px 28px;
         background:#2f6fed;color:#fff;border-radius:10px;font-size:18px}}
 </style></head><body>
-<nav>Halaman Uji SightDiff</nav>
+<nav>Halaman Uji Orphic Eyes</nav>
 <main>
   <h1>Selamat datang</h1>
   <p>Ini halaman contoh untuk menguji apakah dua potret layar yang identik
@@ -108,7 +108,7 @@ def find_browser(cli_value):
 
 def capture(browser, html_path, png_path, extra_flags):
     """Potret satu halaman lokal dengan peramban headless."""
-    profile = tempfile.mkdtemp(prefix="sightdiff_profile_")
+    profile = tempfile.mkdtemp(prefix="orphic_profile_")
     cmd = [
         browser,
         "--headless=new",
@@ -174,7 +174,7 @@ def main():
     browser = find_browser(args.browser)
     if not browser:
         print("Peramban Edge/Chrome tidak ditemukan. Jalankan ulang dengan:")
-        print('  python sightdiff_test.py --browser "C:\\Path\\ke\\msedge.exe"')
+        print('  python reference_capture_test.py --browser "C:\\Path\\ke\\msedge.exe"')
         sys.exit(2)
     extra = ["--no-sandbox"] if args.no_sandbox else []
 

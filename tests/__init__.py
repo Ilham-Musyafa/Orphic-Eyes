@@ -1,1 +1,1 @@
-"""SightDiff unit and installed-browser integration tests."""
+"""Orphic Eyes unit and installed-browser integration tests."""

@@ -1,4 +1,6 @@
-# Orphic SightDiff engine
+# Orphic Eyes
+
+See it. Point at it. Tell the agent.
 
 Python 3.12 or later, with Pillow as the only dependency. Includes a standalone Hermes plugin.
 Use an installed Edge or Chrome; automatic detection prefers Edge in the same
@@ -8,7 +10,7 @@ order as `reference_capture_test.py`.
 
 ### Point & Tell round trip
 
-Pass up to eight `requests` to `sightdiff_compare` to verify `move`, `hide` or
+Pass up to eight `requests` to `orphic_compare` to verify `move`, `hide` or
 `revert` intents deterministically from baseline/after pixels; `comment` is
 skipped. IDs are `PT-1` through `PT-999`. Boxes are user-drawn hints, not DOM
 elements. Read `request_results` and `requests_ok` separately from visual
@@ -33,20 +35,20 @@ Request-enabled CLI calls generate focus crops and shift hints; exit codes still
 follow visual status, so always inspect the independent request verdicts.
 
 `plugin.yaml` declares the five tools registered by `register(ctx)`, in toolset
-`sightdiff`. No hooks are registered. The only declared dependency is
+`orphic`. No hooks are registered. The only declared dependency is
 `Pillow>=10,<14`. This stage does not install or enable the plugin automatically.
 
 | Tool | When to call / arguments |
 | --- | --- |
-| `sightdiff_baseline` | Before editing UI: required `url`; optional `name="default"`, `width=1280`, `height=720`. Replaces that target's baseline and clears its previous comparison and approvals; ignore regions remain. |
-| `sightdiff_compare` | After UI edits: optional `name`, `url` (defaults to the baseline URL), `expect=[{x,y,w,h}]`. Uses the baseline browser and viewport. A URL override affects this capture only until accepted. |
-| `sightdiff_approve` | After reviewing changes: `name`, either `boxes=[1,2]` or `all=true`. Approves content fingerprints; does not replace the baseline. |
-| `sightdiff_accept` | After reviewing the latest capture: `name`. Replaces the baseline with that capture, adopts its URL as the baseline URL and clears approvals. |
-| `sightdiff_ignore` | After baseline creation: `name`, `action="add"` or `"remove"`, `region={x,y,w,h}`. Remove matches one stored rectangle (including engine clipping); compare again to recalculate. |
+| `orphic_baseline` | Before editing UI: required `url`; optional `name="default"`, `width=1280`, `height=720`. Replaces that target's baseline and clears its previous comparison and approvals; ignore regions remain. |
+| `orphic_compare` | After UI edits: optional `name`, `url` (defaults to the baseline URL), `expect=[{x,y,w,h}]`. Uses the baseline browser and viewport. A URL override affects this capture only until accepted. |
+| `orphic_approve` | After reviewing changes: `name`, either `boxes=[1,2]` or `all=true`. Approves content fingerprints; does not replace the baseline. |
+| `orphic_accept` | After reviewing the latest capture: `name`. Replaces the baseline with that capture, adopts its URL as the baseline URL and clears approvals. |
+| `orphic_ignore` | After baseline creation: `name`, `action="add"` or `"remove"`, `region={x,y,w,h}`. Remove matches one stored rectangle (including engine clipping); compare again to recalculate. |
 
-Use `/sightdiff help` for commands, `/sightdiff doctor` for Python/Pillow,
+Use `/orphic help` for commands, `/orphic doctor` for Python/Pillow,
 browser path and version, data-directory write access and engine imports, or
-`/sightdiff demo` for two offline embedded-CSS pages whose **Start trial** button
+`/orphic demo` for two offline embedded-CSS pages whose **Start trial** button
 moves 40 px right. Demo replaces only target `demo` and returns image paths/status.
 It creates HTML **input pages**. `paths.report` is the absolute report.json path
 when that file exists, otherwise null (such as immediately after baseline).
@@ -70,7 +72,7 @@ is embedded in tool results.
 
 Storage resolves via `hermes_constants.get_hermes_home()` when importable,
 otherwise `HERMES_HOME`, otherwise `~/.hermes`. All plugin writes go under
-`<home>/orphic-sightdiff/<target>/`; demo pages go under `demo/`. Target names
+`<home>/orphic-eyes/<target>/`; demo pages go under `demo/`. Target names
 are validated rather than silently renamed: 1–40 ASCII letters/digits/dash/
 underscore, starting with a letter or digit, excluding Windows device names.
 Linked/redirected output files and target directories are rejected. Do not
@@ -82,7 +84,7 @@ The plugin stores the baseline URL in `plugin-state.json` so compare can reuse i
 - Capture calls (`baseline`, `compare`, and the two captures in `demo`) start a
   headless local browser subprocess (Edge/Chrome/Chromium) per capture. Other
   tools do not capture. Commands use argument lists, never a shell or `shell=True`.
-- Plugin data reads and writes stay under `HERMES_HOME/orphic-sightdiff` (or the
+- Plugin data reads and writes stay under `HERMES_HOME/orphic-eyes` (or the
   home fallback above). Browser profiles and child-process temporary files are
   created there and cleaned up after capture. Runtime code, installed packages
   and browser executables are necessarily read outside it; explicitly supplied

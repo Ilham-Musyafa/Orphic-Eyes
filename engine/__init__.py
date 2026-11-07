@@ -1,4 +1,4 @@
-"""Orphic SightDiff: local browser capture and visual comparison."""
+"""Orphic Eyes: local browser capture and visual comparison."""
 
 from .capture import capture
 from .compare import compare

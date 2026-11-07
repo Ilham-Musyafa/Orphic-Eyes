@@ -6,7 +6,7 @@ def register(ctx):
     from .commands import handle_command
 
     for name, schema, handler in TOOL_DEFINITIONS:
-        ctx.register_tool(name=name, toolset="sightdiff", schema=schema, handler=handler)
-    ctx.register_command("sightdiff", handler=handle_command,
+        ctx.register_tool(name=name, toolset="orphic", schema=schema, handler=handler)
+    ctx.register_command("orphic", handler=handle_command,
                          description="Local visual regression: doctor, demo, help",
                          args_hint="doctor|demo|help")

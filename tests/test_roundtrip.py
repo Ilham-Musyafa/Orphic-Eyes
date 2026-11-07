@@ -26,7 +26,7 @@ class MoveBoxRegressionTests(unittest.TestCase):
     def test_flat_button_horizontal_move_changed_pixel_bounds(self):
         if detect_browser() is None:
             self.skipTest("Installed local browser required for exact file:// reproduction")
-        with tempfile.TemporaryDirectory(prefix="sightdiff-box-repro-") as folder:
+        with tempfile.TemporaryDirectory(prefix="orphic-box-repro-") as folder:
             before = baseline("repro", (FIXTURES / "move_104.html").as_uri(), folder)
             self.assertEqual(before["status"], "pass", before)
             result = compare("repro", (FIXTURES / "move_74.html").as_uri(), folder)
@@ -39,7 +39,7 @@ class MoveBoxRegressionTests(unittest.TestCase):
 
 class RequestTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="sightdiff-requests-")
+        self.temp = tempfile.TemporaryDirectory(prefix="orphic-requests-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.before = Image.new("RGB", (400, 300), "white")
@@ -299,7 +299,7 @@ class RequestTests(unittest.TestCase):
 
 class ViewportTests(unittest.TestCase):
     def setUp(self):
-        self.temp = tempfile.TemporaryDirectory(prefix="sightdiff-presets-")
+        self.temp = tempfile.TemporaryDirectory(prefix="orphic-presets-")
         self.addCleanup(self.temp.cleanup)
         for patcher in (patch.dict(os.environ, {"HERMES_HOME": self.temp.name}),
                         patch.dict(sys.modules, {"hermes_constants": None})):
@@ -362,7 +362,7 @@ class RealRequestTests(unittest.TestCase):
     def test_file_pages_move_done_wrong_target_and_flat_unknown(self):
         if detect_browser() is None:
             self.skipTest("Real Point & Tell verification requires an installed local browser")
-        with tempfile.TemporaryDirectory(prefix="sightdiff-real-intents-") as home, \
+        with tempfile.TemporaryDirectory(prefix="orphic-real-intents-") as home, \
                 patch.dict(os.environ, {"HERMES_HOME": home}), \
                 patch.dict(sys.modules, {"hermes_constants": None}):
             before = json.loads(tools.handle_baseline({"url": (FIXTURES / "pattern_104.html").as_uri()}))

@@ -29,7 +29,7 @@ def resolve_data_dir():
     else:
         home = Path(get_hermes_home()).expanduser()
     home = home.resolve()
-    root = home / "orphic-sightdiff"
+    root = home / "orphic-eyes"
     if root.is_symlink() or root.resolve() != root:
         raise ValueError("data directory must not redirect outside HERMES_HOME")
     if root.exists() and not root.is_dir():
@@ -85,15 +85,15 @@ def _failure(exc):
     elif "url" in lower:
         fix = "Use http://localhost:PORT/, http://127.0.0.1:PORT/ or a local absolute file:// URL."
     elif "browser" in lower:
-        fix = "Install an Edge, Chrome or Chromium browser locally, then run /sightdiff doctor."
+        fix = "Install an Edge, Chrome or Chromium browser locally, then run /orphic doctor."
     elif "baseline not found" in lower:
-        fix = "Call sightdiff_baseline with this name and a local URL first."
+        fix = "Call orphic_baseline with this name and a local URL first."
     elif any(word in lower for word in ("permission", "denied", "directory", "read-only")):
-        fix = "Make HERMES_HOME/orphic-sightdiff writable and remove redirected or linked data paths."
+        fix = "Make HERMES_HOME/orphic-eyes writable and remove redirected or linked data paths."
     elif "comparison" in lower or "current.png" in lower:
-        fix = "Call sightdiff_compare for this target before approving or accepting."
+        fix = "Call orphic_compare for this target before approving or accepting."
     else:
-        fix = "Check the tool arguments and saved target; run /sightdiff help or /sightdiff doctor."
+        fix = "Check the tool arguments and saved target; run /orphic help or /orphic doctor."
     while True:
         encoded = json.dumps({"success": False, "error": message, "fix": fix}, ensure_ascii=True)
         if len(encoded.encode("utf-8")) < MAX_RESULT_BYTES:
@@ -124,22 +124,22 @@ def _result(raw, name, root, action):
     message = messages.get(action, {"pass": "No unexpected changes", "check": "Check these changes",
                                     "fail": "Review these visual regressions"}[raw["status"]])
     message = _module("report_json").result_message(raw, message)
-    hints = {"baseline": "After editing UI files, call sightdiff_compare with this target name.",
-             "accept": "Call sightdiff_compare after the next UI edit to check the new baseline.",
-             "ignore": "Call sightdiff_compare again to apply the updated ignore regions."}
+    hints = {"baseline": "After editing UI files, call orphic_compare with this target name.",
+             "accept": "Call orphic_compare after the next UI edit to check the new baseline.",
+             "ignore": "Call orphic_compare again to apply the updated ignore regions."}
     result.update(success=True, target=name, message=message,
                   changed_percent=result["summary"]["changed_percent"],
                   viewport={**metadata["viewport"], "dpr": 1},
                   paths={key: str(case / filename) if (case / filename).is_file() else None
                          for key, filename in (("baseline", "baseline.png"), ("after", "current.png"),
                                                ("diff", "diff.png"), ("report", "report.json"))},
-                  hint=hints.get(action, "Review the boxes; call sightdiff_approve if intended, otherwise fix the code and call sightdiff_compare again."))
+                  hint=hints.get(action, "Review the boxes; call orphic_approve if intended, otherwise fix the code and call orphic_compare again."))
     if raw.get("paths", {}).get("html"):
         result["paths"]["html"] = raw["paths"]["html"]
     if "request_results" in result:
         failing = [row["id"] for row in result["request_results"] if row["status"] in ("not_done", "unknown")]
         if failing:
-            result["hint"] = "Check " + ", ".join(failing) + "; fix or clarify these intents, then call sightdiff_compare again."
+            result["hint"] = "Check " + ", ".join(failing) + "; fix or clarify these intents, then call orphic_compare again."
     result["boxes_omitted"] = original_count - len(result["boxes"])
     # Byte budget, not character count: long paths and additive schema fields
     # mean fewer than 20 boxes can fit. Full data remains in report.json.
@@ -174,7 +174,7 @@ def _run(args, allowed, action, operation):
         raw = operation(args, name, root)
         return _result(raw, name, root, action)
     except Exception as exc:
-        logger.debug("SightDiff %s failed", action, exc_info=True)
+        logger.debug("Orphic Eyes %s failed", action, exc_info=True)
         return _failure(exc)
 
 
@@ -330,7 +330,7 @@ def _schema(name, description, properties, required=()):
 
 LIMITS = " Only http://localhost, http://127.0.0.1 and local file:// URLs; image-only, no DOM access."
 TOOL_DEFINITIONS = (
-    ("sightdiff_baseline", _schema("sightdiff_baseline",
+    ("orphic_baseline", _schema("orphic_baseline",
         "Call first, before editing a local web app's UI, to save a baseline screenshot. Optional viewport: desktop=1280x720, mobile=390x844, tablet=768x1024; do not combine with width/height. Verifies actual PNG dimensions, DPR=1. Returns JSON status, paths and viewport; replacing a baseline clears prior comparison/approvals." + LIMITS,
         {"url": URL, "viewport": {"type": "string", "enum": ["desktop", "mobile", "tablet"],
                                   "description": "Optional preset, e.g. mobile=390x844; do not combine with width/height."},
@@ -338,21 +338,21 @@ TOOL_DEFINITIONS = (
                                "description": "Viewport width in pixels, e.g. 1280."},
          "height": {"type": "integer", "minimum": 1, "default": 720,
                     "description": "Viewport height in pixels, e.g. 720."}}, ("url",)), handle_baseline),
-    ("sightdiff_compare", _schema("sightdiff_compare",
+    ("orphic_compare", _schema("orphic_compare",
         "Call after editing UI files of a local web app. Captures using the baseline viewport/browser; returns pass/check/fail, percentages, numbered boxes, optional shift hints and image paths (no HTML yet). Optional requests verify up to 8 Point & Tell intents: read request_results and requests_ok separately from visual status; expected areas never prove completion. Omitted url reuses the baseline URL; expect classifies regions without approving them. crops_dir contains box-<id>-before/after.png (first 8 boxes) and req-PT-<n>-before/after.png (non-comment requests); full coordinates/scales and verdicts are in report.json next to the screenshots." + LIMITS,
         {"url": URL, "requests": {"type": "array", "maxItems": 8, "items": REQUEST,
                                    "description": "Point & Tell intents; from is in BASELINE pixels, to in AFTER pixels; same size; exact=2px, approximate=8px."},
          "expect": {"type": "array", "items": REGION,
                                  "description": "Expected changed areas, e.g. [{x:8,y:8,w:100,h:40}]."}}), handle_compare),
-    ("sightdiff_approve", _schema("sightdiff_approve",
+    ("orphic_approve", _schema("orphic_approve",
         "After reviewing the latest comparison, approve intended unexpected box IDs or all boxes. Returns updated metrics and classifications; approvals match image content and do not replace the baseline." + LIMITS,
         {"boxes": {"type": "array", "items": {"type": "integer", "minimum": 1},
                    "description": "Latest comparison IDs, e.g. [1,2]; use instead of all=true."},
          "all": {"type": "boolean", "default": False,
                  "description": "Approve every box, e.g. true; omit boxes."}}), handle_approve),
-    ("sightdiff_accept", _schema("sightdiff_accept",
+    ("orphic_accept", _schema("orphic_accept",
         "After reviewing the latest capture, make it the new baseline and clear approvals. Returns status and paths; requires an earlier compare. This replaces the reference image." + LIMITS, {}), handle_accept),
-    ("sightdiff_ignore", _schema("sightdiff_ignore",
+    ("orphic_ignore", _schema("orphic_ignore",
         "After baseline creation, add an ignore rectangle for unstable content or remove one matching the returned stored rectangle. Returns ignore_regions; call compare again to recalculate. Does not edit the website." + LIMITS,
         {"action": {"type": "string", "enum": ["add", "remove"], "description": "Operation, e.g. add."},
          "region": REGION}, ("action", "region")), handle_ignore),
