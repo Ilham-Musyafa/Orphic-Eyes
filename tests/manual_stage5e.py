@@ -1,15 +1,19 @@
-"""Run with python -m tests.manual_stage5d; real captures, no Hermes install."""
+"""Orphic Eyes: python -m tests.manual_stage5e; real captures, no Hermes install."""
 
 import json
 from pathlib import Path
 import tempfile
 
 from engine import accept, baseline, compare
+from engine.capture import detect_browser
 
 
 def main():
     root = Path(__file__).resolve().parents[1]
-    with tempfile.TemporaryDirectory(dir=root / ".stage5", prefix="manual-5d-") as folder:
+    browser = detect_browser()
+    assert browser and Path(browser).name.lower() == "msedge.exe", browser
+    print("Browser:", browser)
+    with tempfile.TemporaryDirectory(dir=root / ".stage5", prefix="manual-5e-") as folder:
         fixtures = root / "tests" / "fixtures"
         saved = baseline("manual", (fixtures / "pattern_104.html").as_uri(), folder)
         assert saved["status"] == "pass", saved
@@ -22,6 +26,7 @@ def main():
         print("baseline: pass; compare: pass; requests: 1 done")
         accepted = accept("manual", folder)
         assert accepted["status"] == "pass", accepted
+        print("accept: pass")
         case = Path(folder) / "manual"
         report = json.loads((case / "report.json").read_text())
         assert report["note"] == "baseline_accepted" and not report["boxes"]
