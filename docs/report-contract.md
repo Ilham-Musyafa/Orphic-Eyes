@@ -1,8 +1,8 @@
-# Orphic SightDiff report contract (Stage 5c)
+# Orphic SightDiff report contract (Stage 5d)
 
 The engine remains image-only, local and offline. No target DOM, CSS selector,
-source-code analysis or HTML report is provided. `schema_version` remains **1**;
-Stage 5c adds optional fields. Readers must tolerate absent optional fields and
+source-code analysis or report UI is provided. `schema_version` remains **1**;
+Stages 5c/5d add optional fields. Readers must tolerate absent optional fields and
 ignore unknown fields. All rectangles use integer natural screenshot pixels,
 origin top-left, `{x,y,w,h}`; right/bottom edges are exclusive. DPR is 1 for plugin
 captures. Diff boxes are changed-pixel clusters, **not element bounds**.
@@ -56,7 +56,7 @@ Saved under `<store>/<name>/report.json`. Required pre-existing fields:
 | `status` | `pass`, `check`, `fail`; only unexpected, unapproved changes affect severity. |
 | `summary` | `changed_px`, `changed_percent`, `box_count`, `unexpected_count`. |
 | `size` | Actual after image `{width,height}`. |
-| `images` | Relative `before`, `after`, `diff` PNG filenames. |
+| `images` | Relative `before`, `after`, `diff` PNG filenames; `diff` is null after accept. |
 | `boxes` | Full, untruncated array of `{id,x,y,w,h,zone,percent,label,approved}`; optional `shift:{dx,dy}`. |
 | `ignore_regions` | Clipped named `{name,x,y,w,h}` regions. |
 | `meta` | `browser`, `os`, `viewport:{width,height,preset?}`, `created_at`, `tolerance`. |
@@ -157,21 +157,24 @@ The same rules apply to a report's optional `message` when present.
 
 Success retains existing engine field names and adds:
 `success`, `target`, `message`, `changed_percent`, boxes' `bbox`/`kind`,
-`boxes_omitted`, `paths:{baseline,after,diff,report:null}`,
+`boxes_omitted`, `paths:{baseline,after,diff,report}`,
 `viewport:{width,height,dpr:1,preset?}`, `hint`, optional `request_results`,
 `requests_ok`, `request_counts`, and **one** `crops_dir` absolute path. Full input
 `requests` and the detailed `crops` object are not echoed in tool output.
+`paths.report` is the absolute report.json path when the file exists; otherwise
+null, including immediately after a fresh baseline. Compare, approve and accept
+return that path. `paths.html` is optional and appears only when HTML was written.
 
 ```json
 {
   "success":true,"status":"pass","name":"login","target":"login",
-  "message":"No unexpected changes","changed_percent":0,
+  "message":"Requests incomplete (1 not_done) | No unexpected changes","changed_percent":0,
   "summary":{"changed_px":0,"changed_percent":0,"box_count":0,"unexpected_count":0},
   "schema_version":1,"size":{"width":390,"height":844},
   "images":{"before":"baseline.png","after":"current.png","diff":"diff.png"},
   "boxes":[],"boxes_omitted":0,"ignore_regions":[],
   "meta":{"browser":"/path/to/browser","os":"Windows","viewport":{"width":390,"height":844,"preset":"mobile"},"created_at":"2026-11-06T19:00:00+07:00","tolerance":0},
-  "paths":{"baseline":"/home/.hermes/orphic-sightdiff/login/baseline.png","after":"/home/.hermes/orphic-sightdiff/login/current.png","diff":"/home/.hermes/orphic-sightdiff/login/diff.png","report":null},
+  "paths":{"baseline":"/home/.hermes/orphic-sightdiff/login/baseline.png","after":"/home/.hermes/orphic-sightdiff/login/current.png","diff":"/home/.hermes/orphic-sightdiff/login/diff.png","report":"/home/.hermes/orphic-sightdiff/login/report.json"},
   "viewport":{"width":390,"height":844,"dpr":1,"preset":"mobile"},
   "crops_dir":"/home/.hermes/orphic-sightdiff/login/crops",
   "request_results":[{"id":"PT-1","status":"not_done","found":{"x":104,"y":180,"w":190,"h":48},"moved":{"dx":0,"dy":0},"off":{"dx":30,"dy":0},"match":1.0,"why":"Found outside target tolerance"}],
@@ -190,6 +193,27 @@ instead of silently discarding request identities.
 
 All failures: `{"success":false,"error":"...","fix":"..."}` (no raising/printing).
 Engine/CLI internal errors retain their existing `status:"error"` contract.
+
+## Optional HTML embedding foundation
+
+`engine.report_html.write_report_html(case_dir, template_path=None)` writes
+`report.html` beside report.json and returns its absolute Path. A template must
+contain exactly one `<!--ORPHIC_REPORT_JSON-->`; it becomes
+`<script type="application/json" id="orphic-report">...</script>` containing
+the report data. Image and crop paths remain relative to the case directory,
+allowing a future file:// page to read embedded data without fetching JSON.
+
+Embedding escapes `</` as `<\/`, U+2028/U+2029 as JSON Unicode escapes,
+and `<!--` as `\u003c!--`. The requested spelling `<\!--` uses an invalid JSON
+escape (`\!`); encoding the less-than character gives safe, valid JSON with
+identical parsed strings. Names and why fields round-trip without data changes.
+Only static template content surrounds the data; no UI is generated here.
+
+Without an explicit template, only `engine/templates/report.html` is considered.
+If absent, return None without writing anything. No default template is shipped.
+Compare and accept call this optional writer after saving report.json; they add
+`paths.html` only if it wrote a file. The compare tool description still says
+"no HTML yet" and must be updated when a real template is introduced.
 
 ## Viewport state
 

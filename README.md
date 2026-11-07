@@ -17,7 +17,7 @@ coexist with unexpected side effects (`check`/`fail`). Matching is grayscale,
 local and conservative; repeated/flat content, changed appearance and moves
 outside the bounded search cannot establish a unique location. Hide proves only
 absence of a matching crop inside the search window, not DOM removal. Focus PNGs
-live in `crops_dir`; no HTML report is produced. See
+live in `crops_dir`; no HTML report is produced without an optional template. See
 [the report contract](docs/report-contract.md) for shapes, thresholds and examples.
 
 Baseline additionally accepts `viewport="desktop"` (1280x720), `"mobile"`
@@ -48,8 +48,8 @@ Use `/sightdiff help` for commands, `/sightdiff doctor` for Python/Pillow,
 browser path and version, data-directory write access and engine imports, or
 `/sightdiff demo` for two offline embedded-CSS pages whose **Start trial** button
 moves 40 px right. Demo replaces only target `demo` and returns image paths/status.
-It creates HTML **input pages**, not an HTML report. All `paths.report` values
-remain `null` until Stage 4.
+It creates HTML **input pages**. `paths.report` is the absolute report.json path
+when that file exists, otherwise null (such as immediately after baseline).
 
 Successful tool calls return JSON with `success`, engine `status`, `message`,
 `target`, `changed_percent`, up to 20 numbered `boxes`, `boxes_omitted`,
@@ -63,6 +63,8 @@ the encoded result below 4,000 bytes; `boxes_omitted` counts every omitted box.
 If necessary, `ignore_regions_omitted` counts omitted region entries. Full engine
 comparison data remains in the target's `report.json`. Baseline/accept/ignore
 responses have zero comparison metrics because they do not perform a comparison.
+`success=true` means the tool ran without error. Incomplete requests are named
+first in `message`; always read `requests_ok` independently of visual status.
 Failures return only `success=false`, `error` and actionable `fix`. No image data
 is embedded in tool results.
 
@@ -182,7 +184,8 @@ with matching geometry during that report regeneration. If the box layout has
 changed, run compare again before approving IDs. Subsequent compare calls need
 their own expected regions. Accept preserves ignore configuration, copies the
 current PNG exactly, clears approvals, and updates baseline time and viewport to
-the accepted image. It leaves report/diff regeneration to the next compare.
+the accepted image. It clears the old diff and crops and writes a passing,
+zero-change report with `note="baseline_accepted"` and `images.diff=null`.
 Individual file replacements are atomic; a command updating several files is
 not a multi-file transaction.
 

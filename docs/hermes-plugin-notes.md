@@ -1,5 +1,12 @@
 # Hermes plugin discovery (Stage 5)
 
+## Gateway schema refresh (Stage 5d)
+
+After copying plugin changes into the Hermes plugins folder, a running Hermes
+gateway keeps the old tool schema in memory. Run `hermes gateway stop`, then
+start a new session. A plugin version change alone did not refresh a running
+gateway. This task does not install/enable the plugin or stop the gateway.
+
 Historical Stage 5 record. Stage 5c verification supersedes the pending runtime
 doctor restriction below: both normal-shell validator and doctor now pass;
 see [stage-5c-notes.md](stage-5c-notes.md).
