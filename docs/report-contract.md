@@ -1,4 +1,4 @@
-# Orphic Eyes report contract (Stage 5d)
+# Orphic Eyes report contract (Stage 5e)
 
 The engine remains image-only, local and offline. No target DOM, CSS selector,
 source-code analysis or report UI is provided. `schema_version` remains **1**;
@@ -211,9 +211,15 @@ Only static template content surrounds the data; no UI is generated here.
 
 Without an explicit template, only `engine/templates/report.html` is considered.
 If absent, return None without writing anything. No default template is shipped.
-Compare and accept call this optional writer after saving report.json; they add
-`paths.html` only if it wrote a file. The compare tool description still says
-"no HTML yet" and must be updated when a real template is introduced.
+Every report.json write refreshes the optional page, including compare, approve,
+accept, and direct `write_report` calls. Ignore add/remove refresh the page from
+the existing report, if present; they retain the existing requirement to compare
+again to recalculate metrics and boxes. Operations return `paths.html` only when
+a page was written. The HTML's embedded JSON equals report.json exactly; HTML
+paths are returned separately and never added to the persisted report schema.
+Replacing a baseline or deleting its report also removes report.html. Accept
+removes the previous page when it replaces the baseline, then generates a new
+page from the accepted report if a template exists.
 
 ## Viewport state
 

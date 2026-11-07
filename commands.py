@@ -19,7 +19,7 @@ HELP = """/orphic help    Show commands
 
 Tools: orphic_baseline, orphic_compare, orphic_approve,
 orphic_accept, orphic_ignore. Only local http://localhost,
-http://127.0.0.1 and local file:// input URLs. No HTML report in Stage 5.
+http://127.0.0.1 and local file:// input URLs. HTML requires an optional template.
 Demo replaces only the target named demo; its files live under the data directory.
 """
 
@@ -125,7 +125,7 @@ font:700 16px Arial,sans-serif}
              "Changed: " + str(result["changed_percent"]) + "%", "Before page: " + str(before),
              "After page: " + str(after)]
     lines += [key + ": " + str(path) for key, path in result["paths"].items()]
-    lines.append("HTML report: unavailable until Stage 4. Review the PNGs; approve if intended.")
+    lines.append("Review the PNGs; approve if intended. paths.html is included only when a report page was generated.")
     return "\n".join(lines)
 
 

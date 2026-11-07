@@ -7,7 +7,7 @@ gateway keeps the old tool schema in memory. Run `hermes gateway stop`, then
 start a new session. A plugin version change alone did not refresh a running
 gateway. This task does not install/enable the plugin or stop the gateway.
 
-Historical Stage 5 record. Stage 5c verification supersedes the pending runtime
+Historical Stage 5 record, with product identifiers normalized for Stage 5e. Stage 5c verification supersedes the pending runtime
 doctor restriction below: both normal-shell validator and doctor now pass;
 see [stage-5c-notes.md](stage-5c-notes.md).
 
@@ -104,7 +104,7 @@ Paths below are relative to that root unless absolute.
 ```text
 ✓ Python 3.14.9
 ✓ Pillow 13.0.0
-✓ Data directory writable: C:\Users\User\Documents\ChatGPT\Orphic Eyes\.stage5\handler-home\orphic-eyes
+✓ Data directory writable: <repo path>\.stage5\handler-home\orphic-eyes
 ✓ Engine importable
 ✓ Browser: C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe — 156.0.4314.58
 ```
@@ -143,14 +143,13 @@ inside `.stage5/` to respect the user's no-outside-repo-writes instruction.
 
 `plugins doctor --ci` rejects a temporary directory inside the plugin, by design:
 `hermes_cli/plugin_dev.py:31-56` refuses the resulting recursive staging copy.
-The following is the exact output (exit 1) from the installed-interpreter CLI:
+The following is the historical failure (exit 1), with paths abbreviated and names normalized:
 
 ```text
-Plugin Doctor: C:\Users\User\Documents\ChatGPT\Orphic Eyes
-  ERROR: Refusing to stage C:\Users\User\Documents\ChatGPT\Orphic Eyes:
-C:\Users\User\Documents\ChatGPT\Orphic Eyes leads into Doctor's temporary
-directory C:\Users\User\Documents\ChatGPT\Orphic
-Orphic Eyes\.stage5\tmp\hermes-plugin-doctor-xjfpukt6\plugins, so the copy would
+Plugin Doctor: <repo path>
+  ERROR: Refusing to stage <repo path>:
+<repo path> leads into Doctor's temporary
+directory <repo path>\.stage5\tmp\hermes-plugin-doctor-xjfpukt6\plugins, so the copy would
 recurse into itself. Point TMPDIR outside the plugin and remove links to it.
   registrations: 0 tool(s), 0 hook(s)
 ```
