@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Orphic Eyes — Report</title>
+<style>
+:root{color-scheme:light;--bg:#f6f6f4;--panel:#ffffff;--surface:#f1f1ef;--soft:#fafaf8;--line:#e6e5e1;--line2:#d9d9d5;--ink:#202023;--muted:#797b80;--faint:#a6a7ab;--bronze:#c58b3e;--bronze-ink:#99671f;--blue:#2f80ff;--blue-bg:#f5f9ff;--blue-line:#c9ddfa;--guide:#e5359b;--green:#188951;--green-bg:#e7f6ed;--amber:#b45309;--amber-bg:#fdf3e2;--amber-line:#f0d9b5;--red:#c63d42;--red-bg:#feeeee;--r:12px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;font-synthesis:none}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:var(--bg);color:var(--ink);font-size:13px;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;color:inherit}
+button:disabled{opacity:.45;cursor:not-allowed}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+.hidden,[hidden]{display:none!important}
+.app{height:100%;display:flex;flex-direction:column;min-height:0;background:var(--bg)}
+
+/* top bar */
+.topbar{flex:0 0 54px;height:54px;display:flex;align-items:center;gap:16px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--line);min-width:0}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:none}
+.logo-wrap{width:34px;height:35px;flex:none;background:#1B1B19;border-radius:8px;padding:4px;display:flex;align-items:center;justify-content:center}
+.logo-wrap svg{display:block;width:100%;height:100%}
+.brand-text{display:flex;flex-direction:column;min-width:0;line-height:1.15}
+.brand-name{font-size:15px;font-weight:700;letter-spacing:-.2px;white-space:nowrap}
+.tagline{font-size:11px;color:var(--muted);white-space:nowrap}
+.topbar-center{display:flex;align-items:center;gap:12px;flex:1;justify-content:center;min-width:0}
+.topbar-right{display:flex;align-items:center;gap:8px;flex:none}
+
+/* segmented controls */
+.seg{display:inline-flex;align-items:center;padding:3px;gap:2px;border-radius:9px;background:var(--surface);border:1px solid var(--line)}
+.seg button{position:relative;border:0;background:transparent;min-height:28px;padding:4px 15px;border-radius:6px;white-space:nowrap;color:#686a6f;font-size:12px}
+.seg button:hover:not(.on){background:#e7e7e4}
+.seg button.on{background:#fff;color:var(--ink);font-weight:650;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.seg button.on::after{content:"";position:absolute;left:9px;right:9px;bottom:-4px;height:2px;border-radius:2px;background:var(--ink);opacity:.5}
+#modeSwitch button.on::after{background:var(--bronze);opacity:1}
+
+.btn{border:1px solid var(--line2);background:var(--panel);padding:6px 11px;border-radius:8px;display:inline-flex;align-items:center;gap:6px;min-height:30px;white-space:nowrap;font-size:12px}
+.btn:hover:not(:disabled){background:#f6f5f2;border-color:#c8c7c2}
+.btn.ghost{border-color:transparent;background:transparent;color:#5b5c62}
+.btn.ghost:hover:not(:disabled){background:#f1f0ed}
+.btn.primary{background:var(--bronze);border-color:var(--bronze);color:#fff;font-weight:650;padding:7px 14px}
+.btn.primary:hover:not(:disabled){background:#b87927;border-color:#b87927}
+.history{display:flex;align-items:center;gap:3px;border-left:1px solid var(--line);padding-left:11px}
+
+/* subbar */
+.subbar{flex:0 0 52px;height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 14px;background:var(--soft);border-bottom:1px solid var(--line);min-width:0}
+.subbar-left,.subbar-right{display:flex;align-items:center;gap:10px;min-width:0}
+.status-chip{display:inline-flex;align-items:center;gap:6px;border-radius:7px;padding:5px 9px;background:#f0f2ef;color:#49594f;font-size:12px;white-space:nowrap}
+.status-chip::before{content:"";width:7px;height:7px;border-radius:50%;background:#8b9a90}
+.status-chip.pass{background:var(--green-bg);color:var(--green)}
+.status-chip.pass::before{background:var(--green)}
+.status-chip.check{background:var(--amber-bg);color:var(--amber)}
+.status-chip.check::before{background:#d99a2b}
+.status-chip.fail{background:var(--red-bg);color:var(--red)}
+.status-chip.fail::before{background:var(--red)}
+.note{color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);white-space:nowrap}
+.ctl select{border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:8px;padding:6px 9px;min-height:30px;font-size:12px;max-width:190px}
+
+/* layout */
+.layout{flex:1;min-height:0;display:grid;grid-template-columns:clamp(208px,19.5vw,258px) minmax(0,1fr) clamp(248px,22.5vw,300px);overflow:hidden;background:var(--bg)}
+.leftpanel,.inspector{min-width:0;min-height:0;background:var(--panel);display:flex;flex-direction:column;overflow:hidden}
+.leftpanel{border-right:1px solid var(--line)}
+.inspector{border-left:1px solid var(--line)}
+.panel-section{border-bottom:1px solid var(--line);min-height:0;flex:none;display:flex;flex-direction:column}
+.section-head{width:100%;border:0;background:var(--panel);padding:10px 12px;font-weight:650;display:flex;align-items:center;justify-content:space-between;text-align:left;font-size:12px;color:var(--ink)}
+.section-content{padding:0 9px 9px;min-height:0}
+.list-section{flex:1;min-height:0;border-bottom:0}
+.list-section .section-content{flex:1;min-height:0;overflow:auto;padding-bottom:12px}
+.count-pill{font-size:10px;font-weight:650;color:#555;background:var(--surface);border-radius:6px;padding:2px 6px;min-width:20px;text-align:center}
+
+/* pages */
+.page-item{display:flex;align-items:center;gap:9px;padding:6px 7px;border:1px solid transparent;border-radius:8px;min-height:37px;cursor:pointer;width:100%;background:transparent;text-align:left}
+.page-item:hover{background:#f6f6f4}
+.page-item.active{background:#f4f4f1;border-color:var(--line2)}
+.page-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;font-size:12px}
+.dot{width:7px;height:7px;border-radius:50%;background:#b5b7bb;flex:none}
+.dot.pass{background:var(--green)}
+.dot.check{background:#d99a2b}
+.dot.fail{background:var(--red)}
+
+/* area map */
+.zone-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+.zone-cell{border:1px solid var(--line);border-radius:5px;background:#fbfbfa;min-height:40px;display:flex;align-items:center;justify-content:center;padding:3px 2px;font-size:9px;line-height:1.15;color:#7a7e82;text-align:center;cursor:pointer;position:relative}
+.zone-cell:hover{border-color:#a4b8cf}
+.zone-cell.hit{background:var(--amber-bg);color:var(--amber);border-color:var(--amber-line)}
+.zone-cell.selected{border-color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue);background:#f1f6ff;color:#2665b9}
+
+/* lists */
+.list-item{display:flex;flex-direction:column;gap:4px;border:1px solid var(--line);border-radius:9px;padding:7px 8px;cursor:pointer;background:#fff;margin-bottom:6px;text-align:left;width:100%}
+.list-item:hover{background:#fcfbf8}
+.list-item.selected{background:var(--blue-bg);border-color:var(--blue-line)}
+.list-item.zone-hit{box-shadow:inset 2px 0 0 var(--blue)}
+.line1{display:flex;gap:6px;align-items:center;font-size:12px;min-width:0}
+.id-pill{flex:none;min-width:26px;min-height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:650;color:#555;background:var(--surface);border-radius:6px}
+.list-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.list-sub{font-size:11px;color:var(--muted);line-height:1.35;padding-left:32px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;border-radius:5px;padding:2px 6px;font-size:10px;font-weight:650;white-space:nowrap;flex:none}
+.chip.approved,.chip.done{background:var(--green-bg);color:var(--green)}
+.chip.expected{background:#edf4ff;color:#2467c2}
+.chip.unexpected,.chip.check{background:var(--amber-bg);color:var(--amber)}
+.chip.not_done,.chip.fail{background:var(--red-bg);color:var(--red)}
+.chip.unknown,.chip.skipped,.chip.draft{background:#eeeef0;color:#74777e}
+.guide{display:flex;flex-direction:column;gap:8px;padding:14px 6px;color:var(--muted);text-align:center;font-size:11px}
+.guide strong{font-size:12px;color:var(--ink);font-weight:650}
+.guide ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:5px;text-align:left}
+.guide li{display:flex;gap:7px;align-items:baseline}
+.guide li b{color:var(--ink);font-size:10px;background:var(--surface);border-radius:5px;padding:1px 5px;flex:none}
+
+/* center */
+.centerpanel{min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--surface);position:relative;overflow:hidden}
+.review-bar{flex:0 0 44px;height:44px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 12px;border-bottom:1px solid var(--line);background:var(--soft);min-width:0}
+.review-bar .seg button{padding:4px 11px;font-size:11px}
+.review-bar .note{font-size:11px}
+.stage-scroller{flex:1;min-height:0;min-width:0;overflow:auto;display:flex;align-items:center;justify-content:center;padding:18px}
+.stage-inner{display:flex;flex-direction:column;align-items:center;gap:9px;flex:none}
+.stage-inner.mode-move{cursor:crosshair}
+.stage-inner.mode-add{cursor:cell}
+.hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:6;background:#ffffffe0;border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:11px;color:#5f6166;max-width:calc(100% - 24px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pair{display:flex;gap:10px;align-items:flex-start}
+.half{position:relative;background:#fff;border:1px solid #ddddda;border-radius:8px;overflow:hidden;box-shadow:0 2px 10px rgba(37,39,45,.06);flex:none}
+.half img{display:block;width:100%;height:100%;object-fit:fill}
+.tag{position:absolute;top:6px;left:6px;z-index:4;background:#ffffffdd;border:1px solid #ececec;border-radius:6px;padding:2px 7px;font-size:10px;font-weight:650;color:#4a4b50}
+.placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;background:#fff;border:1px dashed var(--line2);border-radius:10px;color:var(--muted);font-size:11px;text-align:center;padding:26px;min-width:260px;min-height:150px}
+.placeholder strong{font-size:13px;color:var(--ink);font-weight:650}
+.img-missing{display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:repeating-linear-gradient(45deg,#fafafa,#fafafa 8px,#f3f3f1 8px,#f3f3f1 16px);color:var(--faint);font-size:11px}
+
+/* inspector */
+.inspector-header{padding:13px 13px 11px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.inspector-header h2{margin:0;font-size:14px;font-weight:700;letter-spacing:-.15px}
+.summary-card{flex:none;display:flex;align-items:center;gap:8px;padding:10px 11px;margin:11px 11px 0;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:12px;font-weight:650;min-height:42px}
+.summary-card .mark{font-size:14px;flex:none;width:18px;text-align:center}
+.summary-card.pass{color:var(--green);border-color:#cde9d9;background:var(--green-bg)}
+.summary-card.check{color:var(--amber);border-color:#eddfc2;background:var(--amber-bg)}
+.summary-card.fail{color:var(--red);border-color:#f3d3d4;background:var(--red-bg)}
+.inspector-body{flex:1;min-height:0;overflow:auto;padding:11px}
+.block{margin:0 0 14px}
+.caption{font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#8b8d92;margin:0 0 7px}
+.detail{display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.row{display:flex;justify-content:space-between;gap:8px;padding:7px 9px;font-size:12px;border-bottom:1px solid var(--line);background:#fff}
+.row:last-child{border-bottom:0}
+.row span:first-child{color:var(--muted);font-size:11px}
+.row strong{font-weight:650}
+.empty-note{color:var(--muted);font-size:11px;line-height:1.45}
+
+/* statusbar */
+.statusbar{flex:0 0 27px;height:27px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 12px;border-top:1px solid var(--line);background:var(--soft);color:#73767b;font-size:11px;white-space:nowrap;min-width:0}
+.statusbar>div{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.sep{width:1px;height:12px;background:var(--line2);flex:none}
+
+/* popover + toast */
+.pop{position:fixed;z-index:40;width:250px;padding:11px;border-radius:11px;border:1px solid var(--line2);background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.16);font-size:12px}
+.pop strong{display:block;font-size:12px;font-weight:700;margin-bottom:4px}
+.pop p{margin:0 0 9px;color:#62646a;line-height:1.4;font-size:11px}
+.pop-actions{display:flex;gap:6px}
+.pop-actions .btn{flex:1;justify-content:center;font-size:11px;min-height:28px;padding:4px 8px}
+.toast{position:fixed;left:50%;bottom:44px;transform:translateX(-50%);z-index:50;background:#262626;color:#fff;border-radius:9px;padding:9px 16px;box-shadow:0 5px 25px rgba(0,0,0,.2);font-weight:600;font-size:12px;opacity:0;pointer-events:none;transition:opacity .15s ease}
+.toast.show{opacity:1}
+
+@media(max-width:1300px){
+  .brand .tagline{display:none}
+  .ctl select{max-width:158px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo-wrap" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 430" width="420" height="430"><g id="container"><path d="M37.2 26.2 L28.2 35.2 L27.8 36.6 L23.2 41.2 L22.8 42.6 L20.2 45.2 L19.8 46.6 L18.2 48.2 L17.8 49.6 L16.2 51.2 L16.0 52.2 L15.2 53.2 L15.0 54.2 L14.2 55.2 L13.8 56.6 L12.0 58.6 L12.0 60.2 L11.2 61.2 L11.0 62.2 L10.2 63.2 L10.0 64.2 L9.2 65.2 L9.0 66.2 L8.0 67.6 L8.0 69.2 L7.0 70.6 L7.0 72.2 L6.0 73.6 L6.0 75.2 L5.0 76.6 L5.0 79.2 L4.0 80.6 L4.0 83.2 L3.0 84.6 L3.0 89.2 L2.0 90.6 L2.0 98.2 L1.0 99.6 L1.0 330.2 L2.0 331.6 L2.0 339.2 L3.0 340.6 L3.0 344.2 L4.0 345.6 L4.0 348.2 L5.0 349.6 L5.0 352.2 L6.0 353.6 L6.0 355.2 L7.0 356.6 L7.0 358.2 L7.8 359.2 L8.0 360.2 L9.0 361.6 L9.0 363.2 L9.8 364.2 L10.0 365.2 L10.8 366.2 L11.0 367.2 L11.8 368.2 L12.0 369.2 L12.8 370.2 L13.0 371.2 L13.8 372.2 L14.0 373.2 L14.8 374.2 L15.2 375.6 L16.8 377.2 L17.2 378.6 L18.8 380.2 L19.2 381.6 L20.8 383.2 L21.2 384.6 L23.8 387.2 L24.2 388.6 L29.8 394.2 L30.2 395.6 L34.2 399.6 L35.6 400.0 L41.2 405.6 L42.6 406.0 L45.2 408.6 L46.6 409.0 L48.2 410.6 L49.6 411.0 L51.2 412.6 L52.6 413.0 L54.2 414.6 L55.2 414.8 L56.2 415.6 L57.2 415.8 L58.2 416.6 L59.2 416.8 L60.2 417.6 L61.2 417.8 L62.2 418.6 L63.2 418.8 L64.6 419.8 L66.2 419.8 L67.2 420.6 L68.2 420.8 L69.6 421.8 L71.2 421.8 L72.6 422.8 L74.2 422.8 L75.6 423.8 L78.2 423.8 L79.6 424.8 L82.2 424.8 L83.6 425.8 L87.2 425.8 L88.6 426.8 L94.2 426.8 L95.6 427.8 L329.2 427.8 L330.6 426.8 L335.2 426.8 L336.6 425.8 L339.2 425.8 L340.6 424.8 L343.2 424.8 L344.6 423.8 L346.2 423.8 L347.6 422.8 L349.2 422.8 L350.6 421.8 L352.2 421.8 L353.6 420.8 L355.2 420.8 L356.2 420.0 L357.2 419.8 L358.2 419.0 L359.2 418.8 L360.2 418.0 L361.2 417.8 L362.2 417.0 L363.2 416.8 L364.2 416.0 L365.6 415.6 L367.2 414.0 L368.2 413.8 L369.2 413.0 L370.6 412.6 L372.2 411.0 L373.6 410.6 L375.2 409.0 L376.6 408.6 L380.2 405.0 L381.6 404.6 L394.6 391.6 L395.0 390.2 L399.6 385.6 L400.0 384.2 L401.6 382.6 L402.0 381.2 L403.6 379.6 L403.8 378.6 L404.6 377.6 L404.8 376.6 L405.6 375.6 L406.0 374.2 L407.6 372.6 L407.8 371.6 L408.8 370.2 L408.8 368.6 L409.6 367.6 L409.8 366.6 L410.6 365.6 L410.8 364.6 L411.8 363.2 L411.8 361.6 L412.8 360.2 L412.8 358.6 L413.8 357.2 L413.8 355.6 L414.8 354.2 L414.8 351.6 L415.8 350.2 L415.8 347.6 L416.8 346.2 L416.8 341.6 L417.8 340.2 L417.8 333.6 L418.8 332.2 L418.8 99.6 L417.8 98.2 L417.8 91.6 L416.8 90.2 L416.8 85.6 L415.8 84.2 L415.8 80.6 L414.8 79.2 L414.8 76.6 L413.8 75.2 L413.8 73.6 L412.8 72.2 L412.8 70.6 L412.0 69.6 L411.8 68.6 L410.8 67.2 L410.8 65.6 L410.0 64.6 L409.8 63.6 L409.0 62.6 L408.8 61.6 L408.0 60.6 L407.8 59.6 L407.0 58.6 L406.8 57.6 L406.0 56.6 L405.6 55.2 L404.0 53.6 L403.8 52.6 L403.0 51.6 L402.6 50.2 L401.0 48.6 L400.6 47.2 L399.0 45.6 L398.6 44.2 L396.0 41.6 L395.6 40.2 L379.6 24.2 L378.2 23.8 L375.6 21.2 L374.2 20.8 L372.6 19.2 L371.2 18.8 L369.6 17.2 L368.2 16.8 L366.6 15.2 L365.6 15.0 L364.6 14.2 L363.6 14.0 L362.6 13.2 L361.6 13.0 L360.6 12.2 L359.6 12.0 L358.6 11.2 L357.6 11.0 L356.6 10.2 L355.6 10.0 L354.6 9.2 L353.6 9.0 L352.2 8.0 L350.6 8.0 L349.2 7.0 L347.6 7.0 L346.2 6.0 L344.6 6.0 L343.2 5.0 L341.6 5.0 L340.2 4.0 L336.6 4.0 L335.2 3.0 L331.6 3.0 L330.2 2.0 L324.6 2.0 L323.2 1.0 L93.6 1.0 L92.2 2.0 L87.6 2.0 L86.2 3.0 L82.6 3.0 L81.2 4.0 L78.6 4.0 L77.2 5.0 L75.6 5.0 L74.2 6.0 L72.6 6.0 L71.2 7.0 L69.6 7.0 L68.2 8.0 L66.6 8.0 L65.6 8.8 L64.6 9.0 L63.6 9.8 L62.6 10.0 L61.6 10.8 L60.6 11.0 L59.6 11.8 L58.6 12.0 L57.6 12.8 L56.6 13.0 L55.6 13.8 L54.6 14.0 L53.6 14.8 L52.2 15.2 L50.6 16.8 L49.2 17.2 L47.6 18.8 L46.2 19.2 L43.6 21.8 L42.2 22.2 L38.6 25.8Z" fill="#1B1B19" fill-rule="evenodd"/></g>
+<!--The relocated bottom feather group was removed; container and all remaining path data are untouched.--><!--Remaining artwork: exact original feather-top and rigid eye assembly; translated together only.--><g id="centered-artwork" transform="translate(-4 36.5)"><g id="feather-top"><path d="M360.8 62.6 L360.2 62.0 L356.6 62.0 L355.2 63.0 L350.6 63.0 L349.2 64.0 L344.6 64.0 L343.2 65.0 L338.6 65.0 L337.2 66.0 L333.6 66.0 L332.2 67.0 L328.6 67.0 L327.2 68.0 L324.6 68.0 L323.2 69.0 L319.6 69.0 L318.2 70.0 L314.6 70.0 L313.2 71.0 L310.6 71.0 L309.2 72.0 L306.6 72.0 L305.2 73.0 L302.6 73.0 L301.2 74.0 L299.6 74.0 L298.2 75.0 L295.6 75.0 L294.2 76.0 L291.6 76.0 L290.2 77.0 L288.6 77.0 L287.2 78.0 L284.6 78.0 L283.2 79.0 L281.6 79.0 L280.2 80.0 L277.6 80.0 L276.2 81.0 L274.6 81.0 L273.2 82.0 L271.6 82.0 L270.2 83.0 L268.6 83.0 L267.2 84.0 L265.6 84.0 L264.2 85.0 L262.6 85.0 L261.2 86.0 L259.6 86.0 L258.6 86.8 L257.6 87.0 L256.2 88.0 L254.6 88.0 L253.2 89.0 L251.6 89.0 L250.6 89.8 L249.6 90.0 L248.2 91.0 L246.6 91.0 L245.6 91.8 L244.6 92.0 L243.2 93.0 L241.6 93.0 L240.6 93.8 L239.6 94.0 L238.6 94.8 L237.6 95.0 L236.2 96.0 L234.6 96.0 L233.6 96.8 L232.6 97.0 L231.6 97.8 L230.6 98.0 L229.6 98.8 L228.6 99.0 L227.6 99.8 L226.6 100.0 L225.2 101.0 L223.6 101.0 L222.6 101.8 L221.6 102.0 L220.6 102.8 L219.6 103.0 L218.6 103.8 L217.6 104.0 L216.6 104.8 L215.6 105.0 L214.6 105.8 L213.6 106.0 L212.6 106.8 L211.2 107.2 L209.6 108.8 L208.6 109.0 L207.6 109.8 L206.6 110.0 L205.6 110.8 L204.6 111.0 L203.6 111.8 L202.6 112.0 L201.6 112.8 L200.2 113.2 L198.6 114.8 L197.6 115.0 L196.6 115.8 L195.6 116.0 L194.6 116.8 L193.2 117.2 L191.6 118.8 L190.2 119.2 L188.6 120.8 L187.6 121.0 L186.6 121.8 L185.2 122.2 L183.6 123.8 L182.2 124.2 L180.6 125.8 L179.2 126.2 L177.6 127.8 L176.2 128.2 L174.6 129.8 L173.2 130.2 L171.6 131.8 L170.2 132.2 L167.6 134.8 L166.2 135.2 L163.6 137.8 L162.2 138.2 L158.6 141.8 L157.2 142.2 L153.6 145.8 L152.2 146.2 L146.6 151.8 L145.2 152.2 L122.2 175.2 L121.8 176.6 L116.2 182.2 L115.8 183.6 L111.2 188.2 L110.8 189.6 L108.2 192.2 L107.8 193.6 L105.2 196.2 L104.8 197.6 L102.2 200.2 L101.8 201.6 L100.2 203.2 L99.8 204.6 L98.2 206.2 L97.8 207.6 L96.2 209.2 L96.0 210.2 L95.2 211.2 L94.8 212.6 L93.2 214.2 L93.0 215.2 L92.2 216.2 L91.8 217.6 L90.2 219.2 L90.0 220.2 L89.2 221.2 L89.0 222.2 L88.2 223.2 L88.0 224.2 L87.2 225.2 L87.0 226.2 L86.2 227.2 L85.8 228.6 L84.2 230.2 L84.0 231.2 L83.2 232.2 L83.0 233.2 L82.0 234.6 L82.0 236.2 L81.2 237.2 L81.0 238.2 L80.2 239.2 L80.0 240.2 L79.2 241.2 L79.0 242.2 L78.0 243.6 L78.0 245.2 L77.2 246.2 L77.0 247.2 L76.0 248.6 L76.0 250.2 L75.2 251.2 L75.0 252.2 L74.0 253.6 L74.0 255.2 L73.0 256.6 L73.0 258.2 L72.0 259.6 L72.0 261.2 L71.0 262.6 L71.0 264.2 L70.0 265.6 L70.0 267.2 L69.0 268.6 L69.0 271.2 L68.0 272.6 L68.0 274.2 L67.0 275.6 L67.0 277.2 L67.8 277.4 L68.6 276.8 L69.6 276.6 L78.2 268.0 L79.6 267.6 L86.2 261.0 L87.6 260.6 L93.2 255.0 L94.6 254.6 L100.2 249.0 L101.6 248.6 L106.2 244.0 L107.6 243.6 L114.2 237.0 L115.6 236.6 L121.2 231.0 L122.6 230.6 L126.2 227.0 L127.6 226.6 L131.2 223.0 L132.6 222.6 L135.2 220.0 L136.6 219.6 L138.2 218.0 L139.6 217.6 L141.2 216.0 L142.6 215.6 L144.2 214.0 L145.6 213.6 L147.2 212.0 L148.6 211.6 L150.2 210.0 L151.6 209.6 L153.2 208.0 L154.6 207.6 L156.2 206.0 L157.6 205.6 L159.2 204.0 L160.2 203.8 L161.2 203.0 L162.2 202.8 L163.2 202.0 L164.6 201.6 L166.2 200.0 L167.2 199.8 L168.2 199.0 L169.2 198.8 L170.2 198.0 L171.2 197.8 L172.2 197.0 L173.6 196.6 L175.2 195.0 L176.2 194.8 L177.2 194.0 L178.2 193.8 L179.2 193.0 L180.2 192.8 L181.2 192.0 L182.2 191.8 L183.2 191.0 L184.2 190.8 L185.6 189.8 L187.2 189.8 L188.2 189.0 L189.2 188.8 L190.2 188.0 L191.2 187.8 L192.2 187.0 L193.2 186.8 L194.2 186.0 L195.2 185.8 L196.6 184.8 L198.2 184.8 L199.2 184.0 L200.2 183.8 L201.2 183.0 L202.2 182.8 L203.6 181.8 L205.2 181.8 L206.2 181.0 L207.2 180.8 L208.6 179.8 L210.2 179.8 L211.2 179.0 L212.2 178.8 L213.6 177.8 L215.2 177.8 L216.6 176.8 L218.2 176.8 L219.2 176.0 L220.2 175.8 L221.6 174.8 L223.2 174.8 L224.6 173.8 L226.2 173.8 L227.6 172.8 L229.2 172.8 L230.6 171.8 L232.2 171.8 L233.6 170.8 L235.2 170.8 L236.6 169.8 L238.2 169.8 L239.6 168.8 L242.2 168.8 L243.6 167.8 L245.2 167.8 L246.6 166.8 L248.2 166.8 L249.6 165.8 L251.2 165.8 L252.6 164.8 L255.2 164.8 L256.6 163.8 L259.2 163.8 L260.6 162.8 L263.2 162.8 L264.6 161.8 L266.2 161.8 L267.6 160.8 L270.2 160.8 L271.6 159.8 L274.2 159.8 L275.6 158.8 L278.2 158.8 L279.6 157.8 L282.2 157.8 L283.6 156.8 L286.2 156.8 L287.2 156.0 L288.6 155.6 L290.2 154.0 L291.6 153.6 L293.2 152.0 L294.6 151.6 L296.2 150.0 L297.6 149.6 L299.2 148.0 L300.6 147.6 L302.2 146.0 L303.6 145.6 L307.2 142.0 L308.6 141.6 L315.2 135.0 L316.6 134.6 L321.6 129.6 L322.0 128.2 L329.6 120.6 L330.0 119.2 L333.6 115.6 L334.0 114.2 L336.6 111.6 L337.0 110.2 L338.6 108.6 L339.0 107.2 L340.6 105.6 L341.0 104.2 L342.6 102.6 L343.0 101.2 L344.6 99.6 L344.8 98.6 L345.6 97.6 L346.0 96.2 L347.6 94.6 L347.8 93.6 L348.6 92.6 L348.8 91.6 L349.6 90.6 L349.8 89.6 L350.6 88.6 L350.8 87.6 L351.6 86.6 L351.8 85.6 L352.6 84.6 L352.8 83.6 L353.6 82.6 L353.8 81.6 L354.8 80.2 L354.8 78.6 L355.6 77.6 L355.8 76.6 L356.8 75.2 L356.8 73.6 L357.6 72.6 L357.8 71.6 L358.8 70.2 L358.8 68.6 L359.8 67.2 L359.8 65.6 L360.8 64.2Z" fill="#E7AF50" fill-rule="evenodd"/></g>
+<g transform="translate(10 -60)" id="eye-assembly"><g id="feather-lid"><path d="M309.8 250.6 L309.2 250.0 L265.6 250.0 L264.2 251.0 L253.6 251.0 L252.2 252.0 L244.6 252.0 L243.2 253.0 L237.6 253.0 L236.2 254.0 L231.6 254.0 L230.2 255.0 L226.6 255.0 L225.2 256.0 L221.6 256.0 L220.2 257.0 L216.6 257.0 L215.2 258.0 L212.6 258.0 L211.2 259.0 L208.6 259.0 L207.2 260.0 L204.6 260.0 L203.2 261.0 L200.6 261.0 L199.2 262.0 L197.6 262.0 L196.2 263.0 L193.6 263.0 L192.2 264.0 L190.6 264.0 L189.2 265.0 L187.6 265.0 L186.2 266.0 L184.6 266.0 L183.2 267.0 L181.6 267.0 L180.6 267.8 L179.6 268.0 L178.2 269.0 L176.6 269.0 L175.6 269.8 L174.6 270.0 L173.2 271.0 L171.6 271.0 L170.6 271.8 L169.6 272.0 L168.6 272.8 L167.6 273.0 L166.2 274.0 L164.6 274.0 L163.6 274.8 L162.6 275.0 L161.6 275.8 L160.6 276.0 L159.6 276.8 L158.6 277.0 L157.6 277.8 L156.6 278.0 L155.6 278.8 L154.6 279.0 L153.6 279.8 L152.6 280.0 L151.6 280.8 L150.6 281.0 L149.6 281.8 L148.6 282.0 L147.6 282.8 L146.2 283.2 L144.6 284.8 L143.6 285.0 L142.6 285.8 L141.2 286.2 L139.6 287.8 L138.6 288.0 L137.6 288.8 L136.2 289.2 L134.6 290.8 L133.2 291.2 L131.6 292.8 L130.2 293.2 L127.6 295.8 L126.2 296.2 L123.6 298.8 L122.2 299.2 L119.6 301.8 L118.2 302.2 L113.6 306.8 L112.2 307.2 L90.2 329.2 L89.8 330.6 L86.2 334.2 L85.8 335.6 L83.2 338.2 L82.8 339.6 L80.2 342.2 L79.8 343.6 L77.2 346.2 L76.8 347.6 L75.2 349.2 L74.8 350.6 L73.2 352.2 L73.0 353.2 L72.0 354.6 L72.0 355.2 L72.8 355.4 L74.2 354.0 L75.6 353.6 L80.2 349.0 L81.6 348.6 L86.2 344.0 L87.6 343.6 L91.2 340.0 L92.6 339.6 L95.2 337.0 L96.6 336.6 L99.2 334.0 L100.6 333.6 L103.2 331.0 L104.6 330.6 L106.2 329.0 L107.6 328.6 L109.2 327.0 L110.6 326.6 L112.2 325.0 L113.6 324.6 L115.2 323.0 L116.6 322.6 L118.2 321.0 L119.2 320.8 L120.2 320.0 L121.6 319.6 L123.2 318.0 L124.6 317.6 L126.2 316.0 L127.6 315.6 L129.2 314.0 L130.2 313.8 L131.2 313.0 L132.6 312.6 L134.2 311.0 L135.2 310.8 L136.2 310.0 L137.2 309.8 L138.2 309.0 L139.2 308.8 L140.2 308.0 L141.2 307.8 L142.2 307.0 L143.2 306.8 L144.2 306.0 L145.2 305.8 L146.2 305.0 L147.2 304.8 L148.2 304.0 L149.2 303.8 L150.2 303.0 L151.2 302.8 L152.2 302.0 L153.2 301.8 L154.2 301.0 L155.2 300.8 L156.6 299.8 L158.2 299.8 L159.2 299.0 L160.2 298.8 L161.2 298.0 L162.2 297.8 L163.6 296.8 L165.2 296.8 L166.6 295.8 L168.2 295.8 L169.6 294.8 L171.2 294.8 L172.2 294.0 L173.2 293.8 L174.6 292.8 L177.2 292.8 L178.6 291.8 L180.2 291.8 L181.6 290.8 L183.2 290.8 L184.6 289.8 L187.2 289.8 L188.6 288.8 L191.2 288.8 L192.6 287.8 L196.2 287.8 L197.6 286.8 L201.2 286.8 L202.6 285.8 L210.2 285.8 L211.6 284.8 L245.2 284.8 L246.6 285.8 L252.2 285.8 L253.6 286.8 L259.2 286.8 L260.6 287.8 L264.2 287.8 L265.6 288.8 L269.2 288.8 L270.6 289.8 L273.2 289.8 L275.2 288.0 L276.6 287.6 L279.2 285.0 L280.6 284.6 L287.2 278.0 L288.6 277.6 L290.6 275.6 L291.0 274.2 L298.6 266.6 L299.0 265.2 L302.6 261.6 L303.0 260.2 L304.6 258.6 L305.0 257.2 L306.6 255.6 L307.0 254.2 L309.6 251.6Z" fill="#E7AF50" fill-rule="evenodd"/></g>
+<g id="eye-crescent-curl"><path d="M258.4 298.2 L258.2 298.0 L257.2 298.2 L254.6 300.8 L253.2 301.2 L250.6 303.8 L249.2 304.2 L246.6 306.8 L245.2 307.2 L242.6 309.8 L241.2 310.2 L239.6 311.8 L238.2 312.2 L236.6 313.8 L235.6 314.0 L234.6 314.8 L233.2 315.2 L231.6 316.8 L230.6 317.0 L229.6 317.8 L228.6 318.0 L227.6 318.8 L226.6 319.0 L225.6 319.8 L224.6 320.0 L223.6 320.8 L222.6 321.0 L221.6 321.8 L220.6 322.0 L219.2 323.0 L218.6 323.0 L218.0 322.6 L217.8 321.6 L218.6 320.6 L218.8 319.6 L219.6 318.6 L219.8 317.6 L220.8 316.2 L220.8 313.6 L221.8 312.2 L221.8 303.6 L220.8 302.2 L220.8 299.6 L220.0 298.6 L219.8 297.6 L219.0 296.6 L218.6 295.2 L217.2 294.0 L209.6 294.0 L208.2 295.0 L201.6 295.0 L200.2 296.0 L197.6 296.0 L194.2 299.2 L194.0 300.2 L193.0 301.6 L193.0 305.2 L193.8 306.2 L194.2 307.6 L196.2 309.6 L198.2 309.8 L199.6 310.8 L201.2 310.8 L202.2 310.0 L203.2 309.8 L204.6 308.8 L205.2 308.8 L205.8 308.2 L206.0 307.2 L207.0 306.2 L207.8 306.2 L209.0 307.6 L209.0 312.2 L208.0 313.6 L208.0 316.2 L207.2 317.2 L206.8 318.6 L205.2 320.2 L204.8 321.6 L200.6 325.8 L199.2 326.2 L197.6 327.8 L195.6 328.0 L194.2 329.0 L184.6 329.0 L183.2 328.0 L181.6 328.0 L180.6 327.2 L179.6 327.0 L179.4 327.8 L181.2 329.6 L182.2 329.8 L183.2 330.6 L184.6 331.0 L185.6 332.0 L185.6 332.6 L185.2 333.0 L182.6 333.0 L181.2 334.0 L161.6 334.0 L160.2 333.0 L154.6 333.0 L153.2 332.0 L150.6 332.0 L149.2 331.0 L146.6 331.0 L145.2 330.0 L143.6 330.0 L142.6 329.2 L141.6 329.0 L140.2 328.0 L139.6 328.0 L139.4 328.8 L141.2 330.6 L142.6 331.0 L145.2 333.6 L146.2 333.8 L147.2 334.6 L148.2 334.8 L149.2 335.6 L150.2 335.8 L151.2 336.6 L152.2 336.8 L153.2 337.6 L154.2 337.8 L155.6 338.8 L157.2 338.8 L158.6 339.8 L160.2 339.8 L161.6 340.8 L163.2 340.8 L164.6 341.8 L167.2 341.8 L168.6 342.8 L174.2 342.8 L175.6 343.8 L187.2 343.8 L188.6 342.8 L195.2 342.8 L196.6 341.8 L200.2 341.8 L201.6 340.8 L204.2 340.8 L205.6 339.8 L207.2 339.8 L208.6 338.8 L210.2 338.8 L211.2 338.0 L212.2 337.8 L213.6 336.8 L215.2 336.8 L216.2 336.0 L217.2 335.8 L218.2 335.0 L219.2 334.8 L220.2 334.0 L221.2 333.8 L222.2 333.0 L223.2 332.8 L224.2 332.0 L225.6 331.6 L227.2 330.0 L228.2 329.8 L229.2 329.0 L230.6 328.6 L233.2 326.0 L234.6 325.6 L238.2 322.0 L239.6 321.6 L250.6 310.6 L251.0 309.2 L253.6 306.6 L254.0 305.2 L255.6 303.6 L255.8 302.6 L256.6 301.6 L257.0 300.2 L258.4 298.8Z" fill="#E7AF50" fill-rule="evenodd"/></g>
+</g></g></svg>
+</span>
+      <span class="brand-text">
+        <span class="brand-name">Orphic Eyes</span>
+        <span class="tagline">See it. Point at it. Tell the agent.</span>
+      </span>
+    </div>
+    <div class="topbar-center">
+      <div class="seg" id="modeSwitch" role="group" aria-label="Mode">
+        <button type="button" data-mode="review" class="on" aria-pressed="true">Review</button>
+        <button type="button" data-mode="move" aria-pressed="false">Move</button>
+        <button type="button" data-mode="add" aria-pressed="false">Add</button>
+      </div>
+      <div class="history">
+        <button type="button" class="btn ghost" id="undoBtn" disabled title="Undo — arrives in a later round">Undo</button>
+        <button type="button" class="btn ghost" id="redoBtn" disabled title="Redo — arrives in a later round">Redo</button>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button type="button" class="btn primary" id="copyMain">Copy for Hermes</button>
+    </div>
+  </header>
+
+  <section class="subbar">
+    <div class="subbar-left">
+      <span class="status-chip" id="readiness">Draft</span>
+      <span class="note">Image only · pixels, not page code</span>
+    </div>
+    <div class="subbar-right">
+      <label class="ctl" for="captureSize">Capture
+        <select id="captureSize">
+          <option value="1280x720">Desktop 1280x720</option>
+          <option value="1440x900">Laptop 1440x900</option>
+          <option value="1920x1080">Full HD 1920x1080</option>
+          <option value="768x1024">Tablet 768x1024</option>
+          <option value="390x844">Mobile 390x844</option>
+          <option value="custom">Custom</option>
+        </select>
+      </label>
+      <label class="ctl" for="zoomSelect">Zoom
+        <select id="zoomSelect">
+          <option value="fit">Fit</option>
+          <option value="0.5">50%</option>
+          <option value="1">100%</option>
+          <option value="2">200%</option>
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <main class="layout">
+
+    <aside class="leftpanel" aria-label="Pages, area map and list">
+      <section class="panel-section" id="pagesSection">
+        <div class="section-head">Pages</div>
+        <div class="section-content" id="pageList"></div>
+      </section>
+      <section class="panel-section" id="mapSection">
+        <div class="section-head">Area map</div>
+        <div class="section-content"><div class="zone-grid" id="zoneGrid"></div></div>
+      </section>
+      <section class="panel-section list-section" id="listSection">
+        <div class="section-head"><span id="listTitle">Changes</span><span class="count-pill" id="listCount">0</span></div>
+        <div class="section-content" id="leftList"></div>
+      </section>
+    </aside>
+
+    <section class="centerpanel" aria-label="Image stage">
+      <div class="review-bar">
+        <div class="seg" id="viewSwitch" role="group" aria-label="Review view">
+          <button type="button" data-view="side" class="on" aria-pressed="true">Side by side</button>
+          <button type="button" data-view="slider" aria-pressed="false">Slider</button>
+          <button type="button" data-view="overlay" aria-pressed="false">Overlay</button>
+          <button type="button" data-view="diff" aria-pressed="false">Diff</button>
+        </div>
+        <span class="note" id="reviewNote"></span>
+      </div>
+      <div class="stage-scroller" id="stageScroller">
+        <div class="stage-inner" id="stageInner"></div>
+      </div>
+      <div class="hint" id="stageHint"></div>
+    </section>
+
+    <aside class="inspector" aria-label="Inspector">
+      <div class="inspector-header">
+        <h2 id="inspectorTitle">Changes</h2>
+        <span class="chip unknown" id="inspectorChip">—</span>
+      </div>
+      <div class="summary-card" id="summaryCard"><span class="mark">•</span><span id="summaryText">No report loaded</span></div>
+      <div class="inspector-body">
+        <div class="block">
+          <div class="caption" id="changeListCaption">Changed areas</div>
+          <div id="changeList"><p class="empty-note">No changed areas.</p></div>
+        </div>
+        <div class="block" id="detailBlock" hidden>
+          <div class="caption">Selected area</div>
+          <div class="detail" id="detailRows"></div>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <footer class="statusbar">
+    <div>
+      <span id="sbCapture">Capture —</span>
+      <span class="sep"></span>
+      <span id="sbZoom">Zoom Fit</span>
+    </div>
+    <div><span id="sbPrecision">Exact 2 px · Approx 8 px</span></div>
+  </footer>
+
+</div>
+
+<div class="pop" id="changePop" hidden>
+  <strong id="popTitle">Change</strong>
+  <p id="popInfo"></p>
+  <div class="pop-actions">
+    <button type="button" class="btn" id="popApprove">Approve</button>
+    <button type="button" class="btn" id="popCopy">Copy fix message</button>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!--ORPHIC_REPORT_JSON-->
+
+<script>
+(function () {
+  'use strict';
+
+  var ZONES = ['top-left', 'top-center', 'top-right', 'middle-left', 'center', 'middle-right', 'bottom-left', 'bottom-center', 'bottom-right'];
+  var ZONE_LABEL = {
+    'top-left': 'Top left', 'top-center': 'Top center', 'top-right': 'Top right',
+    'middle-left': 'Middle left', 'center': 'Center', 'middle-right': 'Middle right',
+    'bottom-left': 'Bottom left', 'bottom-center': 'Bottom center', 'bottom-right': 'Bottom right'
+  };
+  var STATUS_TEXT = { pass: '\u2713 Looks the same', check: '\u26a0 Check these changes', fail: '\u2715 Big change detected' };
+  var PRESETS = [
+    { id: '1280x720', label: 'Desktop 1280x720', w: 1280, h: 720 },
+    { id: '1440x900', label: 'Laptop 1440x900', w: 1440, h: 900 },
+    { id: '1920x1080', label: 'Full HD 1920x1080', w: 1920, h: 1080 },
+    { id: '768x1024', label: 'Tablet 768x1024', w: 768, h: 1024 },
+    { id: '390x844', label: 'Mobile 390x844', w: 390, h: 844 }
+  ];
+  var VIEW_PLACEHOLDER = {
+    slider: 'Slider view arrives in a later round.',
+    overlay: 'Overlay view arrives in a later round.',
+    diff: 'Diff view arrives in a later round.'
+  };
+
+  function $(sel) { return document.querySelector(sel); }
+  function el(tag, cls, text) {
+    var node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined && text !== null) node.textContent = String(text);
+    return node;
+  }
+  function esc(value) { return String(value); }
+
+  var state = {
+    mode: 'review',
+    view: 'side',
+    zoom: 'fit',
+    scale: 1,
+    capture: { w: 1280, h: 720, preset: '1280x720' },
+    report: null,
+    changes: [],
+    selectedId: null,
+    zone: null,
+    toastTimer: null
+  };
+
+  /* ---------- report loading ---------- */
+  /* Built at runtime so the template's placeholder literal stays unique in the file. */
+  var PLACEHOLDER_TOKEN = ['ORPHIC', 'REPORT', 'JSON'].join('_');
+
+  function readReport() {
+    var node = document.getElementById('orphic-report');
+    if (!node) return { ok: false, reason: 'No report loaded' };
+    var raw = node.textContent || '';
+    if (!raw || raw.indexOf(PLACEHOLDER_TOKEN) !== -1) return { ok: false, reason: 'No report loaded' };
+    var data;
+    try { data = JSON.parse(raw); } catch (err) { return { ok: false, reason: 'Report data could not be read' }; }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return { ok: false, reason: 'Report data could not be read' };
+    if (data.schema_version !== 1) return { ok: false, reason: 'Unsupported report version' };
+    return { ok: true, data: data };
+  }
+
+  function changeStatus(box) {
+    if (!box) return 'unknown';
+    if (box.approved === true) return 'approved';
+    if (box.label === 'expected') return 'expected';
+    if (box.label === 'approved') return 'approved';
+    return 'unexpected';
+  }
+
+  function zoneLabel(zone) { return ZONE_LABEL[zone] || String(zone || '\u2014'); }
+  function num(value) { return typeof value === 'number' && isFinite(value) ? value : null; }
+  function pct(value) {
+    var n = num(value);
+    if (n === null) return '\u2014';
+    return (Math.round(n * 1000) / 1000) + '%';
+  }
+
+  function loadReport() {
+    var result = readReport();
+    if (!result.ok) {
+      state.report = null;
+      state.changes = [];
+      return;
+    }
+    var report = result.data;
+    state.report = report;
+    state.changes = (Array.isArray(report.boxes) ? report.boxes : []).map(function (box, index) {
+      return {
+        id: box && box.id !== undefined && box.id !== null ? box.id : (index + 1),
+        x: num(box && box.x), y: num(box && box.y), w: num(box && box.w), h: num(box && box.h),
+        zone: (box && box.zone) || null,
+        percent: num(box && box.percent),
+        approved: !!(box && box.approved === true),
+        label: (box && box.label) || null,
+        shift: box && box.shift ? box.shift : null
+      };
+    });
+    var size = report.size || {};
+    if (num(size.width) && num(size.height)) {
+      setCaptureFromSize(size.width, size.height);
+    }
+  }
+
+  function setCaptureFromSize(w, h) {
+    state.capture = { w: w, h: h, preset: 'custom' };
+    var match = null;
+    for (var i = 0; i < PRESETS.length; i++) {
+      if (PRESETS[i].w === w && PRESETS[i].h === h) { match = PRESETS[i]; break; }
+    }
+    state.capture.preset = match ? match.id : 'custom';
+    var select = $('#captureSize');
+    if (select) select.value = state.capture.preset;
+  }
+
+  /* ---------- copy helpers ---------- */
+  function writeClipboard(text) {
+    var done = function () { toast('Copied'); };
+    var fallback = function () {
+      var ok = false;
+      try {
+        var area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', 'readonly');
+        area.style.position = 'fixed';
+        area.style.top = '-1000px';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        area.setSelectionRange(0, area.value.length);
+        ok = document.execCommand('copy');
+        document.body.removeChild(area);
+      } catch (err) { ok = false; }
+      if (ok) toast('Copied');
+      else toast('Copy unavailable \u2014 select the text instead');
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  function toast(message) {
+    var node = $('#toast');
+    if (!node) return;
+    node.textContent = message;
+    node.classList.add('show');
+    if (state.toastTimer) clearTimeout(state.toastTimer);
+    state.toastTimer = setTimeout(function () { node.classList.remove('show'); }, 1500);
+  }
+
+  function hermesText() {
+    var report = state.report;
+    if (!report) return 'Orphic Eyes: no report loaded.';
+    var summary = report.summary || {};
+    var zones = [];
+    state.changes.forEach(function (change) {
+      var label = zoneLabel(change.zone);
+      if (change.zone && zones.indexOf(label) === -1) zones.push(label);
+    });
+    var lines = ['[Orphic Eyes] ' + esc(report.name || 'report')];
+    lines.push('Status: ' + esc(report.status || 'unknown') + ' \u00b7 ' + state.changes.length + ' changed area(s) \u00b7 ' + pct(summary.changed_percent) + ' changed');
+    if (zones.length) lines.push('Areas: ' + zones.join(', '));
+    lines.push('Please fix the unexpected changes without altering approved areas.');
+    return lines.join('\n');
+  }
+
+  function fixText(change) {
+    if (!change) return '';
+    var lines = ['[Orphic Eyes] Fix visual change ' + esc(change.id)];
+    lines.push('Area: ' + zoneLabel(change.zone));
+    lines.push('Position: ' + fmtPoint(change) + ' \u00b7 Size: ' + fmtSize(change));
+    lines.push('Changed: ' + pct(change.percent));
+    lines.push('Please fix only this area and rerun the screenshot comparison.');
+    return lines.join('\n');
+  }
+
+  function fmtPoint(change) {
+    if (change.x === null || change.y === null) return '\u2014';
+    return change.x + ', ' + change.y;
+  }
+  function fmtSize(change) {
+    if (change.w === null || change.h === null) return '\u2014';
+    return change.w + ' \u00d7 ' + change.h;
+  }
+
+  /* ---------- rendering ---------- */
+  function render() {
+    renderStatus();
+    renderPages();
+    renderZones();
+    renderLeftList();
+    renderStage();
+    renderInspector();
+    renderModeChrome();
+    renderStatusbar();
+    renderPopover();
+  }
+
+  function renderStatus() {
+    var chip = $('#readiness');
+    var report = state.report;
+    chip.className = 'status-chip';
+    if (!report) { chip.textContent = 'Draft'; return; }
+    var status = report.status;
+    chip.textContent = status === 'pass' ? 'Pass' : status === 'check' ? 'Check' : status === 'fail' ? 'Fail' : 'Draft';
+    if (STATUS_TEXT[status]) chip.classList.add(status);
+  }
+
+  function renderPages() {
+    var list = $('#pageList');
+    list.innerHTML = '';
+    var report = state.report;
+    var item = el('button', 'page-item active');
+    item.type = 'button';
+    item.appendChild(el('span', 'page-name', report ? esc(report.name || 'report') : 'No target'));
+    var dot = el('span', 'dot' + (report && STATUS_TEXT[report.status] ? ' ' + report.status : ''));
+    item.appendChild(dot);
+    list.appendChild(item);
+  }
+
+  function renderZones() {
+    var grid = $('#zoneGrid');
+    grid.innerHTML = '';
+    var hits = {};
+    state.changes.forEach(function (change) { if (change.zone) hits[change.zone] = true; });
+    ZONES.forEach(function (zone) {
+      var cell = el('button', 'zone-cell' + (hits[zone] ? ' hit' : '') + (state.zone === zone ? ' selected' : ''), ZONE_LABEL[zone]);
+      cell.type = 'button';
+      cell.setAttribute('data-zone', zone);
+      cell.title = ZONE_LABEL[zone];
+      grid.appendChild(cell);
+    });
+  }
+
+  function requestRows() {
+    var report = state.report;
+    if (!report) return [];
+    var results = Array.isArray(report.request_results) ? report.request_results : [];
+    return results.map(function (result) {
+      return {
+        id: result && result.id ? result.id : 'PT-?',
+        status: result && result.status ? result.status : 'unknown',
+        why: result && result.why ? result.why : ''
+      };
+    });
+  }
+
+  function isSelected(change) {
+    return state.selectedId !== null && state.selectedId !== undefined && String(state.selectedId) === String(change.id);
+  }
+
+  function changeRow(change) {
+    var row = el('button', 'list-item' + (isSelected(change) ? ' selected' : '') + (state.zone && state.zone === change.zone ? ' zone-hit' : ''));
+    row.type = 'button';
+    row.setAttribute('data-change', String(change.id));
+    var line = el('div', 'line1');
+    line.appendChild(el('span', 'id-pill', change.id));
+    line.appendChild(el('span', 'list-name', zoneLabel(change.zone)));
+    line.appendChild(el('span', 'chip ' + changeStatus(change), changeStatus(change)));
+    row.appendChild(line);
+    row.appendChild(el('div', 'list-sub mono', pct(change.percent) + ' changed'));
+    return row;
+  }
+
+  function guideBlock() {
+    var box = el('div', 'guide');
+    box.appendChild(el('strong', null, state.mode === 'review' ? 'No changes to show' : 'No requests yet'));
+    var steps = el('ol');
+    ['1|Pick a mode', '2|Point at the image', '3|Copy for Hermes'].forEach(function (step) {
+      var parts = step.split('|');
+      var li = el('li');
+      li.appendChild(el('b', null, parts[0]));
+      li.appendChild(el('span', null, parts[1]));
+      steps.appendChild(li);
+    });
+    box.appendChild(steps);
+    return box;
+  }
+
+  function renderLeftList() {
+    var holder = $('#leftList');
+    var title = $('#listTitle');
+    var count = $('#listCount');
+    holder.innerHTML = '';
+    title.textContent = state.mode === 'review' ? 'Changes' : 'Requests';
+    if (!state.report) {
+      count.textContent = '0';
+      holder.appendChild(guideBlock());
+      return;
+    }
+    if (state.mode === 'review') {
+      count.textContent = String(state.changes.length);
+      if (!state.changes.length) { holder.appendChild(guideBlock()); return; }
+      state.changes.forEach(function (change) { holder.appendChild(changeRow(change)); });
+      return;
+    }
+    var rows = requestRows();
+    count.textContent = String(rows.length);
+    if (!rows.length) { holder.appendChild(guideBlock()); return; }
+    rows.forEach(function (row) {
+      var node = el('button', 'list-item');
+      node.type = 'button';
+      var line = el('div', 'line1');
+      line.appendChild(el('span', 'id-pill', row.id));
+      line.appendChild(el('span', 'list-name', row.id));
+      line.appendChild(el('span', 'chip ' + row.status, row.status));
+      node.appendChild(line);
+      node.appendChild(el('div', 'list-sub', row.why || '\u2014'));
+      holder.appendChild(node);
+    });
+  }
+
+  function imageNode(path, label) {
+    if (!path) {
+      var missing = el('div', 'img-missing', 'No ' + (label || 'image'));
+      return missing;
+    }
+    var img = el('img');
+    img.alt = label || '';
+    img.src = path;
+    img.addEventListener('error', function () {
+      var box = el('div', 'img-missing', 'Image not available');
+      if (img.parentNode) img.parentNode.replaceChild(box, img);
+    });
+    return img;
+  }
+
+  function stageSize() {
+    var report = state.report;
+    var size = report && report.size ? report.size : null;
+    return {
+      w: num(size && size.width) || state.capture.w || 1280,
+      h: num(size && size.height) || state.capture.h || 720
+    };
+  }
+
+  function scaleFor(totalW, totalH) {
+    var scroller = $('#stageScroller');
+    var availW = Math.max(120, (scroller ? scroller.clientWidth : 900) - 40);
+    var availH = Math.max(120, (scroller ? scroller.clientHeight : 600) - 56);
+    if (state.zoom === 'fit') {
+      var scale = Math.min(availW / totalW, availH / totalH, 1);
+      return Math.max(0.02, scale);
+    }
+    return Number(state.zoom);
+  }
+
+  function renderStage() {
+    var inner = $('#stageInner');
+    var hint = $('#stageHint');
+    inner.innerHTML = '';
+    inner.className = 'stage-inner mode-' + state.mode;
+    var report = state.report;
+
+    if (!report) {
+      var empty = el('div', 'placeholder');
+      empty.appendChild(el('strong', null, 'No report loaded'));
+      empty.appendChild(el('span', null, 'This page has no embedded report data yet.'));
+      inner.appendChild(empty);
+      hint.textContent = 'Waiting for report data';
+      state.scale = 1;
+      return;
+    }
+
+    var size = stageSize();
+
+    if (state.mode !== 'review') {
+      hint.textContent = state.mode === 'move'
+        ? 'Move mode: picking a box to move arrives in a later round.'
+        : 'Add mode: drawing a new area arrives in a later round.';
+      var single = el('div', 'half');
+      var scaleSingle = scaleFor(size.w, size.h);
+      single.style.width = Math.max(40, Math.round(size.w * scaleSingle)) + 'px';
+      single.style.height = Math.max(30, Math.round(size.h * scaleSingle)) + 'px';
+      single.appendChild(imageNode(report.images && report.images.after, 'after image'));
+      inner.appendChild(single);
+      state.scale = scaleSingle;
+      return;
+    }
+
+    if (state.view !== 'side') {
+      hint.textContent = VIEW_PLACEHOLDER[state.view] || '';
+      var ph = el('div', 'placeholder');
+      ph.appendChild(el('strong', null, state.view.charAt(0).toUpperCase() + state.view.slice(1) + ' view'));
+      ph.appendChild(el('span', null, VIEW_PLACEHOLDER[state.view] || 'Not available yet.'));
+      inner.appendChild(ph);
+      state.scale = 1;
+      return;
+    }
+
+    hint.textContent = state.changes.length
+      ? state.changes.length + ' changed area(s) \u2014 click one to review it.'
+      : 'No pixel differences beyond the threshold.';
+
+    var pair = el('div', 'pair');
+    var scale = scaleFor(size.w * 2 + 10, size.h);
+    var width = Math.max(40, Math.round(size.w * scale));
+    var height = Math.max(30, Math.round(size.h * scale));
+    [['Before', report.images && report.images.before], ['After', report.images && report.images.after]].forEach(function (pairDef) {
+      var half = el('div', 'half');
+      half.style.width = width + 'px';
+      half.style.height = height + 'px';
+      half.appendChild(imageNode(pairDef[1], pairDef[0].toLowerCase() + ' image'));
+      var tag = el('span', 'tag', pairDef[0]);
+      half.appendChild(tag);
+      pair.appendChild(half);
+    });
+    inner.appendChild(pair);
+    state.scale = scale;
+  }
+
+  function renderInspector() {
+    var card = $('#summaryCard');
+    var text = $('#summaryText');
+    var mark = card.querySelector('.mark');
+    var title = $('#inspectorTitle');
+    var chip = $('#inspectorChip');
+    var list = $('#changeList');
+    var caption = $('#changeListCaption');
+    var detail = $('#detailBlock');
+    var rows = $('#detailRows');
+    var report = state.report;
+
+    card.className = 'summary-card';
+    list.innerHTML = '';
+    detail.hidden = true;
+
+    if (!report) {
+      text.textContent = 'No report loaded';
+      mark.textContent = '\u2022';
+      title.textContent = 'Changes';
+      chip.className = 'chip unknown';
+      chip.textContent = '\u2014';
+      caption.textContent = 'Changed areas';
+      list.appendChild(el('p', 'empty-note', 'No changed areas.'));
+      return;
+    }
+
+    var status = STATUS_TEXT[report.status] ? report.status : 'check';
+    card.classList.add(status);
+    text.textContent = STATUS_TEXT[status];
+    mark.textContent = status === 'pass' ? '\u2713' : status === 'check' ? '\u26a0' : '\u2715';
+
+    if (state.mode === 'review') {
+      title.textContent = 'Changes';
+      caption.textContent = 'Changed areas';
+      var summary = report.summary || {};
+      chip.className = 'chip ' + status;
+      chip.textContent = String(state.changes.length) + ' area' + (state.changes.length === 1 ? '' : 's');
+      if (!state.changes.length) {
+        list.appendChild(el('p', 'empty-note', 'No changed areas. ' + pct(summary.changed_percent) + ' of pixels changed.'));
+      } else {
+        state.changes.forEach(function (change) {
+          var row = el('button', 'list-item' + (isSelected(change) ? ' selected' : '') + (state.zone && state.zone === change.zone ? ' zone-hit' : ''));
+          row.type = 'button';
+          row.setAttribute('data-change', String(change.id));
+          var line = el('div', 'line1');
+          line.appendChild(el('span', 'id-pill', change.id));
+          line.appendChild(el('span', 'list-name', zoneLabel(change.zone)));
+          line.appendChild(el('span', 'chip ' + changeStatus(change), changeStatus(change)));
+          row.appendChild(line);
+          row.appendChild(el('div', 'list-sub mono', fmtSize(change) + ' \u00b7 ' + pct(change.percent)));
+          list.appendChild(row);
+        });
+      }
+      var selected = findChange(state.selectedId);
+      if (selected) {
+        detail.hidden = false;
+        rows.innerHTML = '';
+        appendRow(rows, 'Area', zoneLabel(selected.zone));
+        appendRow(rows, 'Position', fmtPoint(selected));
+        appendRow(rows, 'Size', fmtSize(selected));
+        appendRow(rows, 'Changed', pct(selected.percent));
+        appendRow(rows, 'Status', changeStatus(selected));
+      }
+      return;
+    }
+
+    title.textContent = state.mode === 'move' ? 'Move' : 'Add';
+    caption.textContent = 'Image';
+    chip.className = 'chip draft';
+    chip.textContent = state.mode === 'move' ? 'Skeleton' : 'Skeleton';
+    var size = stageSize();
+    var note = el('p', 'empty-note');
+    note.textContent = (state.mode === 'move'
+      ? 'Move mode is a skeleton in this round. '
+      : 'Add mode is a skeleton in this round. ') + 'Only size, position, area and status are shown here, from the image itself.';
+    list.appendChild(note);
+    var wrap = el('div', 'detail');
+    appendRow(wrap, 'Image size', size.w + ' \u00d7 ' + size.h);
+    appendRow(wrap, 'Area', state.zone ? zoneLabel(state.zone) : '\u2014');
+    appendRow(wrap, 'Changes', String(state.changes.length));
+    var spacer = el('div', 'block');
+    spacer.appendChild(wrap);
+    list.appendChild(spacer);
+  }
+
+  function appendRow(parent, label, value) {
+    var row = el('div', 'row');
+    row.appendChild(el('span', null, label));
+    row.appendChild(el('strong', null, value));
+    parent.appendChild(row);
+  }
+
+  function findChange(id) {
+    if (id === null || id === undefined) return null;
+    for (var i = 0; i < state.changes.length; i++) {
+      if (String(state.changes[i].id) === String(id)) return state.changes[i];
+    }
+    return null;
+  }
+
+  function renderModeChrome() {
+    var buttons = document.querySelectorAll('#modeSwitch button');
+    for (var i = 0; i < buttons.length; i++) {
+      var on = buttons[i].getAttribute('data-mode') === state.mode;
+      buttons[i].classList.toggle('on', on);
+      buttons[i].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    var reviews = document.querySelectorAll('#viewSwitch button');
+    for (var j = 0; j < reviews.length; j++) {
+      var active = reviews[j].getAttribute('data-view') === state.view;
+      reviews[j].classList.toggle('on', active);
+      reviews[j].setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+    var bar = document.querySelector('.review-bar');
+    bar.style.display = state.mode === 'review' ? '' : 'none';
+    $('#reviewNote').textContent = state.report
+      ? (state.view === 'side' ? 'Before and after' : 'Placeholder in this round')
+      : '';
+  }
+
+  function renderStatusbar() {
+    /* The report's own image size is the truth; the preset only fills in before a report loads. */
+    var report = state.report;
+    var reportSize = report && report.size ? report.size : null;
+    var w = num(reportSize && reportSize.width) || state.capture.w;
+    var h = num(reportSize && reportSize.height) || state.capture.h;
+    $('#sbCapture').textContent = 'Capture ' + w + 'x' + h;
+    $('#sbZoom').textContent = 'Zoom ' + (state.zoom === 'fit' ? 'Fit' : Math.round(Number(state.zoom) * 100) + '%');
+    $('#sbPrecision').textContent = 'Exact 2 px \u00b7 Approx 8 px';
+  }
+
+  function renderPopover() {
+    var pop = $('#changePop');
+    var change = findChange(state.selectedId);
+    if (!change || state.mode !== 'review') { pop.hidden = true; return; }
+    pop.hidden = false;
+    $('#popTitle').textContent = 'Change ' + change.id + ' \u00b7 ' + zoneLabel(change.zone);
+    $('#popInfo').textContent = fmtPoint(change) + ' \u00b7 ' + fmtSize(change) + ' \u00b7 ' + pct(change.percent) + ' changed';
+    $('#popApprove').disabled = changeStatus(change) === 'approved';
+    $('#popApprove').textContent = changeStatus(change) === 'approved' ? 'Approved' : 'Approve';
+  }
+
+  function placePopover(clientX, clientY) {
+    var pop = $('#changePop');
+    if (pop.hidden) return;
+    var rect = pop.getBoundingClientRect();
+    var left = clientX + 14;
+    var top = clientY + 14;
+    if (left + rect.width > window.innerWidth - 8) left = Math.max(8, window.innerWidth - rect.width - 8);
+    if (top + rect.height > window.innerHeight - 8) top = Math.max(8, clientY - rect.height - 12);
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.top = Math.round(top) + 'px';
+  }
+
+  /* ---------- events ---------- */
+  function selectChange(id, event) {
+    state.selectedId = id;
+    render();
+    if (event) placePopover(event.clientX, event.clientY);
+  }
+
+  function approveSelected() {
+    var change = findChange(state.selectedId);
+    if (!change) return;
+    change.approved = true;
+    render();
+    toast('Change ' + change.id + ' approved');
+    var pop = $('#changePop');
+    if (!pop.hidden && pop.style.left) placePopover(parseInt(pop.style.left, 10), parseInt(pop.style.top, 10));
+  }
+
+  function applyCapture(value) {
+    var select = $('#captureSize');
+    if (state.report) {
+      /* This page shows one captured report; its image size cannot be changed here. */
+      if (select) select.value = state.capture.preset;
+      toast('Capture size comes from the report');
+      return;
+    }
+    if (value === 'custom') {
+      var current = stageSize();
+      var inputW = window.prompt('Custom capture width (pixels)', String(current.w));
+      if (inputW === null) { $('#captureSize').value = state.capture.preset; return; }
+      var inputH = window.prompt('Custom capture height (pixels)', String(current.h));
+      if (inputH === null) { $('#captureSize').value = state.capture.preset; return; }
+      var w = Math.max(200, Math.min(3840, parseInt(inputW, 10) || current.w));
+      var h = Math.max(200, Math.min(3840, parseInt(inputH, 10) || current.h));
+      state.capture = { w: w, h: h, preset: 'custom' };
+      renderStage();
+      renderStatusbar();
+      return;
+    }
+    for (var i = 0; i < PRESETS.length; i++) {
+      if (PRESETS[i].id === value) {
+        state.capture = { w: PRESETS[i].w, h: PRESETS[i].h, preset: PRESETS[i].id };
+        renderStage();
+        renderStatusbar();
+        return;
+      }
+    }
+  }
+
+  function initEvents() {
+    document.getElementById('modeSwitch').addEventListener('click', function (event) {
+      var button = event.target.closest('[data-mode]');
+      if (!button) return;
+      state.mode = button.getAttribute('data-mode');
+      state.selectedId = null;
+      render();
+      toast(state.mode === 'review' ? 'Review mode' : state.mode === 'move' ? 'Move mode' : 'Add mode');
+    });
+
+    document.getElementById('viewSwitch').addEventListener('click', function (event) {
+      var button = event.target.closest('[data-view]');
+      if (!button) return;
+      state.view = button.getAttribute('data-view');
+      render();
+    });
+
+    document.getElementById('zoneGrid').addEventListener('click', function (event) {
+      var cell = event.target.closest('[data-zone]');
+      if (!cell) return;
+      var zone = cell.getAttribute('data-zone');
+      state.zone = state.zone === zone ? null : zone;
+      render();
+      toast(state.zone ? 'Area: ' + zoneLabel(state.zone) : 'Area cleared');
+    });
+
+    ['#leftList', '#changeList'].forEach(function (selector) {
+      document.querySelector(selector).addEventListener('click', function (event) {
+        var row = event.target.closest('[data-change]');
+        if (!row) return;
+        selectChange(row.getAttribute('data-change'), event);
+      });
+    });
+
+    document.getElementById('copyMain').addEventListener('click', function () {
+      writeClipboard(hermesText());
+    });
+
+    document.getElementById('popApprove').addEventListener('click', approveSelected);
+    document.getElementById('popCopy').addEventListener('click', function () {
+      var change = findChange(state.selectedId);
+      if (!change) return;
+      writeClipboard(fixText(change));
+    });
+
+    document.getElementById('captureSize').addEventListener('change', function (event) {
+      applyCapture(event.target.value);
+    });
+
+    document.getElementById('zoomSelect').addEventListener('change', function (event) {
+      state.zoom = event.target.value;
+      renderStage();
+      renderStatusbar();
+    });
+
+    document.getElementById('undoBtn').addEventListener('click', function () { toast('Undo arrives in a later round'); });
+    document.getElementById('redoBtn').addEventListener('click', function () { toast('Redo arrives in a later round'); });
+
+    document.addEventListener('click', function (event) {
+      var pop = $('#changePop');
+      if (pop.hidden) return;
+      if (event.target.closest('#changePop')) return;
+      if (event.target.closest('[data-change]')) return;
+      if (event.target.closest('#popApprove') || event.target.closest('#popCopy')) return;
+      state.selectedId = null;
+      render();
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        if (!$('#changePop').hidden) { state.selectedId = null; render(); }
+      }
+    });
+
+    var timer = null;
+    window.addEventListener('resize', function () {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () { renderStage(); }, 90);
+    });
+  }
+
+  loadReport();
+  initEvents();
+  render();
+  window.addEventListener('load', function () { renderStage(); });
+})();
+</script>
+</body>
+</html>
