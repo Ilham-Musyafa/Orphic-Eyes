@@ -9,6 +9,7 @@ from unittest.mock import patch
 import sightdiff_tools as tools
 from engine.report_json import result_message, write_report
 from engine.cli import main
+from engine.report_html import write_report_html
 from tests import test_plugin
 
 
@@ -16,6 +17,76 @@ class ContractTests(unittest.TestCase):
     setUp = test_plugin.PluginTests.setUp
     call = test_plugin.PluginTests.call
     baseline = test_plugin.PluginTests.baseline
+
+    def embedded(self, path):
+        text = path.read_text(encoding="utf-8")
+        data = text.split('<script type="application/json" id="orphic-report">', 1)[1].split('</script>', 1)[0]
+        self.assertNotIn("</", data)
+        self.assertNotIn("<!--", data)
+        self.assertNotIn("\u2028", data)
+        self.assertNotIn("\u2029", data)
+        return json.loads(data)
+
+    def test_html_hostile_strings_round_trip_and_relative_paths(self):
+        self.baseline()
+        self.call(tools.handle_compare, {})
+        case = tools.resolve_data_dir() / "default"
+        report = json.loads((case / "report.json").read_text())
+        hostile = '</script><script>alert("x")</script><!-- \\ \u2028\u2029'
+        report["name"] = hostile
+        report["request_results"] = [{"why": hostile}]
+        report["crops"] = {"items": [{"before": {"path": "crops/box-1-before.png"}}]}
+        (case / "report.json").write_text(json.dumps(report, ensure_ascii=False), encoding="utf-8")
+        output = write_report_html(case, test_plugin.FIXTURES / "report_embed.html")
+        self.assertEqual(output, case / "report.html")
+        self.assertEqual(self.embedded(output), report)
+
+    def test_missing_default_template_does_nothing(self):
+        case = self.home / "nonexistent"
+        with patch("engine.report_html.DEFAULT_TEMPLATE", self.home / "missing.html"):
+            self.assertIsNone(write_report_html(case))
+        self.assertFalse(case.exists())
+        self.baseline()
+        result = self.call(tools.handle_compare, {})
+        self.assertNotIn("html", result["paths"])
+        result = self.call(tools.handle_accept, {})
+        self.assertNotIn("html", result["paths"])
+
+    def test_html_requires_one_placeholder(self):
+        self.baseline()
+        self.call(tools.handle_compare, {})
+        case = tools.resolve_data_dir() / "default"
+        template = self.home / "template.html"
+        output = case / "report.html"
+        output.write_text("previous output")
+        for count in (0, 2):
+            template.write_text("<!--ORPHIC_REPORT_JSON-->" * count)
+            with self.assertRaisesRegex(ValueError, "exactly one"):
+                write_report_html(case, template)
+            self.assertEqual(output.read_text(), "previous output")
+
+    def test_compare_and_accept_embed_only_with_default_template(self):
+        self.baseline(viewport="mobile")
+        case = tools.resolve_data_dir() / "default"
+        with patch("engine.report_html.DEFAULT_TEMPLATE", test_plugin.FIXTURES / "report_embed.html"):
+            for handler in (tools.handle_compare, tools.handle_accept):
+                result = self.call(handler, {})
+                self.assertTrue(result["success"], result)
+                self.assertEqual(result["paths"]["html"], str(case / "report.html"))
+                self.assertEqual(self.embedded(case / "report.html"),
+                                 json.loads((case / "report.json").read_text()))
+
+    def test_html_rejects_hard_link_output(self):
+        import os
+        self.baseline()
+        self.call(tools.handle_compare, {})
+        case = tools.resolve_data_dir() / "default"
+        target = self.home / "protected.html"
+        target.write_text("keep")
+        os.link(target, case / "report.html")
+        with self.assertRaisesRegex(ValueError, "without links"):
+            write_report_html(case, test_plugin.FIXTURES / "report_embed.html")
+        self.assertEqual(target.read_text(), "keep")
 
     def test_request_messages(self):
         self.baseline()

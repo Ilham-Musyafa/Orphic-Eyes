@@ -134,6 +134,8 @@ def _result(raw, name, root, action):
                          for key, filename in (("baseline", "baseline.png"), ("after", "current.png"),
                                                ("diff", "diff.png"), ("report", "report.json"))},
                   hint=hints.get(action, "Review the boxes; call sightdiff_approve if intended, otherwise fix the code and call sightdiff_compare again."))
+    if raw.get("paths", {}).get("html"):
+        result["paths"]["html"] = raw["paths"]["html"]
     if "request_results" in result:
         failing = [row["id"] for row in result["request_results"] if row["status"] in ("not_done", "unknown")]
         if failing:
@@ -194,7 +196,7 @@ def _baseline(args, name, root):
     if result["status"] != "error":
         _check_capture_size(case / "baseline.png", width, height)
         # A fresh baseline invalidates previous captures/reports/approvals.
-        for filename in ("current.png", "diff.png", "report.json", "approvals.json"):
+        for filename in ("current.png", "diff.png", "report.json", "report.html", "approvals.json"):
             _safe_file(case, filename).unlink(missing_ok=True)
         state = {"url": url}
         if preset is not None:

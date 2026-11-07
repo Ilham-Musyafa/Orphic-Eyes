@@ -25,7 +25,7 @@ def _case_dir(store_dir, name, create):
     if case.resolve().parent != root:
         raise ValueError("case directory must stay inside the store")
     for filename in ("baseline.png", "metadata.json", "current.png", "diff.png",
-                     "report.json", "config.json", "approvals.json"):
+                     "report.json", "report.html", "config.json", "approvals.json"):
         target = case / filename
         if target.is_symlink() or (target.exists() and (
                 target.resolve().parent != case.resolve() or target.stat().st_nlink > 1)):
@@ -216,7 +216,12 @@ def accept(name, store_dir):
         clear_crops(case)
         (case / "diff.png").unlink(missing_ok=True)
         _atomic_json(case / "report.json", report)
-        return {"status": "pass", "name": name, "meta": metadata}
+        from .report_html import write_report_html
+        html = write_report_html(case)
+        result = {"status": "pass", "name": name, "meta": metadata}
+        if html is not None:
+            result["paths"] = {"html": str(html)}
+        return result
     except Exception as exc:
         return {"status": "error", "error": str(exc)}
     finally:

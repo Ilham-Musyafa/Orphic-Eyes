@@ -205,6 +205,10 @@ def compare(name, url, store_dir, tolerance=0, expected_regions=None, *, request
         saved = write_report(report, case / "report.json")
         if saved.get("status") == "error":
             return saved
+        from .report_html import write_report_html
+        html = write_report_html(case)
+        if html is not None:
+            return {**report, "paths": {"html": str(html)}}
         return report
     except Exception as exc:
         return {"status": "error", "error": str(exc)}
