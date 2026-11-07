@@ -183,8 +183,13 @@ def accept(name, store_dir):
     """Replace the baseline with current.png and clear saved approvals."""
     temporary = None
     try:
+        from .crops import clear_crops, validate_crops
+        from .report_json import build_report
+
         case = _case_dir(store_dir, name, create=False)
+        validate_crops(case)
         metadata = _read_metadata(case / "metadata.json")
+        ignored, unused = _read_options(case)
         with Image.open(case / "current.png") as image:
             if image.format != "PNG":
                 raise ValueError("current.png must be a PNG")
@@ -202,6 +207,15 @@ def accept(name, store_dir):
         metadata = _metadata(metadata["browser"], width, height, metadata["tolerance"],
                              preset=metadata["viewport"].get("preset"))
         _atomic_json(case / "metadata.json", metadata)
+        report = build_report(name, {
+            "status": "pass", "changed_px": 0, "changed_percent": 0.0,
+            "size": {"width": width, "height": height}, "boxes": [],
+            "ignore_regions": _clip(ignored, (width, height)), "note": "baseline_accepted",
+        }, metadata)
+        report["images"] = {"before": "baseline.png", "after": "baseline.png", "diff": None}
+        clear_crops(case)
+        (case / "diff.png").unlink(missing_ok=True)
+        _atomic_json(case / "report.json", report)
         return {"status": "pass", "name": name, "meta": metadata}
     except Exception as exc:
         return {"status": "error", "error": str(exc)}

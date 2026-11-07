@@ -110,8 +110,11 @@ Example full report (illustrative metrics):
   Side effects outside expected areas still affect the existing visual status.
 - Approve preserves request verdicts, crop metadata and existing shift hints;
   approving a visual box never marks a failed request done. Accept retains preset
-  metadata; as before, the latest report describes the prior comparison until
-  compare regenerates it against the newly accepted baseline.
+  metadata and rewrites the report as schema version 1, status `pass`, all-zero
+  summary, `boxes: []`, and `note: "baseline_accepted"`. Request fields are absent.
+  Both `images.before` and `images.after` are `baseline.png`; `images.diff` is null.
+  Accept clears diff.png, crop contents and approvals, and refreshes `meta.created_at`
+  while preserving the viewport/preset. Compare can then regenerate normal diffs.
 
 ### Crops and shifts
 
