@@ -9,9 +9,9 @@ import sys
 import tempfile
 
 if __package__:
-    from . import sightdiff_tools as tools
+    from . import orphic_tools as tools
 else:
-    import sightdiff_tools as tools
+    import orphic_tools as tools
 
 HELP = """/sightdiff help    Show commands
 /sightdiff doctor  Check Python, Pillow, browser, data directory and engine

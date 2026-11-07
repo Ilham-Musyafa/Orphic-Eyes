@@ -6,7 +6,7 @@ import io
 import unittest
 from unittest.mock import patch
 
-import sightdiff_tools as tools
+import orphic_tools as tools
 from engine.report_json import result_message, write_report
 from engine.cli import main
 from engine.report_html import write_report_html

@@ -16,7 +16,7 @@ from unittest.mock import patch
 from PIL import Image
 
 import commands
-import sightdiff_tools as tools
+import orphic_tools as tools
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests" / "fixtures"

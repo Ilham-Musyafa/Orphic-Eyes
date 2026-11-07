@@ -16,7 +16,7 @@ from engine import baseline, compare
 from engine.capture import detect_browser
 from engine.requests import validate_requests
 from tests.test_locate import texture
-import sightdiff_tools as tools
+import orphic_tools as tools
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURES = ROOT / "tests" / "fixtures"

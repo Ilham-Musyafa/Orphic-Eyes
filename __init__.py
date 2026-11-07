@@ -2,7 +2,7 @@
 
 
 def register(ctx):
-    from .sightdiff_tools import TOOL_DEFINITIONS
+    from .orphic_tools import TOOL_DEFINITIONS
     from .commands import handle_command
 
     for name, schema, handler in TOOL_DEFINITIONS:
