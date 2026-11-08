@@ -1,0 +1,375 @@
+{
+  "schema_version": 1,
+  "name": "scenario",
+  "status": "check",
+  "summary": {
+    "changed_px": 35687,
+    "changed_percent": 3.872,
+    "box_count": 3,
+    "unexpected_count": 1
+  },
+  "size": {
+    "width": 1280,
+    "height": 720
+  },
+  "images": {
+    "before": "before.png",
+    "after": "after.png",
+    "diff": "diff.png"
+  },
+  "boxes": [
+    {
+      "id": 1,
+      "x": 103,
+      "y": 257,
+      "w": 379,
+      "h": 19,
+      "zone": "middle-left",
+      "percent": 0.27,
+      "label": "unexpected",
+      "approved": false
+    },
+    {
+      "id": 2,
+      "x": 104,
+      "y": 340,
+      "w": 280,
+      "h": 192,
+      "zone": "middle-left",
+      "percent": 2.887,
+      "label": "expected",
+      "approved": false
+    },
+    {
+      "id": 3,
+      "x": 902,
+      "y": 527,
+      "w": 215,
+      "h": 92,
+      "zone": "bottom-right",
+      "percent": 0.716,
+      "label": "expected",
+      "approved": false
+    }
+  ],
+  "ignore_regions": [],
+  "meta": {
+    "browser": "../../../../../../../Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+    "os": "Windows",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "created_at": "2026-11-08T08:52:28.501714+07:00",
+    "tolerance": 0
+  },
+  "requests": [
+    {
+      "id": "PT-1",
+      "type": "move",
+      "precision": "exact",
+      "from": {
+        "x": 104,
+        "y": 340,
+        "w": 160,
+        "h": 52
+      },
+      "to": {
+        "x": 224,
+        "y": 340,
+        "w": 160,
+        "h": 52
+      }
+    },
+    {
+      "id": "PT-2",
+      "type": "move",
+      "precision": "exact",
+      "from": {
+        "x": 104,
+        "y": 440,
+        "w": 160,
+        "h": 52
+      },
+      "to": {
+        "x": 224,
+        "y": 440,
+        "w": 160,
+        "h": 52
+      }
+    },
+    {
+      "id": "PT-3",
+      "type": "move",
+      "precision": "exact",
+      "from": {
+        "x": 900,
+        "y": 520,
+        "w": 264,
+        "h": 96
+      },
+      "to": {
+        "x": 780,
+        "y": 520,
+        "w": 264,
+        "h": 96
+      }
+    }
+  ],
+  "request_results": [
+    {
+      "id": "PT-1",
+      "status": "done",
+      "found": {
+        "x": 224,
+        "y": 340,
+        "w": 160,
+        "h": 52
+      },
+      "moved": {
+        "dx": 120,
+        "dy": 0
+      },
+      "off": {
+        "dx": 0,
+        "dy": 0
+      },
+      "match": 1.0,
+      "why": "Within target tolerance"
+    },
+    {
+      "id": "PT-2",
+      "status": "not_done",
+      "found": {
+        "x": 104,
+        "y": 480,
+        "w": 160,
+        "h": 52
+      },
+      "moved": {
+        "dx": 0,
+        "dy": 40
+      },
+      "off": {
+        "dx": -120,
+        "dy": 40
+      },
+      "match": 1.0,
+      "why": "Found outside target tolerance"
+    },
+    {
+      "id": "PT-3",
+      "status": "unknown",
+      "found": null,
+      "moved": {
+        "dx": null,
+        "dy": null
+      },
+      "off": {
+        "dx": null,
+        "dy": null
+      },
+      "match": 0.8872,
+      "why": "Low match score"
+    }
+  ],
+  "requests_ok": false,
+  "request_counts": {
+    "done": 1,
+    "not_done": 1,
+    "unknown": 1,
+    "skipped": 0
+  },
+  "crops": {
+    "pad": 16,
+    "max_side": 640,
+    "items": [
+      {
+        "id": "box-1",
+        "before": {
+          "path": "crops/box-1-before.png",
+          "bbox": {
+            "x": 87,
+            "y": 241,
+            "w": 411,
+            "h": 51
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 411,
+            "height": 51
+          }
+        },
+        "after": {
+          "path": "crops/box-1-after.png",
+          "bbox": {
+            "x": 87,
+            "y": 241,
+            "w": 411,
+            "h": 51
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 411,
+            "height": 51
+          }
+        }
+      },
+      {
+        "id": "box-2",
+        "before": {
+          "path": "crops/box-2-before.png",
+          "bbox": {
+            "x": 88,
+            "y": 324,
+            "w": 312,
+            "h": 224
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 312,
+            "height": 224
+          }
+        },
+        "after": {
+          "path": "crops/box-2-after.png",
+          "bbox": {
+            "x": 88,
+            "y": 324,
+            "w": 312,
+            "h": 224
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 312,
+            "height": 224
+          }
+        }
+      },
+      {
+        "id": "box-3",
+        "before": {
+          "path": "crops/box-3-before.png",
+          "bbox": {
+            "x": 886,
+            "y": 511,
+            "w": 247,
+            "h": 124
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 247,
+            "height": 124
+          }
+        },
+        "after": {
+          "path": "crops/box-3-after.png",
+          "bbox": {
+            "x": 886,
+            "y": 511,
+            "w": 247,
+            "h": 124
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 247,
+            "height": 124
+          }
+        }
+      },
+      {
+        "id": "req-PT-1",
+        "before": {
+          "path": "crops/req-PT-1-before.png",
+          "bbox": {
+            "x": 88,
+            "y": 324,
+            "w": 192,
+            "h": 84
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 192,
+            "height": 84
+          }
+        },
+        "after": {
+          "path": "crops/req-PT-1-after.png",
+          "bbox": {
+            "x": 208,
+            "y": 324,
+            "w": 192,
+            "h": 84
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 192,
+            "height": 84
+          }
+        }
+      },
+      {
+        "id": "req-PT-2",
+        "before": {
+          "path": "crops/req-PT-2-before.png",
+          "bbox": {
+            "x": 88,
+            "y": 424,
+            "w": 192,
+            "h": 84
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 192,
+            "height": 84
+          }
+        },
+        "after": {
+          "path": "crops/req-PT-2-after.png",
+          "bbox": {
+            "x": 88,
+            "y": 464,
+            "w": 192,
+            "h": 84
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 192,
+            "height": 84
+          }
+        }
+      },
+      {
+        "id": "req-PT-3",
+        "before": {
+          "path": "crops/req-PT-3-before.png",
+          "bbox": {
+            "x": 884,
+            "y": 504,
+            "w": 296,
+            "h": 128
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 296,
+            "height": 128
+          }
+        },
+        "after": {
+          "path": "crops/req-PT-3-after.png",
+          "bbox": {
+            "x": 764,
+            "y": 504,
+            "w": 296,
+            "h": 128
+          },
+          "scale": 1.0,
+          "size": {
+            "width": 296,
+            "height": 128
+          }
+        }
+      }
+    ]
+  }
+}

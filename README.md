@@ -206,6 +206,7 @@ regenerated report status; ignore and accept commands return 0 on success.
 
 - Tested on Windows 11 with Microsoft Edge (headless). macOS and Linux are
   untested; discovery paths alone do not establish platform or browser support.
+- In a cloud Linux test (Debian 13, Python 3.12), 113 of 125 tests passed; browser capture failed in that sandbox, so Linux support is not verified. macOS is untested.
 - Capture is viewport-only, with DPR 1; full-page capture is not implemented.
 - Initial URLs must be local `file://`, `http://localhost`, or
   `http://127.0.0.1`. As disclosed above, this is not browser network isolation.

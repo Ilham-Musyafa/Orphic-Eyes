@@ -1,4 +1,9 @@
-"""Optional HTML data embedding; no report UI or default template is shipped."""
+"""A default self-contained template ships at engine/templates/report.html.
+
+The engine replaces <!--ORPHIC_REPORT_JSON--> with report JSON wrapped in
+<script type="application/json" id="orphic-report">. HTML generation failures
+never fail compare: html_error is returned instead, not stored in report.json.
+"""
 
 import json
 from pathlib import Path

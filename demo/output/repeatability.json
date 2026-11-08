@@ -1,0 +1,229 @@
+{
+  "runs": [
+    {
+      "schema_version": 1,
+      "status": "check",
+      "summary": {
+        "changed_px": 35687,
+        "changed_percent": 3.872,
+        "box_count": 3,
+        "unexpected_count": 1
+      },
+      "boxes": [
+        {
+          "id": 1,
+          "x": 103,
+          "y": 257,
+          "w": 379,
+          "h": 19,
+          "zone": "middle-left",
+          "percent": 0.27,
+          "label": "unexpected",
+          "approved": false
+        },
+        {
+          "id": 2,
+          "x": 104,
+          "y": 340,
+          "w": 280,
+          "h": 192,
+          "zone": "middle-left",
+          "percent": 2.887,
+          "label": "expected",
+          "approved": false
+        },
+        {
+          "id": 3,
+          "x": 902,
+          "y": 527,
+          "w": 215,
+          "h": 92,
+          "zone": "bottom-right",
+          "percent": 0.716,
+          "label": "expected",
+          "approved": false
+        }
+      ],
+      "request_results": [
+        {
+          "id": "PT-1",
+          "status": "done",
+          "found": {
+            "x": 224,
+            "y": 340,
+            "w": 160,
+            "h": 52
+          },
+          "moved": {
+            "dx": 120,
+            "dy": 0
+          },
+          "off": {
+            "dx": 0,
+            "dy": 0
+          },
+          "match": 1.0,
+          "why": "Within target tolerance"
+        },
+        {
+          "id": "PT-2",
+          "status": "not_done",
+          "found": {
+            "x": 104,
+            "y": 480,
+            "w": 160,
+            "h": 52
+          },
+          "moved": {
+            "dx": 0,
+            "dy": 40
+          },
+          "off": {
+            "dx": -120,
+            "dy": 40
+          },
+          "match": 1.0,
+          "why": "Found outside target tolerance"
+        },
+        {
+          "id": "PT-3",
+          "status": "unknown",
+          "found": null,
+          "moved": {
+            "dx": null,
+            "dy": null
+          },
+          "off": {
+            "dx": null,
+            "dy": null
+          },
+          "match": 0.8872,
+          "why": "Low match score"
+        }
+      ],
+      "requests_ok": false,
+      "request_counts": {
+        "done": 1,
+        "not_done": 1,
+        "unknown": 1,
+        "skipped": 0
+      }
+    },
+    {
+      "schema_version": 1,
+      "status": "check",
+      "summary": {
+        "changed_px": 35687,
+        "changed_percent": 3.872,
+        "box_count": 3,
+        "unexpected_count": 1
+      },
+      "boxes": [
+        {
+          "id": 1,
+          "x": 103,
+          "y": 257,
+          "w": 379,
+          "h": 19,
+          "zone": "middle-left",
+          "percent": 0.27,
+          "label": "unexpected",
+          "approved": false
+        },
+        {
+          "id": 2,
+          "x": 104,
+          "y": 340,
+          "w": 280,
+          "h": 192,
+          "zone": "middle-left",
+          "percent": 2.887,
+          "label": "expected",
+          "approved": false
+        },
+        {
+          "id": 3,
+          "x": 902,
+          "y": 527,
+          "w": 215,
+          "h": 92,
+          "zone": "bottom-right",
+          "percent": 0.716,
+          "label": "expected",
+          "approved": false
+        }
+      ],
+      "request_results": [
+        {
+          "id": "PT-1",
+          "status": "done",
+          "found": {
+            "x": 224,
+            "y": 340,
+            "w": 160,
+            "h": 52
+          },
+          "moved": {
+            "dx": 120,
+            "dy": 0
+          },
+          "off": {
+            "dx": 0,
+            "dy": 0
+          },
+          "match": 1.0,
+          "why": "Within target tolerance"
+        },
+        {
+          "id": "PT-2",
+          "status": "not_done",
+          "found": {
+            "x": 104,
+            "y": 480,
+            "w": 160,
+            "h": 52
+          },
+          "moved": {
+            "dx": 0,
+            "dy": 40
+          },
+          "off": {
+            "dx": -120,
+            "dy": 40
+          },
+          "match": 1.0,
+          "why": "Found outside target tolerance"
+        },
+        {
+          "id": "PT-3",
+          "status": "unknown",
+          "found": null,
+          "moved": {
+            "dx": null,
+            "dy": null
+          },
+          "off": {
+            "dx": null,
+            "dy": null
+          },
+          "match": 0.8872,
+          "why": "Low match score"
+        }
+      ],
+      "requests_ok": false,
+      "request_counts": {
+        "done": 1,
+        "not_done": 1,
+        "unknown": 1,
+        "skipped": 0
+      }
+    }
+  ],
+  "identical": true,
+  "html_checks": {
+    "marker_count": 0,
+    "json_script_count": 1,
+    "embedded_equals_report": true,
+    "relative_paths_verified": true
+  }
+}
