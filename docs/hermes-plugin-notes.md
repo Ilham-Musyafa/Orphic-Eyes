@@ -9,7 +9,7 @@ gateway. This task does not install/enable the plugin or stop the gateway.
 
 Historical Stage 5 record, with product identifiers normalized for Stage 5e. Stage 5c verification supersedes the pending runtime
 doctor restriction below: both normal-shell validator and doctor now pass;
-see [stage-5c-notes.md](stage-5c-notes.md).
+the restriction below is historical.
 
 ## Confirmed before implementation
 
