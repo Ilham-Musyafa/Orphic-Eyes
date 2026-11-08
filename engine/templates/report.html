@@ -208,14 +208,35 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .move-sel{position:absolute;z-index:2;border:2px dashed var(--blue);background:rgba(47,128,255,.07);box-sizing:border-box}
 .move-ghost{position:absolute;z-index:3;border:2px solid var(--blue);background:rgba(47,128,255,.14);box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:2px;overflow:hidden}
 .move-ghost span{font-size:10px;font-weight:650;color:#1c5cb8;background:#ffffffdd;border-radius:4px;padding:1px 5px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.move-guide{position:absolute;z-index:4}
-.move-guide.v{border-left:1px dashed var(--guide)}
-.move-guide.h{border-top:1px dashed var(--guide)}
-.move-measure{position:absolute;z-index:5;border-top:1px solid var(--guide)}
-.move-measure.v{border-top:0;border-left:1px solid var(--guide)}
-.move-tag{position:absolute;z-index:6;font-size:10px;font-weight:650;color:#fff;background:var(--guide);border-radius:4px;padding:1px 5px;white-space:nowrap;transform:translate(-50%,-50%);max-width:70%;overflow:hidden;text-overflow:ellipsis}
+/* Guides are real 2px boxes with a painted background, so they have a non-zero
+   height/width at every zoom level and their centre stays hit-testable.
+   Border-only 1px boxes had zero size and never painted. */
+.move-guide{position:absolute;z-index:5;pointer-events:auto}
+.move-guide.v{width:2px;margin-left:-1px;background-image:repeating-linear-gradient(to bottom,var(--guide) 0 5px,transparent 5px 9px)}
+.move-guide.h{height:2px;margin-top:-1px;background-image:repeating-linear-gradient(to right,var(--guide) 0 5px,transparent 5px 9px)}
+.move-guide.dim{opacity:.45}
+.move-measure{position:absolute;z-index:6;pointer-events:auto;background:var(--guide);border-radius:2px}
+.move-measure.h{height:2px}
+.move-measure.v{width:2px}
+.move-tag{position:absolute;z-index:8;pointer-events:auto;font-size:10px;font-weight:650;line-height:1.5;color:#fff;background:var(--guide);border-radius:4px;padding:1px 5px;white-space:nowrap;transform:translate(-50%,-50%);max-width:70%;overflow:hidden;text-overflow:ellipsis}
 .move-tag.blue{background:var(--blue)}
 .move-tag.gray{background:#5c6069}
+
+/* add mode: placement rectangles, blue dashed */
+.add-sel{position:absolute;z-index:3;border:2px dashed var(--blue);background:rgba(47,128,255,.08);box-sizing:border-box;pointer-events:none}
+.add-ghost{position:absolute;z-index:2;border:1px dashed rgba(47,128,255,.5);background:rgba(47,128,255,.04);box-sizing:border-box;pointer-events:none}
+.add-tag{position:absolute;z-index:6;pointer-events:auto;font-size:10px;font-weight:650;line-height:1.5;color:#fff;background:var(--blue);border-radius:4px;padding:1px 5px;white-space:nowrap;transform:translate(-50%,-50%);max-width:80%;overflow:hidden;text-overflow:ellipsis}
+.chip.unverified{background:#eeeef0;color:#6f7278}
+.motion-badge{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:4px 7px;border-radius:6px;background:#f1f1ef;color:#63656b;font-size:10px;line-height:1.3;border:1px solid var(--line)}
+.motion-badge b{font-weight:650;color:#4d4f55}
+.list-sub .chip{margin-left:6px;vertical-align:1px}
+.add-form{display:flex;flex-direction:column;gap:6px}
+.add-form .labelled{display:flex;flex-direction:column;gap:3px;min-width:0}
+.add-form label{font-size:10.5px;color:var(--muted);display:block;margin:0}
+.add-form .field,.add-form select{width:100%;border:1px solid var(--line2);background:#fff;border-radius:8px;padding:6px 8px;font:inherit;font-size:12px;min-width:0;color:var(--ink);min-height:30px}
+.add-form select{max-width:none}
+.add-form .field:focus,.add-form select:focus{outline:2px solid var(--blue);outline-offset:1px}
+.add-form select:disabled,.add-form input:disabled{background:#f4f4f2;color:#9a9ca1;cursor:not-allowed}
 
 /* move mode: selection panel */
 .field-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
@@ -338,20 +359,25 @@ button:disabled{opacity:.45;cursor:not-allowed}
       </div>
       <div class="move-toolbar" id="moveToolbar" hidden>
         <div class="tool-group" role="group" aria-label="Tools">
-          <button type="button" data-tool="select" title="Select (V)">Select<span class="mono key">V</span></button>
-          <button type="button" data-tool="move" title="Move (M)">Move<span class="mono key">M</span></button>
+          <button type="button" data-tool="select" data-for="move" title="Select area (V)">Select<span class="mono key">V</span></button>
+          <button type="button" data-tool="move" data-for="move" title="Move (M)">Move<span class="mono key">M</span></button>
+          <button type="button" data-tool="select" data-for="add" title="Select area (V)">Select<span class="mono key">V</span></button>
+          <button type="button" data-tool="place" data-for="add" title="Place (P)">Place<span class="mono key">P</span></button>
           <button type="button" data-tool="hand" title="Hand — drag the image to pan">Hand</button>
-          <span class="tool-sep" aria-hidden="true"></span>
-          <span class="later" title="Coming next round"><button type="button" data-tool="hide" disabled title="Coming next round">Hide</button></span>
-          <span class="later" title="Coming next round"><button type="button" data-tool="comment" disabled title="Coming next round">Comment</button></span>
+          <span class="tool-sep" aria-hidden="true" data-for="move"></span>
+          <span class="later" title="Coming next round" data-for="move"><button type="button" data-tool="hide" disabled title="Coming next round">Hide</button></span>
+          <span class="later" title="Coming next round" data-for="move"><button type="button" data-tool="comment" disabled title="Coming next round">Comment</button></span>
         </div>
-        <div class="opt-group" role="group" aria-label="Move options">
+        <div class="opt-group" role="group" aria-label="Move options" data-for="move">
           <button type="button" id="gridBtn" class="on" aria-pressed="true" title="Show an 8 px grid">Grid 8</button>
           <button type="button" id="snapBtn" class="on" aria-pressed="true" title="Snap offsets to the 8 px grid">Snap</button>
           <button type="button" id="axisBtn" aria-pressed="false" title="Lock movement to one axis (hold Shift)">Axis lock</button>
           <span class="tool-sep" aria-hidden="true"></span>
           <button type="button" id="exactBtn" class="on" aria-pressed="true" title="Exact = 2 px">Exact</button>
           <button type="button" id="approxBtn" aria-pressed="false" title="Approx = 8 px">Approx</button>
+        </div>
+        <div class="opt-group" role="group" aria-label="Add options" data-for="add">
+          <button type="button" id="addGridBtn" class="on" aria-pressed="true" title="Show an 8 px grid">Grid 8</button>
         </div>
       </div>
       <div class="move-hint" id="moveHint" hidden>Drag an area in Move mode. This tool only sees pixels.</div>
@@ -415,9 +441,22 @@ button:disabled{opacity:.45;cursor:not-allowed}
   var MAX_REQUESTS = 8;
   var MIN_SELECT = 8;
   var PRECISION = { exact: 'Exact', approximate: 'Approx' };
-  var TOOL_KEYS = { v: 'select', m: 'move' };
-  var CURSOR_CLASS = { select: 'cursor-cross', move: 'cursor-grab', hand: 'cursor-grab' };
+  var TOOL_KEYS = { move: { v: 'select', m: 'move' }, add: { v: 'select', p: 'place' } };
+  var CURSOR_CLASS = { select: 'cursor-cross', move: 'cursor-grab', hand: 'cursor-grab', place: 'cursor-cross' };
   var HINT_MOVE = 'Drag an area in Move mode. This tool only sees pixels.';
+  var HINT_ADD = 'Drag where the new element should appear. Motion cannot be checked from a screenshot.';
+  /* Unknown tokens stay silent: the card itself already carries the verdict. */
+  var NOTE_TEXT = {
+    only_expected_changes: 'Only expected changes found',
+    size_mismatch: 'Image sizes differ',
+    baseline_accepted: 'Baseline updated'
+  };
+  var ADD_HINTS = ['Button', 'Card', 'Text', 'Image', 'Banner', 'Other'];
+  var ANIMATION_LABEL = { none: 'None', fade: 'Fade in', slide: 'Slide in', bounce: 'Bounce', pulse: 'Pulse' };
+  var ANIMATION_ORDER = ['none', 'fade', 'slide', 'bounce', 'pulse'];
+  var EASINGS = ['ease', 'ease-in', 'ease-out', 'linear'];
+  var ADD_DEFAULT_SIZE = { w: 160, h: 80 };
+  var MOTION_NOTE = 'Motion: not verifiable from screenshots';
 
   function $(sel) { return document.querySelector(sel); }
   function el(tag, cls, text) {
@@ -475,7 +514,21 @@ button:disabled{opacity:.45;cursor:not-allowed}
     drawRect: null,
     drag: null,
     imgLoaded: {},
-    labelTimer: null
+    labelTimer: null,
+    /* add mode */
+    addTool: 'place',
+    addSelection: null,     /* {x,y,w,h} in after pixels */
+    addSelected: null,      /* selected ADD-n id */
+    addDrafts: [],
+    addLabel: '',
+    addHint: 'Banner',
+    addAnimation: 'none',
+    addDuration: 300,
+    addEasing: 'ease',
+    addGrid: true,
+    addFieldBefore: null,
+    addFocus: null,
+    addTimer: null
   };
 
   /* ---------- report loading ---------- */
@@ -605,7 +658,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
     state.requests.forEach(function (request) {
       lines.push('- Request ' + (request.id || 'PT-?') + ' \u00b7 ' + (request.type || 'unknown') + ' \u00b7 ' + request.status);
     });
-    lines.push('Please fix the unexpected changes without altering approved areas.');
+    /* Only ask for a fix when something is actually unexpected. */
+    var unexpected = state.boxes.some(function (box) { return boxStatus(box) === 'unexpected'; });
+    if (unexpected) lines.push('Please fix the unexpected changes without altering approved areas.');
     /* Drafts append only when they exist, so the review message stays byte-identical otherwise. */
     if (state.drafts.length) {
       lines.push('');
@@ -618,6 +673,15 @@ button:disabled{opacity:.45;cursor:not-allowed}
       });
       lines.push('');
       lines.push('Pass these to orphic_compare as requests. from is baseline pixels, to is after pixels.');
+    }
+    /* Adds are instructions for a human or agent, never engine requests. */
+    if (state.addDrafts.length) {
+      lines.push('');
+      lines.push('Add instructions (not verified by the engine)');
+      state.addDrafts.forEach(function (draft) {
+        lines.push('');
+        lines.push(addText(draft));
+      });
     }
     return lines.join('\n');
   }
@@ -645,6 +709,21 @@ button:disabled{opacity:.45;cursor:not-allowed}
     var x = num(rect.x), y = num(rect.y), w = num(rect.w), h = num(rect.h);
     if (x === null || y === null || w === null || h === null) return '\u2014';
     return x + ', ' + y + ' \u00b7 ' + w + ' \u00d7 ' + h;
+  }
+  /* Null means "the engine could not measure it": show a dash, never the word null. */
+  function numberOrDash(value) { var n = num(value); return n === null ? '\u2014' : String(n); }
+  function signedOrDash(value) {
+    var n = num(value);
+    return n === null ? '\u2014' : (n > 0 ? '+' : '') + n;
+  }
+  function matchText(value) {
+    var n = num(value);
+    if (n === null) return '\u2014';
+    return clamp(Math.round(n * 100), 0, 100) + '% match';
+  }
+  function pairText(pair) {
+    if (!pair || typeof pair !== 'object') return '\u2014';
+    return signedOrDash(pair.dx) + ', ' + signedOrDash(pair.dy);
   }
 
   /* ---------- selection helpers ---------- */
@@ -740,12 +819,75 @@ button:disabled{opacity:.45;cursor:not-allowed}
     return JSON.stringify(requestObject(source));
   }
 
+  /* ---------- add mode: drafts ---------- */
+  /* The engine has no "add" request type, so these never enter the requests JSON.
+     They are plain-English placement instructions for the person or agent doing the work. */
+  function nextAddId() {
+    var used = {};
+    state.addDrafts.forEach(function (draft) { used[draft.id] = true; });
+    for (var n = 1; n <= 999; n++) {
+      if (!used['ADD-' + n]) return 'ADD-' + n;
+    }
+    return 'ADD-999';
+  }
+  function findAddDraft(id) {
+    if (id === null || id === undefined) return null;
+    for (var i = 0; i < state.addDrafts.length; i++) {
+      if (String(state.addDrafts[i].id) === String(id)) return state.addDrafts[i];
+    }
+    return null;
+  }
+  function addName(source) {
+    var text = source && typeof source.label === 'string' ? source.label.replace(/\s+/g, ' ').trim() : '';
+    return text || 'New element';
+  }
+  function addHintOf(source) {
+    var hint = source && typeof source.hint === 'string' ? source.hint : '';
+    return ADD_HINTS.indexOf(hint) === -1 ? 'Other' : hint;
+  }
+  function addAnimationOf(source) {
+    var anim = source && typeof source.animation === 'string' ? source.animation : 'none';
+    return ANIMATION_ORDER.indexOf(anim) === -1 ? 'none' : anim;
+  }
+  function addEasingOf(source) {
+    var easing = source && typeof source.easing === 'string' ? source.easing : 'ease';
+    return EASINGS.indexOf(easing) === -1 ? 'ease' : easing;
+  }
+  function addDurationOf(source) {
+    var ms = num(source && source.duration);
+    if (ms === null) return 300;
+    return clamp(Math.round(ms), 50, 3000);
+  }
+  function addHasMotion(source) { return addAnimationOf(source) !== 'none'; }
+  function addHeading(source) {
+    return source.id + ' Add ' + addName(source);
+  }
+  /* One plain-English instruction plus an explicit statement of what a screenshot can prove. */
+  function addText(source) {
+    var rect = { x: Math.round(source.x), y: Math.round(source.y), w: Math.round(source.w), h: Math.round(source.h) };
+    var lines = [];
+    lines.push(addHeading(source));
+    var sentence = 'Add a ' + addHintOf(source) + ' at x ' + rect.x + ', y ' + rect.y +
+      ', size ' + rect.w + 'x' + rect.h + '.';
+    if (addHasMotion(source)) {
+      sentence += ' Animation: ' + ANIMATION_LABEL[addAnimationOf(source)] + ', ' +
+        addDurationOf(source) + ' ms, ' + addEasingOf(source) + '.';
+    }
+    sentence += ' Use the existing layout system.';
+    lines.push(sentence);
+    lines.push('Verification: only that this area changes in a screenshot. Motion is not verified.');
+    return lines.join('\n');
+  }
+
   /* ---------- move mode: undo/redo ---------- */
   function copy(value) { return JSON.parse(JSON.stringify(value)); }
   function snapshotState() {
     return copy({
       selection: state.selection, offset: state.offset, label: state.label,
-      precision: state.precision, drafts: state.drafts, selectedDraft: state.selectedDraft
+      precision: state.precision, drafts: state.drafts, selectedDraft: state.selectedDraft,
+      addSelection: state.addSelection, addSelected: state.addSelected, addDrafts: state.addDrafts,
+      addLabel: state.addLabel, addHint: state.addHint, addAnimation: state.addAnimation,
+      addDuration: state.addDuration, addEasing: state.addEasing
     });
   }
   function restoreState(snap) {
@@ -755,6 +897,14 @@ button:disabled{opacity:.45;cursor:not-allowed}
     state.precision = snap.precision === 'approximate' ? 'approximate' : 'exact';
     state.drafts = Array.isArray(snap.drafts) ? snap.drafts : [];
     state.selectedDraft = snap.selectedDraft || null;
+    state.addSelection = snap.addSelection || null;
+    state.addSelected = snap.addSelected || null;
+    state.addDrafts = Array.isArray(snap.addDrafts) ? snap.addDrafts : [];
+    if (typeof snap.addLabel === 'string') state.addLabel = snap.addLabel;
+    if (typeof snap.addHint === 'string') state.addHint = snap.addHint;
+    if (typeof snap.addAnimation === 'string') state.addAnimation = snap.addAnimation;
+    if (num(snap.addDuration) !== null) state.addDuration = snap.addDuration;
+    if (typeof snap.addEasing === 'string') state.addEasing = snap.addEasing;
   }
   function commitHistory(before) {
     if (!before) return;
@@ -868,6 +1018,91 @@ button:disabled{opacity:.45;cursor:not-allowed}
     commitHistory(before);
     render();
     toast('Request removed');
+  }
+
+  function selectAddDraft(id) {
+    var draft = findAddDraft(id);
+    if (!draft) return;
+    state.mode = 'add';
+    state.addSelected = draft.id;
+    state.selectedBox = null;
+    state.selectedRequest = null;
+    state.addSelection = { x: draft.x, y: draft.y, w: draft.w, h: draft.h };
+    state.addLabel = draft.label || '';
+    state.addHint = addHintOf(draft);
+    state.addAnimation = addAnimationOf(draft);
+    state.addDuration = addDurationOf(draft);
+    state.addEasing = addEasingOf(draft);
+    state.drawRect = null;
+    render();
+  }
+  function saveAddDraft() {
+    if (!state.report) { toast('No report loaded'); return; }
+    if (!state.addSelection) { toast('Drag an area on the image first'); return; }
+    var before = snapshotState();
+    var draft = {
+      id: state.addSelected && findAddDraft(state.addSelected) ? state.addSelected : nextAddId(),
+      x: Math.round(state.addSelection.x), y: Math.round(state.addSelection.y),
+      w: Math.round(state.addSelection.w), h: Math.round(state.addSelection.h),
+      label: state.addLabel, hint: addHintOf({ hint: state.addHint }),
+      animation: addAnimationOf({ animation: state.addAnimation }),
+      duration: addDurationOf({ duration: state.addDuration }),
+      easing: addEasingOf({ easing: state.addEasing })
+    };
+    var existing = findAddDraft(draft.id);
+    if (existing) {
+      var index = state.addDrafts.indexOf(existing);
+      state.addDrafts[index] = draft;
+    } else {
+      state.addDrafts.push(draft);
+    }
+    state.addSelected = draft.id;
+    commitHistory(before);
+    render();
+    toast('Add ' + draft.id + (existing ? ' updated' : ' added'));
+  }
+  function syncSelectedAdd() {
+    var draft = state.addSelected ? findAddDraft(state.addSelected) : null;
+    if (!draft || !state.addSelection) return;
+    draft.x = Math.round(state.addSelection.x);
+    draft.y = Math.round(state.addSelection.y);
+    draft.w = Math.round(state.addSelection.w);
+    draft.h = Math.round(state.addSelection.h);
+    draft.label = state.addLabel;
+    draft.hint = addHintOf({ hint: state.addHint });
+    draft.animation = addAnimationOf({ animation: state.addAnimation });
+    draft.duration = addDurationOf({ duration: state.addDuration });
+    draft.easing = addEasingOf({ easing: state.addEasing });
+  }
+  function deleteAddDraft(id) {
+    var draft = findAddDraft(id);
+    if (!draft) return;
+    var before = snapshotState();
+    state.addDrafts.splice(state.addDrafts.indexOf(draft), 1);
+    if (state.addSelected !== null && String(state.addSelected) === String(id)) {
+      state.addSelected = null;
+      if (state.addDrafts.length) state.addSelected = state.addDrafts[0].id;
+    }
+    commitHistory(before);
+    render();
+    toast('Add removed');
+  }
+  /* Text and select fields commit one undo step per editing burst. */
+  function commitAddField() {
+    /* A rebuild removes the focused control; that focusout must not create a
+       history entry (it would also discard the redo stack). */
+    if (state.suppressFocusCommit) return;
+    var before = state.addFieldBefore;
+    state.addFieldBefore = null;
+    if (!before) return;
+    var fields = ['addLabel', 'addHint', 'addAnimation', 'addDuration', 'addEasing', 'addSelection', 'addDrafts'];
+    var beforeValues = fields.map(function (key) { return JSON.stringify(before[key]); }).join('|');
+    var nowValues = fields.map(function (key) { return JSON.stringify(state[key]); }).join('|');
+    if (beforeValues === nowValues) return;
+    state.history.push(before);
+    if (state.history.length > 80) state.history.shift();
+    state.future.length = 0;
+    updateHistory();
   }
 
   /* ---------- move mode: before crop ---------- */
@@ -998,6 +1233,113 @@ button:disabled{opacity:.45;cursor:not-allowed}
     node.style.height = (rect.h / size.h * 100) + '%';
   }
 
+  /* Guides are inset by half a pixel so a 1px line sits exactly on the capture
+     pixel edge at any scale, and so its painted area is always inside the frame. */
+  function guideV(layer, x, opts) {
+    var size = state.overlaySize || imageSize();
+    var node = el('div', 'move-guide v' + (opts && opts.dim ? ' dim' : ''));
+    node.style.left = (x / size.w * 100) + '%';
+    node.style.top = '0px';
+    node.style.height = '100%';
+    node.setAttribute('data-guide', (opts && opts.kind) || 'v');
+    node.title = Math.round(x) + ' px';
+    layer.appendChild(node);
+    return node;
+  }
+  function guideH(layer, y, opts) {
+    var size = state.overlaySize || imageSize();
+    var node = el('div', 'move-guide h' + (opts && opts.dim ? ' dim' : ''));
+    node.style.top = (y / size.h * 100) + '%';
+    node.style.left = '0px';
+    node.style.width = '100%';
+    node.setAttribute('data-guide', (opts && opts.kind) || 'h');
+    node.title = Math.round(y) + ' px';
+    layer.appendChild(node);
+    return node;
+  }
+  function measureH(layer, x1, x2, y) {
+    var size = state.overlaySize || imageSize();
+    var node = el('div', 'move-measure h');
+    node.style.left = (Math.min(x1, x2) / size.w * 100) + '%';
+    node.style.width = (Math.abs(x2 - x1) / size.w * 100) + '%';
+    node.style.top = (y / size.h * 100) + '%';
+    node.setAttribute('data-measure', 'dx');
+    layer.appendChild(node);
+    return node;
+  }
+  function measureV(layer, y1, y2, x) {
+    var size = state.overlaySize || imageSize();
+    var node = el('div', 'move-measure v');
+    node.style.top = (Math.min(y1, y2) / size.h * 100) + '%';
+    node.style.height = (Math.abs(y2 - y1) / size.h * 100) + '%';
+    node.style.left = (x / size.w * 100) + '%';
+    node.setAttribute('data-measure', 'dy');
+    layer.appendChild(node);
+    return node;
+  }
+  /* shiftX/shiftY are CSS offsets from the anchor, so a label never sits on top
+     of the line it annotates and its centre stays hit-testable. */
+  function tag(layer, cx, cy, text, cls, shiftX, shiftY) {
+    var size = state.overlaySize || imageSize();
+    var node = el('div', 'move-tag' + (cls ? ' ' + cls : ''), text);
+    node.setAttribute('data-tag', cls || 'guide');
+    /* Keep the label inside the frame so it is never clipped away. */
+    var halfPctX = 42 / Math.max(1, state.frameW || 1) * 100;
+    var halfPctY = 9 / Math.max(1, state.frameH || 1) * 100;
+    node.style.left = clamp(cx / size.w * 100, halfPctX, 100 - halfPctX) + '%';
+    node.style.top = clamp(cy / size.h * 100, halfPctY, 100 - halfPctY) + '%';
+    if (shiftX) node.style.marginLeft = shiftX + 'px';
+    if (shiftY) node.style.marginTop = shiftY + 'px';
+    layer.appendChild(node);
+    return node;
+  }
+
+  /* Guides describe both rectangles: dashed magenta lines from the ORIGINAL
+     edges and the NEW edges to the image edges, with a px distance for dx and
+     dy measured anchor to anchor. Duplicate edges are drawn once so each line
+     keeps a real size and a hit-testable centre. */
+  function paintGuides(layer, sel, offset, size) {
+    var dx = Math.round(offset.dx);
+    var dy = Math.round(offset.dy);
+    var ghost = { x: sel.x + dx, y: sel.y + dy, w: sel.w, h: sel.h };
+    var usedV = {};
+    var usedH = {};
+    function addV(x, dim) {
+      var key = String(Math.round(x));
+      if (usedV[key]) return;
+      usedV[key] = true;
+      guideV(layer, x, { dim: dim, kind: dim ? 'from-x' : 'to-x' });
+    }
+    function addH(y, dim) {
+      var key = String(Math.round(y));
+      if (usedH[key]) return;
+      usedH[key] = true;
+      guideH(layer, y, { dim: dim, kind: dim ? 'from-y' : 'to-y' });
+    }
+    /* New edges first: where an old edge lands on a new one the brighter line
+       should be the one that stays on top. */
+    addV(ghost.x, false); addV(ghost.x + ghost.w, false);
+    addH(ghost.y, false); addH(ghost.y + ghost.h, false);
+    addV(sel.x, true); addV(sel.x + sel.w, true);
+    addH(sel.y, true); addH(sel.y + sel.h, true);
+
+    /* Distance from the original anchor to the new anchor, in capture pixels.
+       Both measures sit outside the rectangles so they never cover a guide. */
+    var topY = Math.max(4, Math.min(sel.y, ghost.y) - 14);
+    var leftX = Math.max(4, Math.min(sel.x, ghost.x) - 14);
+    if (dx !== 0) {
+      measureH(layer, sel.x, ghost.x, topY);
+      tag(layer, (sel.x + ghost.x) / 2, topY, Math.abs(dx) + ' px', null, 0, -11);
+    }
+    if (dy !== 0) {
+      measureV(layer, sel.y, ghost.y, leftX);
+      tag(layer, leftX, (sel.y + ghost.y) / 2, Math.abs(dy) + ' px', null, 34, 0);
+    }
+    if (dx === 0 && dy === 0) {
+      tag(layer, ghost.x + ghost.w / 2, Math.max(4, ghost.y - 14), '0 px', null, 0, -11);
+    }
+  }
+
   function paintOverlay() {
     var layer = document.getElementById('moveOverlay');
     if (!layer) return;
@@ -1021,47 +1363,46 @@ button:disabled{opacity:.45;cursor:not-allowed}
     ghostNode.appendChild(el('span', null, labelOf({ label: state.label })));
     layer.appendChild(ghostNode);
 
-    /* magenta guides at the destination edges */
-    var guideV = el('div', 'move-guide v');
-    guideV.style.left = ((ghost.x + ghost.w) / size.w * 100) + '%';
-    layer.appendChild(guideV);
-    var guideH = el('div', 'move-guide h');
-    guideH.style.top = ((ghost.y + ghost.h / 2) / size.h * 100) + '%';
-    layer.appendChild(guideH);
+    /* Guides stay painted after mouseup: they belong to the selection, and are
+       removed only when the selection, mode, or Esc changes. */
+    paintGuides(layer, sel, state.offset, size);
 
-    /* distance measures, only when the area actually moved */
-    var centerY = ghost.y + ghost.h / 2;
-    if (state.offset.dx !== 0) {
-      var a = state.offset.dx > 0 ? sel.x + sel.w : ghost.x + ghost.w;
-      var b = state.offset.dx > 0 ? ghost.x : sel.x;
-      var measure = el('div', 'move-measure');
-      measure.style.left = (Math.min(a, b) / size.w * 100) + '%';
-      measure.style.width = (Math.abs(b - a) / size.w * 100) + '%';
-      measure.style.top = (centerY / size.h * 100) + '%';
-      layer.appendChild(measure);
-      var tagDx = el('div', 'move-tag', Math.abs(state.offset.dx) + ' px');
-      tagDx.style.left = (clamp((a + b) / 2 / size.w * 100, 4, 96)) + '%';
-      tagDx.style.top = (clamp(centerY / size.h * 100, 4, 96)) + '%';
-      layer.appendChild(tagDx);
+    tag(layer, ghost.x + ghost.w / 2, ghost.y - 12,
+      'x ' + Math.round(ghost.x) + ' y ' + Math.round(ghost.y), 'gray');
+  }
+
+  /* ---------- add mode: overlay ---------- */
+  function paintAddOverlay() {
+    var layer = document.getElementById('moveOverlay');
+    if (!layer) return;
+    var size = state.overlaySize || imageSize();
+    layer.innerHTML = '';
+    if (state.drawRect) {
+      var drawing = el('div', 'add-sel');
+      placeBox(drawing, state.drawRect, size);
+      layer.appendChild(drawing);
+      return;
     }
-    var centerX = ghost.x + ghost.w / 2;
-    if (state.offset.dy !== 0) {
-      var c = state.offset.dy > 0 ? sel.y + sel.h : ghost.y + ghost.h;
-      var d = state.offset.dy > 0 ? ghost.y : sel.y;
-      var measureV = el('div', 'move-measure v');
-      measureV.style.top = (Math.min(c, d) / size.h * 100) + '%';
-      measureV.style.height = (Math.abs(d - c) / size.h * 100) + '%';
-      measureV.style.left = (centerX / size.w * 100) + '%';
-      layer.appendChild(measureV);
-      var tagDy = el('div', 'move-tag', Math.abs(state.offset.dy) + ' px');
-      tagDy.style.left = (clamp(centerX / size.w * 100, 4, 96)) + '%';
-      tagDy.style.top = (clamp((c + d) / 2 / size.h * 100, 4, 96)) + '%';
-      layer.appendChild(tagDy);
+    var sel = state.addSelection;
+    if (!sel) return;
+    var selectedDraft = findAddDraft(state.addSelected);
+    if (selectedDraft) {
+      var original = el('div', 'add-ghost');
+      placeBox(original, selectedDraft, size);
+      layer.appendChild(original);
     }
-    var tagPos = el('div', 'move-tag gray', 'x ' + Math.round(ghost.x) + ' y ' + Math.round(ghost.y));
-    tagPos.style.left = (clamp((ghost.x + ghost.w / 2) / size.w * 100, 6, 94)) + '%';
-    tagPos.style.top = (clamp((ghost.y - 12) / size.h * 100, 3, 97)) + '%';
-    layer.appendChild(tagPos);
+    var rect = el('div', 'add-sel');
+    placeBox(rect, sel, size);
+    layer.appendChild(rect);
+    /* Corner ticks make a thin/tall selection readable without hiding the image. */
+    var label = addName({ label: state.addLabel });
+    var node = el('div', 'add-tag', label + ' \u00b7 ' + Math.round(sel.w) + '\u00d7' + Math.round(sel.h));
+    var halfPctX = 44 / Math.max(1, state.frameW || 1) * 100;
+    var halfPctY = 9 / Math.max(1, state.frameH || 1) * 100;
+    node.style.left = clamp((sel.x + sel.w / 2) / size.w * 100, halfPctX, 100 - halfPctX) + '%';
+    node.style.top = clamp((sel.y - 12) / size.h * 100, halfPctY, 100 - halfPctY) + '%';
+    node.setAttribute('data-add-tag', 'add');
+    layer.appendChild(node);
   }
 
   /* ---------- move mode: pointer ---------- */
@@ -1081,20 +1422,35 @@ button:disabled{opacity:.45;cursor:not-allowed}
       point.y >= rect.y - p && point.y <= rect.y + rect.h + p;
   }
 
+  function activeTool() { return state.mode === 'add' ? state.addTool : state.tool; }
+
+  /* Topmost existing add area under the cursor, for the Select tool. */
+  function addDraftAt(point) {
+    for (var i = state.addDrafts.length - 1; i >= 0; i--) {
+      var draft = state.addDrafts[i];
+      if (insideRect(point, draft, 0)) return draft;
+    }
+    return null;
+  }
+
   function setTool(tool) {
-    state.tool = tool;
+    if (state.mode === 'add') {
+      state.addTool = tool === 'select' ? 'select' : 'place';
+    } else {
+      state.tool = tool;
+    }
     state.drag = null;
     state.drawRect = null;
     renderChrome();
-    paintOverlay();
+    if (state.mode === 'add') paintAddOverlay(); else paintOverlay();
     updateFrameCursor();
-    toast(tool === 'select' ? 'Select tool' : tool === 'move' ? 'Move tool' : 'Hand tool');
+    toast(tool === 'select' ? 'Select tool' : tool === 'move' ? 'Move tool' : tool === 'place' ? 'Place tool' : 'Hand tool');
   }
 
   function updateFrameCursor() {
     var frame = document.getElementById('moveFrame');
     if (!frame) return;
-    var cls = state.tool === 'select' ? 'cursor-cross' : 'cursor-grab';
+    var cls = CURSOR_CLASS[activeTool()] || 'cursor-grab';
     frame.className = 'move-frame ' + cls;
   }
 
@@ -1103,7 +1459,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     if (!state.report || event.button !== 0) return;
     var point = capturePoint(frame, event.clientX, event.clientY);
     var scroller = $('#stageScroller');
-    if (state.tool === 'hand') {
+    if (activeTool() === 'hand') {
       state.drag = { kind: 'pan', x: event.clientX, y: event.clientY,
                      left: scroller ? scroller.scrollLeft : 0, top: scroller ? scroller.scrollTop : 0 };
       frame.className = 'move-frame cursor-grabbing';
@@ -1113,6 +1469,26 @@ button:disabled{opacity:.45;cursor:not-allowed}
     }
     var sel = state.selection;
     var ghost = sel ? { x: sel.x + state.offset.dx, y: sel.y + state.offset.dy, w: sel.w, h: sel.h } : null;
+    if (state.mode === 'add' && state.addTool !== 'hand') {
+      if (state.addTool === 'select') {
+        /* Select only picks an existing area; Place draws a new one. */
+        var hit = addDraftAt(point);
+        if (hit) { selectAddDraft(hit.id); return; }
+        if (state.addSelection && insideRect(point, state.addSelection, 0)) {
+          state.addSelected = null;
+          renderInspector();
+          return;
+        }
+        toast('Click an add area, or use Place (P)');
+        return;
+      }
+      state.drag = { kind: 'add-select', start: point, before: snapshotState() };
+      state.drawRect = { x: point.x, y: point.y, w: 0, h: 0 };
+      paintAddOverlay();
+      if (frame.setPointerCapture) { try { frame.setPointerCapture(event.pointerId); } catch (err) {} }
+      event.preventDefault();
+      return;
+    }
     if (state.tool === 'move' && sel && (insideRect(point, sel, 0) || (ghost && insideRect(point, ghost, 0)))) {
       state.drag = { kind: 'move', start: point, base: { dx: state.offset.dx, dy: state.offset.dy },
                      before: snapshotState() };
@@ -1142,7 +1518,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     }
     var point = capturePoint(frame, event.clientX, event.clientY);
     var size = imageSize();
-    if (drag.kind === 'select') {
+    if (drag.kind === 'select' || drag.kind === 'add-select') {
       var x = Math.min(drag.start.x, point.x);
       var y = Math.min(drag.start.y, point.y);
       state.drawRect = {
@@ -1150,7 +1526,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
         w: Math.round(Math.abs(point.x - drag.start.x)),
         h: Math.round(Math.abs(point.y - drag.start.y))
       };
-      paintOverlay();
+      if (drag.kind === 'add-select') paintAddOverlay(); else paintOverlay();
       return;
     }
     var dx = drag.base.dx + (point.x - drag.start.x);
@@ -1181,6 +1557,21 @@ button:disabled{opacity:.45;cursor:not-allowed}
     var frame = event.currentTarget;
     if (frame && frame.className) updateFrameCursor();
     if (drag.kind === 'pan') return;
+    if (drag.kind === 'add-select') {
+      var addRect = state.drawRect;
+      state.drawRect = null;
+      if (addRect && addRect.w >= MIN_SELECT && addRect.h >= MIN_SELECT) {
+        state.addSelection = addRect;
+        state.addSelected = null;
+        syncSelectedAdd();
+        commitHistory(drag.before);
+        render();
+      } else {
+        paintAddOverlay();
+        if (addRect) toast('Select at least 8 \u00d7 8 px');
+      }
+      return;
+    }
     if (drag.kind === 'select') {
       var rect = state.drawRect;
       state.drawRect = null;
@@ -1216,6 +1607,22 @@ button:disabled{opacity:.45;cursor:not-allowed}
     if (text) text.textContent = requestHeading(source) + '\n' + requestText(source);
     var json = $('#requestJson');
     if (json) json.textContent = requestJson(source);
+  }
+
+  function addSource() {
+    var sel = state.addSelection || { x: 0, y: 0, w: 0, h: 0 };
+    return {
+      id: state.addSelected || nextAddId(),
+      x: Math.round(sel.x), y: Math.round(sel.y), w: Math.round(sel.w), h: Math.round(sel.h),
+      label: state.addLabel, hint: state.addHint,
+      animation: state.addAnimation, duration: state.addDuration, easing: state.addEasing
+    };
+  }
+  /* The instruction box updates without rebuilding the form, so typing keeps focus. */
+  function updateAddInline() {
+    var text = $('#addText');
+    if (!text) return;
+    text.textContent = state.addSelection ? addText(addSource()) : 'Point at an area to create an add instruction.';
   }
 
   /* ---------- rendering ---------- */
@@ -1310,10 +1717,11 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
     var section = $('#requestsSection');
     var list = $('#requestList');
-    section.hidden = !hasRequests;
-    $('#requestCount').textContent = String(state.requests.length + draftCount);
+    var addCount = state.addDrafts.length;
+    section.hidden = !hasRequests && !addCount;
+    $('#requestCount').textContent = String(state.requests.length + draftCount + addCount);
     list.innerHTML = '';
-    if (!hasRequests) return;
+    if (section.hidden) return;
 
     /* Drafts first: they are this session's work and the ones Copy for Hermes sends. */
     state.drafts.forEach(function (draft) {
@@ -1352,6 +1760,33 @@ button:disabled{opacity:.45;cursor:not-allowed}
       if (request.precision) parts.push(request.precision);
       if (request.result && typeof request.result.why === 'string' && request.result.why) parts.push(request.result.why);
       row.appendChild(el('div', 'list-sub', parts.join(' \u00b7 ') || '\u2014'));
+      list.appendChild(row);
+    });
+
+    /* Add drafts come last, with their own ids and an explicit "not verified" badge. */
+    state.addDrafts.forEach(function (draft) {
+      var selected = state.addSelected !== null && String(state.addSelected) === String(draft.id);
+      var row = el('div', 'list-item' + (selected ? ' selected' : ''));
+      row.setAttribute('data-add-draft', draft.id);
+      row.setAttribute('role', 'button');
+      row.setAttribute('tabindex', '0');
+      var line = el('div', 'line1');
+      line.appendChild(el('span', 'id-pill', draft.id));
+      line.appendChild(el('span', 'list-name', 'Add \u00b7 ' + addName(draft)));
+      line.appendChild(el('span', 'chip draft', 'draft'));
+      var remove = el('button', 'row-x', '\u00d7');
+      remove.type = 'button';
+      remove.setAttribute('data-delete-add', draft.id);
+      remove.setAttribute('aria-label', 'Delete ' + draft.id);
+      remove.title = 'Delete ' + draft.id;
+      line.appendChild(remove);
+      row.appendChild(line);
+      var sub = el('div', 'list-sub mono');
+      sub.appendChild(document.createTextNode(
+        Math.round(draft.w) + '\u00d7' + Math.round(draft.h) + ' \u00b7 ' +
+        (addHasMotion(draft) ? ANIMATION_LABEL[addAnimationOf(draft)] : 'No animation')));
+      sub.appendChild(el('span', 'chip unverified', 'not verified'));
+      row.appendChild(sub);
       list.appendChild(row);
     });
   }
@@ -1457,7 +1892,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     rulerTop.id = 'rulerTop';
     var rulerLeft = el('div', 'ruler-left');
     rulerLeft.id = 'rulerLeft';
-    var frame = el('div', 'move-frame ' + (CURSOR_CLASS[state.tool] || 'cursor-grab'));
+    var frame = el('div', 'move-frame ' + (CURSOR_CLASS[activeTool()] || 'cursor-grab'));
     frame.id = 'moveFrame';
 
     var availW = Math.max(120, (scroller ? scroller.clientWidth : 900) - 23 - 16);
@@ -1476,7 +1911,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
     rulerLeft.style.height = frameH + 'px';
 
     var grid = el('div', 'move-grid');
-    if (state.grid) {
+    var wantGrid = state.mode === 'add' ? state.addGrid : state.grid;
+    if (wantGrid) {
       var step = Math.max(4, 8 * frameW / size.w);
       grid.style.backgroundImage = 'linear-gradient(to right,rgba(47,128,255,.13) 1px,transparent 1px),' +
         'linear-gradient(to bottom,rgba(47,128,255,.13) 1px,transparent 1px)';
@@ -1518,7 +1954,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     state.frameH = frameH;
     rulerHost(true);
     rulerHost(false);
-    paintOverlay();
+    if (state.mode === 'add') paintAddOverlay(); else paintOverlay();
   }
 
   function renderStage() {
@@ -1545,11 +1981,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     var images = report.images || {};
 
     if (state.mode === 'add') {
-      var addPh = el('div', 'placeholder');
-      addPh.appendChild(el('strong', null, 'Add'));
-      addPh.appendChild(el('span', null, 'Add arrives in a later round.'));
-      inner.appendChild(addPh);
-      state.scale = 1;
+      renderMoveStage(inner, scroller, size);
       return;
     }
 
@@ -1642,9 +2074,22 @@ button:disabled{opacity:.45;cursor:not-allowed}
     card.appendChild(mark);
     text.textContent = STATUS_TEXT[status];
     card.appendChild(text);
-    var value = typeof report.note === 'string' ? report.note : '';
+    /* Only the three contract tokens are shown, in words. Anything else stays silent. */
+    var value = typeof report.note === 'string' ? NOTE_TEXT[report.note] || '' : '';
     note.textContent = value;
     note.hidden = !value;
+  }
+
+  function restoreFocus(focusId, caret) {
+    if (!focusId) return;
+    var node = document.getElementById(focusId);
+    if (!node) return;
+    try {
+      node.focus({ preventScroll: true });
+      if (caret !== null && typeof node.setSelectionRange === 'function' && typeof node.value === 'string') {
+        node.setSelectionRange(caret, caret);
+      }
+    } catch (err) { /* focus is best-effort */ }
   }
 
   function renderInspector() {
@@ -1652,26 +2097,40 @@ button:disabled{opacity:.45;cursor:not-allowed}
     var title = $('#inspectorTitle');
     var chip = $('#inspectorChip');
     var body = $('#inspectorBody');
+    /* Rebuilds replace the form controls; keep the caret where the user left it. */
+    var active = document.activeElement;
+    var focusId = active && active.id && body.contains(active) ? active.id : null;
+    var caret = focusId && typeof active.selectionStart === 'number' ? active.selectionStart : null;
+    if (focusId) {
+      /* Dropping the control must not be read as "the user finished editing". */
+      state.suppressFocusCommit = true;
+      try { active.blur(); } catch (err) { /* ignore */ }
+      state.suppressFocusCommit = false;
+      state.addFieldBefore = null;
+      state.labelBefore = null;
+    }
     body.innerHTML = '';
     chip.className = 'chip count';
     var report = state.report;
 
     if (!report) {
-      title.textContent = state.mode === 'review' ? 'Changes' : 'Selection';
+      title.textContent = state.mode === 'review' ? 'Changes' : state.mode === 'add' ? 'Add' : 'Selection';
       chip.textContent = '\u2014';
-      body.appendChild(el('p', 'empty-note', 'No report loaded.'));
+      body.appendChild(el('p', 'empty-note', state.mode === 'add'
+        ? 'No report loaded. Open a report with an embedded image to place new elements.'
+        : 'No report loaded.'));
       return;
     }
 
     if (state.mode === 'add') {
-      title.textContent = 'Add';
-      chip.textContent = 'Later round';
-      body.appendChild(el('p', 'empty-note', 'Add arrives in a later round.'));
+      renderAddInspector(title, chip, body);
+      restoreFocus(focusId, caret);
       return;
     }
 
     if (state.mode !== 'review') {
       renderMoveInspector(title, chip, body);
+      restoreFocus(focusId, caret);
       return;
     }
 
@@ -1689,14 +2148,18 @@ button:disabled{opacity:.45;cursor:not-allowed}
       var verdict = el('div', 'detail');
       appendRow(verdict, 'Verdict', request.status);
       var result = request.result || {};
-      if (num(result.match) !== null) appendRow(verdict, 'Match', String(Math.round(result.match * 10000) / 10000));
-      if (result.moved) appendRow(verdict, 'Moved', delta(result.moved.dx) + ', ' + delta(result.moved.dy));
-      if (result.off) appendRow(verdict, 'Off', delta(result.off.dx) + ', ' + delta(result.off.dy));
+      /* match is 0..1 in the contract; the UI only ever shows whole percents. */
+      if (num(result.match) !== null) appendRow(verdict, 'Match', matchText(result.match));
+      /* found/moved/off may be null: a dash, never "null". */
+      appendRow(verdict, 'Found', fmtRect(result.found));
+      appendRow(verdict, 'Moved', pairText(result.moved));
+      appendRow(verdict, 'Off', pairText(result.off));
       if (typeof result.why === 'string' && result.why) appendRow(verdict, 'Why', result.why);
       body.appendChild(blockWithCaption('Verdict', verdict));
       var requestCrops = request.id ? cropPair('req-' + request.id) : null;
       if (requestCrops) body.appendChild(blockWithCaption('Crops', requestCrops));
       else body.appendChild(el('p', 'empty-note', 'No crops for this request.'));
+      restoreFocus(focusId, caret);
       return;
     }
 
@@ -1864,6 +2327,165 @@ button:disabled{opacity:.45;cursor:not-allowed}
     drawBeforeCrop();
   }
 
+  function copyIconButton(id, title) {
+    var button = el('button', 'copy-mini');
+    button.type = 'button';
+    button.id = id;
+    button.title = title;
+    button.setAttribute('aria-label', title);
+    var icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('aria-hidden', 'true');
+    var rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', '8'); rect.setAttribute('y', '8');
+    rect.setAttribute('width', '12'); rect.setAttribute('height', '12');
+    rect.setAttribute('rx', '2');
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2');
+    icon.appendChild(rect);
+    icon.appendChild(path);
+    button.appendChild(icon);
+    button.appendChild(el('span', null, 'Copy'));
+    return button;
+  }
+
+  function addFieldRow(labelText, control) {
+    var wrap = el('div', 'labelled');
+    var label = el('label', null, labelText);
+    if (control.id) label.setAttribute('for', control.id);
+    wrap.appendChild(label);
+    wrap.appendChild(control);
+    return wrap;
+  }
+
+  function addSelect(id, options, value, disabled) {
+    var select = el('select');
+    select.id = id;
+    options.forEach(function (item) {
+      var option = el('option', null, item[1]);
+      option.value = item[0];
+      if (item[0] === value) option.selected = true;
+      select.appendChild(option);
+    });
+    select.disabled = !!disabled;
+    return select;
+  }
+
+  /* Renders only the fields that changed, so a focused control keeps its focus
+     and typing is never interrupted by a full re-render. */
+  function syncAddControls() {
+    var label = document.getElementById('addLabel');
+    if (label && document.activeElement !== label && label.value !== state.addLabel) label.value = state.addLabel;
+    var hint = document.getElementById('addHint');
+    if (hint && hint.value !== state.addHint) hint.value = state.addHint;
+    var anim = document.getElementById('addAnimation');
+    if (anim && anim.value !== state.addAnimation) anim.value = state.addAnimation;
+    var easing = document.getElementById('addEasing');
+    if (easing && easing.value !== state.addEasing) easing.value = state.addEasing;
+    var motion = addHasMotion({ animation: state.addAnimation });
+    if (easing) easing.disabled = !motion;
+    var duration = document.getElementById('addDuration');
+    if (duration) {
+      duration.disabled = !motion;
+      var shown = String(addDurationOf({ duration: state.addDuration }));
+      if (document.activeElement !== duration && duration.value !== shown) duration.value = shown;
+    }
+  }
+
+  /* Add mode: one large After image. The panel is the placement form and the
+     generated instruction; nothing here is verified, and nothing goes to the engine. */
+  function renderAddInspector(title, chip, body) {
+    var sel = state.addSelection;
+    var draft = state.addSelected ? findAddDraft(state.addSelected) : null;
+    title.textContent = draft ? 'Add ' + draft.id : 'Add';
+    chip.className = 'chip count';
+    chip.textContent = state.addDrafts.length + ' add' + (state.addDrafts.length === 1 ? '' : 's');
+
+    var areaBlock = el('div', 'block');
+    areaBlock.appendChild(el('div', 'caption', 'Where it should appear (pixels)'));
+    var grid = el('div', 'field-grid');
+    grid.appendChild(fieldBox('X', sel ? Math.round(sel.x) : '\u2014'));
+    grid.appendChild(fieldBox('Y', sel ? Math.round(sel.y) : '\u2014'));
+    grid.appendChild(fieldBox('W', sel ? Math.round(sel.w) : '\u2014'));
+    grid.appendChild(fieldBox('H', sel ? Math.round(sel.h) : '\u2014'));
+    areaBlock.appendChild(grid);
+    if (!sel) areaBlock.appendChild(el('p', 'hint-note', 'Drag on the image to place the new element.'));
+    body.appendChild(areaBlock);
+
+    var form = el('div', 'add-form');
+
+    var labelInput = el('input', 'field');
+    labelInput.type = 'text';
+    labelInput.id = 'addLabel';
+    labelInput.maxLength = 60;
+    labelInput.value = state.addLabel;
+    labelInput.placeholder = 'e.g. Promo banner';
+    labelInput.setAttribute('aria-label', 'Your label');
+    form.appendChild(addFieldRow('Your label', labelInput));
+
+    var hintSelect = addSelect('addHint', ADD_HINTS.map(function (item) { return [item, item]; }), state.addHint);
+    form.appendChild(addFieldRow('Element hint', hintSelect));
+
+    var motion = addHasMotion({ animation: state.addAnimation });
+    var animSelect = addSelect('addAnimation',
+      ANIMATION_ORDER.map(function (key) { return [key, ANIMATION_LABEL[key]]; }), state.addAnimation);
+    form.appendChild(addFieldRow('Animation', animSelect));
+
+    var duration = el('input', 'field mono');
+    duration.type = 'number';
+    duration.id = 'addDuration';
+    duration.min = '50';
+    duration.max = '3000';
+    duration.step = '10';
+    duration.value = String(addDurationOf({ duration: state.addDuration }));
+    duration.disabled = !motion;
+    duration.setAttribute('aria-label', 'Animation duration in milliseconds');
+    form.appendChild(addFieldRow('Duration (ms)', duration));
+
+    var easingSelect = addSelect('addEasing',
+      EASINGS.map(function (key) { return [key, key]; }), state.addEasing, !motion);
+    form.appendChild(addFieldRow('Easing', easingSelect));
+    body.appendChild(blockWithCaption('New element', form));
+
+    if (motion) {
+      var badge = el('div', 'motion-badge');
+      badge.id = 'addMotionBadge';
+      /* One unambiguous sentence: motion is never verified. */
+      badge.textContent = MOTION_NOTE;
+      body.appendChild(badge);
+    }
+
+    /* Generated instruction: plain text only, no engine request object. */
+    var source = {
+      id: draft ? draft.id : nextAddId(),
+      x: sel ? sel.x : 0, y: sel ? sel.y : 0,
+      w: sel ? sel.w : 0, h: sel ? sel.h : 0,
+      label: state.addLabel, hint: state.addHint,
+      animation: state.addAnimation, duration: state.addDuration, easing: state.addEasing
+    };
+    var textBlock = el('div', 'block');
+    var head = el('div', 'request-head');
+    head.appendChild(el('div', 'caption', 'Add instruction'));
+    head.appendChild(copyIconButton('copyAddText', 'Copy this instruction'));
+    textBlock.appendChild(head);
+    var text = el('div', 'request-text mono');
+    text.id = 'addText';
+    text.textContent = sel ? addText(source) : 'Point at an area to create an add instruction.';
+    textBlock.appendChild(text);
+    body.appendChild(textBlock);
+
+    var actions = el('div', 'block');
+    var saveBtn = el('button', 'btn', draft ? 'Save ' + draft.id : 'Add instruction');
+    saveBtn.type = 'button';
+    saveBtn.id = 'addDraftSave';
+    saveBtn.disabled = !sel;
+    saveBtn.style.width = '100%';
+    saveBtn.style.justifyContent = 'center';
+    actions.appendChild(saveBtn);
+    if (draft) actions.appendChild(el('p', 'hint-note', 'Edits above save to ' + draft.id + '.'));
+    body.appendChild(actions);
+  }
+
   function renderPopover() {
     var pop = $('#changePop');
     var crops = $('#popCrops');
@@ -1914,14 +2536,25 @@ button:disabled{opacity:.45;cursor:not-allowed}
     bar.style.display = state.mode === 'review' ? '' : 'none';
     var toolbar = $('#moveToolbar');
     var hint = $('#moveHint');
-    if (toolbar) toolbar.hidden = state.mode !== 'move';
-    if (hint) hint.hidden = state.mode !== 'move';
+    var editing = state.mode === 'move' || state.mode === 'add';
+    if (toolbar) toolbar.hidden = !editing;
+    if (hint) {
+      hint.hidden = !editing;
+      hint.textContent = state.mode === 'add' ? HINT_ADD : HINT_MOVE;
+    }
+    /* Each mode shows only its own tools: Move gets move+precision, Add gets place. */
+    var forNodes = document.querySelectorAll('#moveToolbar [data-for]');
+    for (var f = 0; f < forNodes.length; f++) {
+      var owned = forNodes[f].getAttribute('data-for');
+      forNodes[f].style.display = owned === state.mode ? '' : 'none';
+    }
 
     var tools = document.querySelectorAll('#moveToolbar [data-tool]');
+    var current = activeTool();
     for (var k = 0; k < tools.length; k++) {
       var name = tools[k].getAttribute('data-tool');
       var disabled = name === 'hide' || name === 'comment';
-      tools[k].classList.toggle('on', !disabled && name === state.tool);
+      tools[k].classList.toggle('on', !disabled && name === current);
       if (disabled) {
         tools[k].disabled = true;
         tools[k].setAttribute('aria-disabled', 'true');
@@ -1933,6 +2566,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
     toggleOption('#axisBtn', state.axisLock);
     toggleOption('#exactBtn', state.precision === 'exact');
     toggleOption('#approxBtn', state.precision === 'approximate');
+    toggleOption('#addGridBtn', state.addGrid);
 
     var note = $('#reviewNote');
     if (!state.report) { note.textContent = ''; return; }
@@ -1993,32 +2627,21 @@ button:disabled{opacity:.45;cursor:not-allowed}
   }
 
   function setMode(mode) {
-    state.mode = mode === 'move' ? 'move' : 'review';
+    state.mode = mode === 'move' ? 'move' : mode === 'add' ? 'add' : 'review';
     state.selectedBox = null;
     state.selectedRequest = null;
     state.drawRect = null;
     state.drag = null;
-    /* Drafts and selection survive mode switches on purpose. */
+    /* Drafts and selections survive mode switches on purpose. */
     render();
-    toast(state.mode === 'review' ? 'Review mode' : 'Move mode');
+    toast(state.mode === 'review' ? 'Review mode' : state.mode === 'move' ? 'Move mode' : 'Add mode');
   }
 
   function initEvents() {
     document.getElementById('modeSwitch').addEventListener('click', function (event) {
       var button = event.target.closest('[data-mode]');
       if (!button) return;
-      var next = button.getAttribute('data-mode');
-      if (next === 'add') {
-        state.mode = 'add';
-        state.selectedBox = null;
-        state.selectedRequest = null;
-        state.drawRect = null;
-        state.drag = null;
-        render();
-        toast('Add mode arrives in a later round');
-        return;
-      }
-      setMode(next);
+      setMode(button.getAttribute('data-mode'));
     });
 
     document.getElementById('viewSwitch').addEventListener('click', function (event) {
@@ -2083,6 +2706,10 @@ button:disabled{opacity:.45;cursor:not-allowed}
         toast(state.axisLock ? 'Axis lock on' : 'Axis lock off');
       } else if (id === 'exactBtn' || id === 'approxBtn') {
         setPrecision(id === 'exactBtn' ? 'exact' : 'approximate');
+      } else if (id === 'addGridBtn') {
+        state.addGrid = !state.addGrid;
+        renderChrome();
+        renderStage();
       }
     });
 
@@ -2092,9 +2719,19 @@ button:disabled{opacity:.45;cursor:not-allowed}
         selectBox(mark.getAttribute('data-box'), event.clientX, event.clientY, true);
         return;
       }
+      var removeAdd = event.target.closest('[data-delete-add]');
+      if (removeAdd) {
+        deleteAddDraft(removeAdd.getAttribute('data-delete-add'));
+        return;
+      }
       var remove = event.target.closest('[data-delete-draft]');
       if (remove) {
         deleteDraft(remove.getAttribute('data-delete-draft'));
+        return;
+      }
+      var addRow = event.target.closest('[data-add-draft]');
+      if (addRow) {
+        selectAddDraft(addRow.getAttribute('data-add-draft'));
         return;
       }
       var draftRow = event.target.closest('[data-draft]');
@@ -2122,48 +2759,129 @@ button:disabled{opacity:.45;cursor:not-allowed}
       if (target.closest('#precisionExact')) { setPrecision('exact'); return; }
       if (target.closest('#precisionApprox')) { setPrecision('approximate'); return; }
       if (target.closest('#addDraft')) { addDraft(); return; }
+      if (target.closest('#addDraftSave')) { saveAddDraft(); return; }
       if (target.closest('#copyRequest')) {
         var source = liveSource();
         if (!state.selection) { toast('Point at an area to create a request'); return; }
         writeClipboard(requestHeading(source) + '\n' + requestText(source) + '\n' + requestJson(source));
         return;
       }
+      if (target.closest('#copyAddText')) {
+        if (!state.addSelection) { toast('Point at an area to create an instruction'); return; }
+        writeClipboard(addText(addSource()));
+        return;
+      }
     });
 
     body.addEventListener('focusin', function (event) {
-      if (!event.target || event.target.id !== 'selectionLabel') return;
-      /* One undo step per label edit: snapshot on focus, commit on commit. */
-      state.labelBefore = snapshotState();
+      var id = event.target && event.target.id;
+      if (id === 'selectionLabel') {
+        /* One undo step per label edit: snapshot on focus, commit on commit. */
+        state.labelBefore = snapshotState();
+        return;
+      }
+      if (id && id.indexOf('add') === 0) {
+        /* Same rule for the add fields: one step per editing burst. */
+        state.addFieldBefore = snapshotState();
+        state.addFocus = id;
+      }
     });
 
     body.addEventListener('input', function (event) {
-      if (!event.target || event.target.id !== 'selectionLabel') return;
-      if (!state.selection) return;
-      var value = event.target.value;
-      if (state.label === value) return;
-      state.label = value;
-      syncSelectedDraft();
-      updateMoveInline();
-      if (!state.labelTimer) {
-        state.labelTimer = setTimeout(function () {
-          state.labelTimer = null;
-          renderLeft();
-        }, 260);
+      var id = event.target && event.target.id;
+      if (id === 'selectionLabel') {
+        if (!state.selection) return;
+        var value = event.target.value;
+        if (state.label === value) return;
+        state.label = value;
+        syncSelectedDraft();
+        updateMoveInline();
+        if (!state.labelTimer) {
+          state.labelTimer = setTimeout(function () {
+            state.labelTimer = null;
+            renderLeft();
+          }, 260);
+        }
+        return;
+      }
+      if (id === 'addLabel') {
+        if (state.addLabel === event.target.value) return;
+        state.addLabel = event.target.value;
+        syncSelectedAdd();
+        updateAddInline();
+        if (state.addSelected) {
+          var row = document.querySelector('[data-add-draft="' + state.addSelected + '"] .list-name');
+          if (row) row.textContent = 'Add \u00b7 ' + addName({ label: state.addLabel });
+        }
+        if (!state.addTimer) {
+          state.addTimer = setTimeout(function () {
+            state.addTimer = null;
+            renderLeft();
+          }, 260);
+        }
+        return;
+      }
+      if (id === 'addDuration') {
+        var raw = event.target.value;
+        if (raw === '') return;
+        var ms = num(Number(raw));
+        if (ms === null || !isFinite(ms)) return;
+        state.addDuration = clamp(Math.round(ms), 50, 3000);
+        syncSelectedAdd();
+        updateAddInline();
       }
     });
 
     body.addEventListener('change', function (event) {
-      if (!event.target || event.target.id !== 'selectionLabel') return;
-      if (!state.selection) return;
-      state.label = event.target.value;
-      syncSelectedDraft();
-      updateMoveInline();
-      commitLabel();
+      var id = event.target && event.target.id;
+      if (id === 'selectionLabel') {
+        if (!state.selection) return;
+        state.label = event.target.value;
+        syncSelectedDraft();
+        updateMoveInline();
+        commitLabel();
+        return;
+      }
+      if (id === 'addHint') {
+        state.addHint = addHintOf({ hint: event.target.value });
+        syncSelectedAdd();
+        updateAddInline();
+        renderLeft();
+        commitAddField();
+        return;
+      }
+      if (id === 'addAnimation') {
+        state.addAnimation = addAnimationOf({ animation: event.target.value });
+        syncSelectedAdd();
+        /* Close the undo step BEFORE the rebuild: rebuilding drops the focused
+           control, so the pending snapshot must be consumed first. */
+        commitAddField();
+        /* Rebuild so Duration and Easing enable/disable together. */
+        renderInspector();
+        renderLeft();
+        return;
+      }
+      if (id === 'addDuration') {
+        state.addDuration = addDurationOf({ duration: Number(event.target.value) });
+        syncSelectedAdd();
+        var node = event.target;
+        node.value = String(state.addDuration);
+        updateAddInline();
+        commitAddField();
+        return;
+      }
+      if (id === 'addEasing') {
+        state.addEasing = addEasingOf({ easing: event.target.value });
+        syncSelectedAdd();
+        updateAddInline();
+        commitAddField();
+      }
     });
 
     body.addEventListener('focusout', function (event) {
-      if (!event.target || event.target.id !== 'selectionLabel') return;
-      commitLabel();
+      var id = event.target && event.target.id;
+      if (id === 'selectionLabel') { commitLabel(); return; }
+      if (id && id.indexOf('add') === 0) commitAddField();
     });
 
     document.addEventListener('keydown', function (event) {
@@ -2183,14 +2901,32 @@ button:disabled{opacity:.45;cursor:not-allowed}
           return;
         }
       }
-      if (event.key === 'Escape' && state.selectedBox !== null) {
-        state.selectedBox = null;
-        render();
-        return;
+      if (event.key === 'Escape') {
+        /* Esc drops the transient selection; the drafts themselves stay. */
+        if (state.mode === 'add' && (state.addSelection || state.drawRect)) {
+          state.addSelection = null;
+          state.addSelected = null;
+          state.drawRect = null;
+          render();
+          return;
+        }
+        if (state.selectedBox !== null) {
+          state.selectedBox = null;
+          render();
+          return;
+        }
+        if (state.mode === 'move' && state.selection) {
+          state.selection = null;
+          state.offset = { dx: 0, dy: 0 };
+          state.selectedDraft = null;
+          state.drawRect = null;
+          render();
+          return;
+        }
       }
-      if (writing || state.mode !== 'move') return;
+      if (writing || (state.mode !== 'move' && state.mode !== 'add')) return;
       if (mod || event.altKey) return;
-      var tool = TOOL_KEYS[String(event.key).toLowerCase()];
+      var tool = TOOL_KEYS[state.mode === 'add' ? 'add' : 'move'][String(event.key).toLowerCase()];
       if (tool) {
         event.preventDefault();
         setTool(tool);
