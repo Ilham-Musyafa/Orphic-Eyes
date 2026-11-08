@@ -13,7 +13,7 @@ the restriction below is historical.
 
 ## Confirmed before implementation
 
-Source root on this machine: `C:/Users/User/AppData/Local/hermes/hermes-agent`.
+Source root on this machine: `%LOCALAPPDATA%\hermes\hermes-agent`.
 Paths below are relative to that root unless absolute.
 
 - `hermes plugins --help` and `hermes plugins validate --help` succeeded on
@@ -48,10 +48,10 @@ Paths below are relative to that root unless absolute.
 - `hermes_constants.py:194`: `get_hermes_home() -> Path` is importable from an
   external Python process with the Hermes source on its import path. Confirmed
   by running Python 3.12 with bytecode disabled. It resolved this installation's
-  home to `C:/Users/User/AppData/Local/hermes`. The validator's public-import
+  home to `%LOCALAPPDATA%\hermes`. The validator's public-import
   allowlist also includes `hermes_constants`.
 - Hermes interpreter:
-  `C:/Users/User/AppData/Local/hermes/installs/6b17de8c14938a10/environments/5b0d085f340941ce8b4edc40ec61485e/venv/Scripts/python.exe`.
+  `%LOCALAPPDATA%\hermes\installs\<install-id>\environments\<environment-id>\venv\Scripts\python.exe`.
   Confirmed version **3.14.9**, installed Pillow **13.0.0**, import succeeded.
 - `hermes plugins validate PATH --json` does not install dependencies unless
   `--install-deps` is supplied. Do not supply that flag for this task.
@@ -125,7 +125,7 @@ this plugin. The scratch runtime was removed, after verifying its absolute path
 was the repository's `.stage5/` directory. Visible output excerpts, verbatim:
 
 ```text
-hermes: preparing dependencies for this data root (the checkout's updates belong to C:\Users\User\AppData\Local\hermes)...
+hermes: preparing dependencies for this data root (the checkout's updates belong to %LOCALAPPDATA%\hermes)...
 Preparing the isolated Hermes runtime…
   → Installing Python dependencies…
   ✓ Installing Python dependencies
