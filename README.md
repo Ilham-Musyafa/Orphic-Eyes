@@ -19,7 +19,8 @@ coexist with unexpected side effects (`check`/`fail`). Matching is grayscale,
 local and conservative; repeated/flat content, changed appearance and moves
 outside the bounded search cannot establish a unique location. Hide proves only
 absence of a matching crop inside the search window, not DOM removal. Focus PNGs
-live in `crops_dir`; no HTML report is produced without an optional template. See
+live in `crops_dir`; a default HTML report template is included at
+`engine/templates/report.html`. HTML generation remains optional. See
 [the report contract](docs/report-contract.md) for shapes, thresholds and examples.
 
 Baseline additionally accepts `viewport="desktop"` (1280x720), `"mobile"`
@@ -151,11 +152,13 @@ Implementation choices where the brief left details open:
   launching and verifies a resulting PNG before returning true. Browser command
   flags and timeout/kill behavior are unchanged from the reference.
 
-The three HTML fixtures are copied from the reference constants, with shifts of
-0 and 8 pixels for page_a/page_b. Tests require an installed browser and fail
-explicitly if capture is unavailable; they do not silently skip integration tests.
-Test outputs and profiles are temporary directories under this project and are
-removed after testing. On execution environments that restrict browser child
+HTML fixtures include the reference-derived page_a/page_b/page_real pages,
+move and pattern pairs, and a report embedding fixture; page_a/page_b differ by
+an 8 pixel shift. Real-browser tests require an installed browser: some fail if
+one is unavailable, while others explicitly skip. Automated test outputs use
+temporary directories under this project or in system temporary storage and
+are removed after testing; capture profiles stay beside their output PNGs and
+are cleaned up after capture. On environments that restrict browser child
 processes, run tests with permission to launch the installed browser normally.
 
 Stage 3 adds `ignore_add(name, store_dir, region, label=None)`, `ignore_list`,
@@ -198,3 +201,30 @@ with `only_expected_changes` when boxes remain (including approved boxes).
 Changed-pixel summaries still include expected and approved changes. Report
 keys and schema version are unchanged. Approval CLI exit codes reflect the
 regenerated report status; ignore and accept commands return 0 on success.
+
+## Limitations
+
+- Tested on Windows 11 with Microsoft Edge (headless). macOS and Linux are
+  untested; discovery paths alone do not establish platform or browser support.
+- Capture is viewport-only, with DPR 1; full-page capture is not implemented.
+- Initial URLs must be local `file://`, `http://localhost`, or
+  `http://127.0.0.1`. As disclosed above, this is not browser network isolation.
+- Pillow is the only Python dependency; an installed browser is also required.
+- Analysis is image-only: pixels, with no DOM, CSS or page-code inspection.
+  Motion and animation cannot be verified from screenshots.
+- Precision: Exact = 2 px, Approx = 8 px per axis. Bounded grayscale crop
+  matching cannot reliably locate flat, repeated, altered or off-window content.
+- The HTML report is optional. HTML generation failure never fails compare:
+  the JSON comparison remains available and the response includes `html_error`.
+
+## Roadmap
+
+Plans, not current features:
+
+- Multi-frame capture for animation.
+- An `add` request kind in the engine.
+- Attempt history for the fix loop.
+- Save-report export.
+- CI on Linux and macOS.
+- Chrome/Chromium support, including real-browser validation of the existing
+  discovery and launch paths.

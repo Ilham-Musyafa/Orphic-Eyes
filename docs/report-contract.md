@@ -1,11 +1,14 @@
 # Orphic Eyes report contract (Stage 5e)
 
-The engine remains image-only, local and offline. No target DOM, CSS selector,
-source-code analysis or report UI is provided. `schema_version` remains **1**;
-Stages 5c/5d add optional fields. Readers must tolerate absent optional fields and
+The engine remains image-only, local and offline. No target DOM, CSS selector
+or source-code analysis is provided. A default HTML report template is shipped.
+`schema_version` remains **1**; Stages 5c/5d add optional fields.
+Readers must tolerate absent optional fields and
 ignore unknown fields. All rectangles use integer natural screenshot pixels,
 origin top-left, `{x,y,w,h}`; right/bottom edges are exclusive. DPR is 1 for plugin
-captures. Diff boxes are changed-pixel clusters, **not element bounds**.
+captures. Diff boxes are changed-pixel clusters, **not element bounds**. Their
+flat `x,y,w,h` coordinates use the aligned image grid and include vacated BEFORE
+locations; they are not limited to the bounds of objects visible AFTER.
 
 ## Inputs: requests
 
@@ -29,12 +32,15 @@ Each id matches `^PT-[1-9][0-9]{0,2}$` and is unique within the list.
 - `to` is required only for move, in the **after** image; its width/height must
   equal `from`. This verifies relocation, not resizing. Revert targets `from`.
   Comment has no from/to and creates no request crop. Hide has no to.
-- `precision` defaults to `approximate`: 8 px per axis; `exact`: 2 px per axis.
+- Precision: Exact = 2 px, Approx = 8 px per axis. `precision` defaults to
+  `approximate`; the other input value is `exact`.
   The top-left position is compared, using `abs(dx)<=tolerance && abs(dy)<=tolerance`.
 - Searches use a 64 px pad around source and destination. Overlapping windows
   are merged; distant windows are searched separately, not across the page
   between them. Searches never expand globally to find a missing object.
 - Score is `1 - mean(abs(gray_before_crop-gray_after_candidate))/255`.
+  `request_results[].match` is a number from 0 to 1, rounded to 4 decimals;
+  1.0 means identical grayscale pixels. Unverified searches retain 0.0.
   `MATCH_MIN=0.92`, `UNIQUE_GAP=0.03`; the best high-scoring match must beat
   every candidate whose top-left is at least 4 Euclidean px away by >=0.03.
   A coarse pass proposes candidates; a disjoint-block MAE lower bound screens
@@ -54,13 +60,20 @@ Saved under `<store>/<name>/report.json`. Required pre-existing fields:
 | `schema_version` | Integer 1. |
 | `name` | Target name. |
 | `status` | `pass`, `check`, `fail`; only unexpected, unapproved changes affect severity. |
-| `summary` | `changed_px`, `changed_percent`, `box_count`, `unexpected_count`. |
+| `summary` | `changed_px`, `changed_percent`, `box_count`, `unexpected_count` (unexpected, unapproved boxes). Changed totals include expected and approved changes. Percentages are 0–100, rounded to 3 decimals. |
 | `size` | Actual after image `{width,height}`. |
 | `images` | Relative `before`, `after`, `diff` PNG filenames; `diff` is null after accept. |
 | `boxes` | Full, untruncated array of `{id,x,y,w,h,zone,percent,label,approved}`; optional `shift:{dx,dy}`. |
-| `ignore_regions` | Clipped named `{name,x,y,w,h}` regions. |
-| `meta` | `browser`, `os`, `viewport:{width,height,preset?}`, `created_at`, `tolerance`. |
-| `note` | Optional existing notes such as `size_mismatch` or `only_expected_changes`. |
+| `ignore_regions` | Named `{name,x,y,w,h}` regions, clipped to the after image and excluded from pixel comparison. |
+| `meta` | `browser` (executable path), `os` (OS name), `viewport:{width,height,preset?}`, ISO `created_at`, and integer pixel-difference `tolerance` (0–255). |
+| `note` | One of the three tokens below; otherwise absent. |
+
+- `only_expected_changes`: visual status is `pass` and boxes remain; all are
+  expected or approved, so no unexpected, unapproved box remains.
+- `size_mismatch`: before/after dimensions differ; status is `fail`, with zero
+  counted changed pixels, zero percent and no boxes because alignment is unavailable.
+- `baseline_accepted`: accept made the latest capture the baseline and wrote a
+  passing zero-change report.
 
 Optional Stage 5c fields:
 
@@ -96,12 +109,34 @@ Example full report (illustrative metrics):
 
 ### Request verdicts are independent of visual status
 
+Verdict values are exactly `done`, `not_done`, `unknown`, `skipped`. Every full
+`request_results` row always contains these fields; none are omitted:
+
+| Field | Type and meaning |
+| --- | --- |
+| `id` | String request ID. |
+| `status` | String verdict from the four values above. |
+| `found` | Null, or `{x,y,w,h}` with integer AFTER coordinates and source crop size. |
+| `moved` | `{dx,dy}`, integer displacement from BEFORE `requests[].from`, or both null. |
+| `off` | `{dx,dy}`, integer offset from AFTER `to` (original source position for hide/revert), or both null. |
+| `match` | Number in 0–1, rounded to 4 decimals; initially 0.0. |
+| `why` | String explanation. |
+
+`requests[].from` uses BEFORE coordinates; `requests[].to` and
+`request_results[].found` use AFTER coordinates. All four request fields
+(`requests`, `request_results`, `requests_ok`, `request_counts`) are absent when
+requests were omitted, and are present for an explicitly supplied empty list.
+
 - Move/revert: unique high-scoring match within tolerance -> done; unique match
-  outside tolerance -> not_done; low score/ambiguity -> unknown.
+  outside tolerance -> not_done; low score/ambiguity -> unknown. High-scoring
+  means at least 0.92; both top-left offsets must satisfy the precision tolerance.
+  Move targets `to`; revert targets the original `from` position.
 - Hide: score below MATCH_MIN -> done (bounded visual absence); otherwise not_done,
   even if the location is ambiguous. A size mismatch makes non-comment requests
   unknown rather than treating a cropped-away object as hidden.
-- Comment -> skipped. `why` is <=80 characters. `found` is a source-sized
+- A viewport size mismatch or exhausted search budget makes every affected
+  non-comment request unknown; neither can prove hide. Comment -> skipped,
+  including on a size mismatch. `why` is <=80 characters. `found` is a source-sized
   rectangle only for a unique high-scoring location; otherwise null.
 - `moved` is found minus source; `off` is found minus target (source for hide/revert).
   Both have `{dx:null,dy:null}` when no trustworthy location exists.
@@ -201,22 +236,27 @@ Engine/CLI internal errors retain their existing `status:"error"` contract.
 contain exactly one `<!--ORPHIC_REPORT_JSON-->`; it becomes
 `<script type="application/json" id="orphic-report">...</script>` containing
 the report data. Image and crop paths remain relative to the case directory,
-allowing a future file:// page to read embedded data without fetching JSON.
+allowing the file:// report page to read embedded data without fetching JSON.
 
 Embedding escapes `</` as `<\/`, U+2028/U+2029 as JSON Unicode escapes,
 and `<!--` as `\u003c!--`. The requested spelling `<\!--` uses an invalid JSON
 escape (`\!`); encoding the less-than character gives safe, valid JSON with
 identical parsed strings. Names and why fields round-trip without data changes.
-Only static template content surrounds the data; no UI is generated here.
+The writer embeds data into the supplied template; the shipped default template
+provides the report UI.
 
 Without an explicit template, only `engine/templates/report.html` is considered.
-If absent, return None without writing anything. No default template is shipped.
+This default template is shipped. If absent, return None without writing anything.
 Every report.json write refreshes the optional page, including compare, approve,
 accept, and direct `write_report` calls. Ignore add/remove refresh the page from
 the existing report, if present; they retain the existing requirement to compare
 again to recalculate metrics and boxes. Operations return `paths.html` only when
 a page was written. The HTML's embedded JSON equals report.json exactly; HTML
 paths are returned separately and never added to the persisted report schema.
+For compare, HTML embedding/write failure leaves the comparison successful and
+returns `html_error` with the error string. `html_error` and `paths.html` are
+response additions (also carried by tool responses), not fields stored in
+`report.json`. The JSON report is written before optional HTML generation.
 Replacing a baseline or deleting its report also removes report.html. Accept
 removes the previous page when it replaces the baseline, then generates a new
 page from the accepted report if a template exists.
