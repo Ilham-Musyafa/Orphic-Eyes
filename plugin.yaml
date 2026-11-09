@@ -2,6 +2,7 @@ name: orphic-eyes
 version: 0.3.0
 kind: standalone
 author: Ilham Musyafa
+license: Apache-2.0
 description: "Orphic Eyes verifies requested UI edits from before/after screenshots, with per-request verdicts separate from visual status."
 python_dependencies:
   - "Pillow>=10,<14"

@@ -94,20 +94,37 @@ Motion and animation cannot be verified from screenshots.
 
 ## Data access and disclosure
 
-Capture starts a local headless browser (Edge/Chrome/Chromium) on this machine.
-Initial URLs must be `http://localhost`, `http://127.0.0.1` or local `file://`
-pages. Hermes tool calls write screenshots, crops, report.json and the optional
-report.html under the Hermes data directory's `orphic-eyes/<target>/` case
-folder. Standalone callers choose their store; the repository demo uses
-`demo/output/`.
+- **Network:** The Python code has no third-party service client or upload
+  implementation. It starts no web server. Captured pages may load remote
+  resources or redirect. Initial URLs must be `http://localhost`,
+  `http://127.0.0.1` or local `file://` pages; this validation does not isolate
+  the browser from the network.
+- **Reads/writes:** Tools store artifacts locally; doctor also probes the parent
+  directory. Runtime, packages, browser and supplied pages are read outside the
+  store. For Hermes tools, the store is `<home>/orphic-eyes/<target>/`; home
+  uses Hermes' resolver, then `HERMES_HOME`, then `~/.hermes`. Standalone
+  callers choose their store; the repository demo uses `demo/output/`.
+- **Subprocess/shell:** Capture uses a browser argument list without a shell;
+  doctor may run --version on non-Windows.
+- **Background processes:** Capture waits up to 45 seconds, then kills and waits
+  for its browser if needed. Profile deletion is attempted; descendant cleanup
+  is not established. Fresh profiles are created beside the output PNG; browser
+  temporary-directory variables point into the profile. The code starts no
+  threads, daemons or schedulers.
+- **Credentials:** The code reads no credential store. Saved URLs may contain
+  query secrets; pages may store cookies in temporary profiles.
+- **Telemetry:** The code contains no telemetry or usage reporting.
 
-The plugin opens only the local URLs above and uploads no screenshots or reports.
-A captured page
-can itself load remote resources or follow redirects; local-URL validation
-does not isolate the browser from the network. The default report has inline
-CSS and JavaScript, reads embedded JSON and references adjacent local image
-files, so it can be reviewed offline without a server. It copies instructions
-to the clipboard rather than sending them to Hermes.
+Captured URLs and temporary browser profiles are stored locally and may contain secrets, such as query tokens, so do not capture URLs containing secrets.
+
+Hermes surfaces: `orphic_baseline`, `orphic_compare`, `orphic_approve`,
+`orphic_accept` and `orphic_ignore` in toolset `orphic`; `/orphic` supports
+`help`, `doctor` and `demo`. No hooks, middleware, custom Hermes CLI subcommands,
+skills, dashboard or Desktop pages are registered.
+
+The default report uses inline CSS/JavaScript, embedded JSON and adjacent local
+images for offline review. Copy for Hermes writes instructions to the clipboard;
+pasting them into Hermes remains manual.
 
 ## Install
 
@@ -367,3 +384,7 @@ Plans, not current features:
 - CI on Linux and macOS.
 - Chrome/Chromium support, including real-browser validation of the existing
   discovery and launch paths.
+
+## License
+
+Apache License 2.0. Copyright 2026 Ilham Musyafa.
