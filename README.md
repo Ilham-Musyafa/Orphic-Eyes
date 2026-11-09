@@ -1,14 +1,138 @@
+<p align="center">
+  <img src="assets/orphic-eyes-logo-final.svg" width="120" alt="Orphic Eyes logo">
+</p>
+
 # Orphic Eyes
 
-See it. Point at it. Tell the agent.
+*See it. Point at it. Tell the agent.*
 
-Python 3.12 or later, with Pillow as the only dependency. Includes a standalone Hermes plugin.
-Use an installed Edge or Chrome; automatic detection prefers Edge in the same
-order as `reference_capture_test.py`.
+Orphic Eyes verifies UI edits from before/after screenshots using pixels, with no
+DOM, CSS or page-code inspection. Each requested change gets its own verdict,
+kept separate from the visual status. The default offline HTML report lets you
+review differences and prepare instructions to copy back to Hermes.
 
-## Hermes plugin
+Tested with Python 3.12 and 3.14; `/orphic doctor` checks for 3.12 or newer.
+Pillow is the only Python dependency, and an installed Edge, Chrome or Chromium
+browser is required. Only Windows 11 with headless Edge is verified.
 
-### Point & Tell round trip
+## At a glance
+
+| Result | Meaning |
+| --- | --- |
+| Visual `pass` | No unexpected, unapproved change boxes remain. Expected or approved changes may still exist. |
+| Visual `check` | Unexpected, unapproved boxes remain, below the 5% changed-pixel fail threshold. |
+| Visual `fail` | Unexpected, unapproved changed pixels reach 5% of the image, or before/after dimensions differ. |
+| Request `done` | Move/revert: a unique grayscale crop match scores at least 0.92 and both position offsets are within precision tolerance. Hide: the crop scores below 0.92 throughout the completed bounded search. |
+| Request `not_done` | Move/revert: a unique high-scoring crop is found outside tolerance. Hide: a matching crop remains, even if its location is ambiguous. |
+| Request `unknown` | Move/revert: low or ambiguous match. Any non-comment request: changed viewport or exhausted search budget. |
+| Request `skipped` | Comment requests have no pixel test. |
+
+Precision: Exact = 2 px, Approx = 8 px per axis. A request verdict does not prove
+semantic identity or DOM removal; matching is local and image-only.
+
+## How it works
+
+```mermaid
+flowchart LR
+    baseline --> edit[edit UI] --> compare --> report --> verdict[verdict per request]
+```
+
+The visual status describes unexpected changes; request verdicts describe whether
+the requested edits can be verified. Read both before deciding what to fix.
+
+## See it
+
+![Review report with three request verdicts](docs/images/review-verdicts.png)
+
+The before/after pages shown in this report are a synthetic Lumen Demo scenario.
+
+<!-- TODO: add move-guides.png and add-mode.png -->
+
+## Demo
+
+`demo/` contains synthetic **Lumen Demo** before/after pages, three request
+definitions, and a script that captures them with the real engine. The scenario
+produces one `done`, one `not_done`, one `unknown`, plus an unexpected subline
+color change. These are demonstration pages, not a customer website.
+
+Use Python 3.12 or newer, matching the doctor check, with Pillow installed in
+that same interpreter. Run these commands from the repository root:
+
+```powershell
+python -m pip install -r requirements.txt
+python -B demo/run_demo.py --repeat 2
+```
+
+The script regenerates `demo/output/` twice and checks that metrics, boxes and
+verdicts agree. Open [demo/output/report.html](demo/output/report.html); the
+folder also contains screenshots, crops, report.json and repeatability evidence.
+Use `python` for the interpreter containing Pillow; an installed Edge, Chrome or
+Chromium is also required. On Windows with several Pythons, the launcher can
+select one explicitly: `py -3.12 -B demo/run_demo.py --repeat 2`.
+
+## Point & Tell in the report UI
+
+- **Review:** inspect visual changes, request verdicts and before/after images.
+- **Move:** select an image area and describe its intended destination.
+- **Add:** describe new content and where it should go. Add instructions are
+  not engine requests and are not verified by the engine.
+- **Copy for Hermes:** copy the instructions, paste them into Hermes and press
+  Enter. Nothing is sent automatically.
+- **Text size S/M/L:** adjust report text size.
+
+Motion and animation cannot be verified from screenshots.
+
+## Why not X?
+
+- Agent self-checks based on tool-call logs can show that an operation ran;
+  those logs alone do not establish how the screen changed.
+- DOM or test-selector checks typically need page-code access and a test
+  harness. Orphic Eyes compares screenshots without that access.
+- Whole-screenshot visual-regression checks describe visual differences.
+  Orphic Eyes also checks each supplied request and returns `unknown` when
+  its bounded pixel matching cannot establish completion.
+
+## Data access and disclosure
+
+Capture starts a local headless browser (Edge/Chrome/Chromium) on this machine.
+Initial URLs must be `http://localhost`, `http://127.0.0.1` or local `file://`
+pages. Hermes tool calls write screenshots, crops, report.json and the optional
+report.html under the Hermes data directory's `orphic-eyes/<target>/` case
+folder. Standalone callers choose their store; the repository demo uses
+`demo/output/`.
+
+The plugin opens only the local URLs above and uploads no screenshots or reports.
+A captured page
+can itself load remote resources or follow redirects; local-URL validation
+does not isolate the browser from the network. The default report has inline
+CSS and JavaScript, reads embedded JSON and references adjacent local image
+files, so it can be reviewed offline without a server. It copies instructions
+to the clipboard rather than sending them to Hermes.
+
+## Install
+
+Until the repository URL and release commit are confirmed, these are placeholders:
+
+```text
+hermes plugins install <GITHUB-OWNER/REPO> --ref <FULL-40-CHAR-SHA>
+```
+
+Only after a catalog entry is merged, installation by catalog name becomes
+available. The draft catalog entry is marked Windows-only:
+
+```text
+hermes plugins install orphic-eyes
+```
+
+Users on other systems can try the direct pinned-repository install above; only
+Windows 11 with Edge has been verified, and operation elsewhere is unverified.
+
+<details>
+<summary>Hermes tools and engine reference</summary>
+
+### Hermes plugin
+
+#### Point & Tell round trip
 
 Pass up to eight `requests` to `orphic_compare` to verify `move`, `hide` or
 `revert` intents deterministically from baseline/after pixels; `comment` is
@@ -202,11 +326,15 @@ Changed-pixel summaries still include expected and approved changes. Report
 keys and schema version are unchanged. Approval CLI exit codes reflect the
 regenerated report status; ignore and accept commands return 0 on success.
 
+</details>
+
 ## Limitations
 
-- Tested on Windows 11 with Microsoft Edge (headless). macOS and Linux are
-  untested; discovery paths alone do not establish platform or browser support.
-- In a cloud Linux test (Debian 13, Python 3.12), 113 of 125 tests passed; browser capture failed in that sandbox, so Linux support is not verified. macOS is untested.
+- Verified on Windows 11 with Microsoft Edge (headless). Browser discovery
+  paths alone do not establish platform or browser support.
+- In a cloud Linux test (Debian 13, Python 3.12), 113 of 125 tests passed;
+  browser capture failed in that sandbox. No Linux or macOS end-to-end run
+  has succeeded; Linux remains unverified and macOS is untested.
 - Capture is viewport-only, with DPR 1; full-page capture is not implemented.
 - Initial URLs must be local `file://`, `http://localhost`, or
   `http://127.0.0.1`. As disclosed above, this is not browser network isolation.

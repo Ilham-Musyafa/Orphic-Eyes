@@ -2,7 +2,7 @@ name: orphic-eyes
 version: 0.3.0
 kind: standalone
 author: Ilham Musyafa
-description: "Orphic Eyes: capture local web UI baselines, compare screenshots after edits, and review visual changes with Hermes Agent."
+description: "Orphic Eyes verifies requested UI edits from before/after screenshots, with per-request verdicts separate from visual status."
 python_dependencies:
   - "Pillow>=10,<14"
 provides_tools:
