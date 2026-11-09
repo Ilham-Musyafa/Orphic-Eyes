@@ -44,9 +44,9 @@ the requested edits can be verified. Read both before deciding what to fix.
 
 ![Review report with three request verdicts](docs/images/review-verdicts.png)
 
-The before/after pages shown in this report are a synthetic Lumen Demo scenario.
+All pages shown here are from the synthetic Lumen Demo scenario.
 
-<!-- TODO: add move-guides.png and add-mode.png -->
+<!-- TODO: add move-guides.png / add-mode.png -->
 
 ## Demo
 
@@ -86,8 +86,8 @@ Motion and animation cannot be verified from screenshots.
 
 - Agent self-checks based on tool-call logs can show that an operation ran;
   those logs alone do not establish how the screen changed.
-- DOM or test-selector checks typically need page-code access and a test
-  harness. Orphic Eyes compares screenshots without that access.
+- DOM or selector tests inspect page structure through browser or test APIs.
+  Orphic Eyes compares captured pixels.
 - Whole-screenshot visual-regression checks describe visual differences.
   Orphic Eyes also checks each supplied request and returns `unknown` when
   its bounded pixel matching cannot establish completion.
@@ -135,8 +135,9 @@ Windows 11 with Edge has been verified, and operation elsewhere is unverified.
 #### Point & Tell round trip
 
 Pass up to eight `requests` to `orphic_compare` to verify `move`, `hide` or
-`revert` intents deterministically from baseline/after pixels; `comment` is
-skipped. IDs are `PT-1` through `PT-999`. Boxes are user-drawn hints, not DOM
+`revert` intents from baseline/after pixels; `comment` is skipped.
+A search time budget can produce `unknown`. IDs are `PT-1` through `PT-999`.
+Boxes are user-drawn hints, not DOM
 elements. Read `request_results` and `requests_ok` separately from visual
 `status`: an unmet request can coexist with `pass`, and a completed request can
 coexist with unexpected side effects (`check`/`fail`). Matching is grayscale,
@@ -154,8 +155,10 @@ Actual PNG dimensions are checked. Explicit presets are returned as
 
 Standalone Python callers can pass `requests=[...]` to `engine.compare`;
 `focus=True` enables box crops without requests and `shift_hints=True` enables
-shift hints. Omitting all three retains the original engine report shape.
-CLI: `python -m engine.cli compare demo file:///path/to/after.html --store ./store --requests requests.json`.
+shift hints. Omitting all three leaves out Point & Tell fields; successful HTML
+generation may still add `paths.html` to the returned result.
+After creating the baseline, use actual local page URLs, for example:
+`python -m engine.cli compare demo file:///path/to/after.html --store ./store --requests demo/requests.json`.
 Request-enabled CLI calls generate focus crops and shift hints; exit codes still
 follow visual status, so always inspect the independent request verdicts.
 
@@ -196,9 +199,10 @@ Failures return only `success=false`, `error` and actionable `fix`. No image dat
 is embedded in tool results.
 
 Storage resolves via `hermes_constants.get_hermes_home()` when importable,
-otherwise `HERMES_HOME`, otherwise `~/.hermes`. All plugin writes go under
-`<home>/orphic-eyes/<target>/`; demo pages go under `demo/`. Target names
-are validated rather than silently renamed: 1–40 ASCII letters/digits/dash/
+otherwise `HERMES_HOME`, otherwise `~/.hermes`. Target artifacts are written
+under `<home>/orphic-eyes/<target>/`; doctor may also create and probe the parent
+`orphic-eyes` directory. Demo pages go under target `demo/`. Target names are
+validated rather than silently renamed: 1–40 ASCII letters/digits/dash/
 underscore, starting with a letter or digit, excluding Windows device names.
 Linked/redirected output files and target directories are rejected. Do not
 concurrently mutate or replace the same target's storage while a call is running.
@@ -222,10 +226,15 @@ The plugin stores the baseline URL in `plugin-state.json` so compare can reuse i
   or compiled binaries are supplied by this plugin. Capture waits for the local
   browser and cleans up its profile; a browser installation is required separately.
 - Dependency: Pillow. No other new Python dependencies. Hermes provides its own
-  plugin loader. Baselines are not portable across machines: browser, fonts and
-  OS rendering affect pixels; recreate baselines on each machine.
-- Screenshots, source URLs, ignore regions and approvals persist locally until
-  you remove the target's data. Input pages may themselves contain private data.
+  plugin loader. Recreate baselines on each machine: browser, fonts and OS
+  rendering can change pixels.
+- Screenshots, source URLs, ignore regions and approvals are stored locally.
+  Baseline, compare and accept operations can replace or clear artifacts.
+  Input pages may themselves contain private data.
+
+The examples below require your own page or running local server. Replace the
+example URL and box IDs with values from your page and latest report. Run compare
+before approving or accepting its capture. Use the Python containing Pillow.
 
 ```powershell
 python -m engine.cli baseline demo file:///C:/path/to/page.html --store ./store
@@ -237,7 +246,7 @@ python -m engine.cli compare demo http://localhost:8000/ --store ./store --expec
 python -m engine.cli approve demo --store ./store --box 1 --box 2
 python -m engine.cli approve demo --store ./store --all
 python -m engine.cli accept demo --store ./store
-python -m unittest -v
+python -B -m unittest discover -q
 ```
 
 CLI exit codes are 0 (pass), 1 (check), 2 (fail), and 3 (error). Successful
@@ -260,9 +269,10 @@ must not concurrently modify or replace store paths during an operation.
 
 Implementation choices where the brief left details open:
 
-- `viewport` is `{"width": 1280, "height": 800}`; `browser` is the executable
-  path and `os` is `platform.system()`. Baselines use tolerance 0. Comparisons
-  reuse the recorded browser and viewport and record their own time/tolerance.
+- Default baseline `viewport` is `{"width": 1280, "height": 800}`; explicit
+  sizes or Hermes viewport presets override it. `browser` is the executable path
+  and `os` is `platform.system()`. Baselines use tolerance 0. Comparisons reuse
+  the recorded browser and viewport and record their own time/tolerance.
 - Tolerance is an integer from 0 to 255. PNG inputs are converted to RGB, as in
   the reference. Status uses the unrounded pixel percentage; reported page and
   box percentages are rounded to three decimals.
@@ -322,9 +332,10 @@ Only unexpected, unapproved tile-cluster pixels contribute to the 5 percent fail
 threshold; this avoids counting pixels twice when box bounds overlap. Any
 remaining unexpected, unapproved box gives check. Otherwise status is pass,
 with `only_expected_changes` when boxes remain (including approved boxes).
-Changed-pixel summaries still include expected and approved changes. Report
-keys and schema version are unchanged. Approval CLI exit codes reflect the
-regenerated report status; ignore and accept commands return 0 on success.
+Changed-pixel summaries still include expected and approved changes. The core
+report schema remains version 1; optional Point & Tell fields may be added.
+Approval CLI exit codes reflect the regenerated report status; ignore and accept
+commands return 0 on success.
 
 </details>
 
@@ -332,9 +343,8 @@ regenerated report status; ignore and accept commands return 0 on success.
 
 - Verified on Windows 11 with Microsoft Edge (headless). Browser discovery
   paths alone do not establish platform or browser support.
-- In a cloud Linux test (Debian 13, Python 3.12), 113 of 125 tests passed;
-  browser capture failed in that sandbox. No Linux or macOS end-to-end run
-  has succeeded; Linux remains unverified and macOS is untested.
+- Linux is unverified; an earlier cloud sandbox run was reported to fail during
+  browser capture. macOS is untested.
 - Capture is viewport-only, with DPR 1; full-page capture is not implemented.
 - Initial URLs must be local `file://`, `http://localhost`, or
   `http://127.0.0.1`. As disclosed above, this is not browser network isolation.
