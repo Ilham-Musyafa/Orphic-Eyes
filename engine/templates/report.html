@@ -4062,6 +4062,12 @@ body.insp-closed .inspector{border-left:0}
         if (saved[key] !== undefined) prefs[key] = saved[key];
       });
     }
+    /* Older or hand-edited saves: unknown keys (e.g. accent) are dropped, wrong types fall back. */
+    ['snap', 'rulers', 'inspectorOpen', 'tourDone', 'showGrid'].forEach(function (key) {
+      if (typeof prefs[key] !== 'boolean') prefs[key] = PREF_DEFAULTS[key];
+    });
+    if (prefs.sidebarCollapsed !== true && prefs.sidebarCollapsed !== false) prefs.sidebarCollapsed = null;
+    if (prefs.defaultPrecision !== 'approximate') prefs.defaultPrecision = 'exact';
     if (['light', 'dark', 'system'].indexOf(prefs.theme) === -1) prefs.theme = 'light';
     if (!TEXT_SCALE[prefs.textSize]) prefs.textSize = 'm';
     if ([4, 8, 16].indexOf(prefs.gridSize) === -1) prefs.gridSize = 8;
@@ -4571,7 +4577,7 @@ body.insp-closed .inspector{border-left:0}
       pane.appendChild(setRow('Show grid', 'Grid lines over the picture in Review, Move and Add.', switchControl(state.grid, function (v) {
         state.grid = v; savePrefs(); render(); refreshSettings();
       }, 'Show grid')));
-      pane.appendChild(setRow('Grid size', 'Grid lines and snapping in Move and Add.', segControl([[4, '4 px'], [8, '8 px'], [16, '16 px']], state.gridSize, function (v) {
+      pane.appendChild(setRow('Grid size', 'Grid spacing in every mode, and snapping in Move and Add.', segControl([[4, '4 px'], [8, '8 px'], [16, '16 px']], state.gridSize, function (v) {
         state.gridSize = Number(v); savePrefs(); render(); refreshSettings();
       }, 'Grid size')));
       pane.appendChild(setRow('Snap to grid', null, switchControl(state.snap, function (v) {
