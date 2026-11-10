@@ -420,6 +420,8 @@ body.insp-closed .inspector{border-left:0}
 .modal-head{display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s3) var(--s3) var(--s4);border-bottom:1px solid var(--line)}
 .modal-head h2{margin:0;flex:1;font-size:var(--fs-section);font-weight:var(--w-strong)}
 .modal-body{display:grid;grid-template-columns:160px minmax(0,1fr);min-height:0;flex:1}
+.modal-foot{display:flex;align-items:center;gap:6px;padding:var(--s2) var(--s4);border-top:1px solid var(--line);color:var(--muted);font-size:var(--fs-sec)}
+.modal-foot .ic{width:14px;height:14px;color:var(--green)}
 .modal-nav{padding:var(--s2);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
 .modal-nav button{text-align:left;min-height:var(--hit);padding:0 var(--s3);border-radius:var(--r-btn);color:var(--muted);font-weight:var(--w-medium)}
 .modal-nav button:hover{background:var(--hover);color:var(--ink)}
@@ -4621,6 +4623,10 @@ body.insp-closed .inspector{border-left:0}
     bodyNode.appendChild(nav);
     bodyNode.appendChild(settingsPane(settingsTab));
     modal.appendChild(bodyNode);
+    var foot = el('div', 'modal-foot');
+    foot.appendChild(icon('check'));
+    foot.appendChild(el('span', null, 'Changes save automatically.'));
+    modal.appendChild(foot);
     return modal;
   }
   function openSettings(tab) {
