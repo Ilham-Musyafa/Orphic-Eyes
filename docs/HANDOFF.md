@@ -1,6 +1,25 @@
 # HANDOFF
 
-## Current task: Load images in the UI
+## Current task: Add reference
+
+Branch: `feat/add-reference` (from `feat/load-images` at dc3b476).
+
+### Done
+- A (af8a7d0): "Reference (optional)" in the Add panel: Add reference picker, 72 px dashed drop zone ("Drop an image or GIF, or paste with Ctrl+V" / "Drop to add reference" while dragging). PNG/JPG/WebP/GIF, max 5 MB, one per request, exact error texts. Stored only in memory (`REFS`, object URLs; revoked when nothing uses them). 64×64 thumbnail (GIF animates), name `ref-{n}.{ext}` where n is the request number in the Copy prompt list, size, Replace / Remove icon buttons, toasts. Paste goes to the reference only while the Add panel (inspector) is focused and an area is marked; otherwise Load images keeps it (tested both ways). Requests list: `ref-n.ext` badge + Download reference action.
+- B (1188766): "What should the AI copy from it?" Layout / Style / Animation / Interaction, single-select, tap again clears, selection blue, 28 px pills 12 px/500. A reference requires a kind ("Pick what to copy from the reference."). Guided questions per kind (Style·Copy multi-select, Direction only for Slide), 72 px muted labels, 120 ms fade (off with reduced motion). Note placeholder per kind. Existing helper chips moved to a "Quick notes" row under the questions.
+- C: Copy prompt line `{n}. [Add · {Kind}] {name} — at x…` + Reference line + one answers line (speeds ~150/300/600 ms) + Note; Attachments line above the list and two extra Rules when references exist; toast "Prompt copied · Attach {k} reference files in your AI chat" with "Download references" (each file with its ref-n name); Preview prompt hint. Prompts without references are byte-identical to `feat/load-images` (checked).
+- report.html: 383,754 → 406,529 bytes. Diff: no URLs/fetch/XHR/eval, no localStorage. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
+- Screenshots: `docs/screenshots/add-reference/`.
+
+### Not done
+- 3D & motion kind (out of scope for this prompt). Edge not available. Browsers may ask once to allow several downloads when "Download references" saves more than one file.
+- The Add panel's older Element hint / Animation fields stay; for Adds with a kind or reference they are not repeated in the prompt (the template has no line for them).
+
+### Next
+- Add reference polish: 3D & motion, 390px, a11y
+- Queued now: Flow clarity (branch from `feat/add-reference`).
+
+## Previous task: Load images in the UI
 
 Branch: `feat/load-images` (from `feat/micro-animations` at 17038f5).
 
