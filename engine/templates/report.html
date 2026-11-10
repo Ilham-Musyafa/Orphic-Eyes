@@ -423,6 +423,19 @@ body.mode-add .tool.on{background:var(--add-bg);color:var(--add)}
 .help-chip{min-height:var(--hit-dense);padding:0 10px;border-radius:var(--r-pill);background:var(--surface);color:var(--ink);font-size:var(--fs-sec);font-weight:var(--w-medium);white-space:nowrap;transition:background var(--t) var(--ease)}
 .help-chip:hover{background:var(--active)}
 .help-chip:active{background:var(--blue-bg);color:var(--blue-ink)}
+.ref-drop{display:flex;align-items:center;justify-content:center;width:100%;height:72px;padding:0 var(--s3);border:1px dashed var(--line2);border-radius:var(--r-btn);background:var(--soft);color:var(--muted);font-size:var(--fs-sec);text-align:center;transition:border-color var(--dur-fast) var(--ease-out),background-color var(--dur-fast) var(--ease-out)}
+.ref-drop:hover{border-color:var(--blue)}
+.ref-drop.drag{border-color:#2F80FF;background:var(--blue-bg);color:var(--blue-ink)}
+.ref-drop .ref-drop-active,.ref-drop.drag .ref-drop-idle{display:none}
+.ref-drop.drag .ref-drop-active{display:inline}
+.ref-add{margin-top:var(--s2);min-height:var(--hit-dense);font-size:var(--fs-sec)}
+.ref-card{display:flex;align-items:center;gap:var(--s2);padding:6px;border-radius:var(--r-btn);background:var(--soft);box-shadow:inset 0 0 0 1px var(--line)}
+.ref-thumb{width:64px;height:64px;object-fit:cover;border-radius:6px;flex:none;background:#fff}
+.ref-meta{display:flex;flex-direction:column;min-width:0;flex:1}
+.ref-name{font-family:var(--font-mono);font-size:var(--fs-mono);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ref-size{font-size:var(--fs-sec);color:var(--muted)}
+.ref-tools{display:flex;gap:2px}
+.chip.ref-badge{background:var(--blue-bg);color:var(--blue-ink);font-family:var(--font-mono);font-weight:var(--w-medium);margin-left:6px}
 .field-error{margin:4px 0 0;color:var(--red);font-size:var(--fs-sec);font-weight:var(--w-medium)}
 
 /* ---------- inspector ---------- */
@@ -1390,7 +1403,8 @@ body.insp-closed .inspector{border-left:0}
       selection: state.selection, offset: state.offset, label: state.label, note: state.note,
       precision: state.precision, drafts: state.drafts, selectedDraft: state.selectedDraft,
       addSelection: state.addSelection, addSelected: state.addSelected, addDrafts: state.addDrafts,
-      addLabel: state.addLabel, addDescription: state.addDescription, addHint: state.addHint, addAnimation: state.addAnimation,
+      addLabel: state.addLabel, addDescription: state.addDescription, addRef: state.addRef, addKind: state.addKind, addAnswers: state.addAnswers,
+      addHint: state.addHint, addAnimation: state.addAnimation,
       addDuration: state.addDuration, addEasing: state.addEasing
     });
   }
@@ -1407,6 +1421,9 @@ body.insp-closed .inspector{border-left:0}
     state.addDrafts = Array.isArray(snap.addDrafts) ? snap.addDrafts : [];
     if (typeof snap.addLabel === 'string') state.addLabel = snap.addLabel;
     if (typeof snap.addDescription === 'string') state.addDescription = snap.addDescription;
+    state.addRef = snap.addRef || null;
+    state.addKind = snap.addKind || null;
+    state.addAnswers = snap.addAnswers && typeof snap.addAnswers === 'object' ? snap.addAnswers : {};
     if (typeof snap.addHint === 'string') state.addHint = snap.addHint;
     if (typeof snap.addAnimation === 'string') state.addAnimation = snap.addAnimation;
     if (num(snap.addDuration) !== null) state.addDuration = snap.addDuration;
@@ -1539,6 +1556,12 @@ body.insp-closed .inspector{border-left:0}
     state.addSelection = { x: draft.x, y: draft.y, w: draft.w, h: draft.h };
     state.addLabel = draft.label || '';
     state.addDescription = draft.description || '';
+    state.addRef = draft.ref || null;
+    state.addKind = draft.kind || null;
+    state.addAnswers = draft.answers ? copy(draft.answers) : {};
+    state.addRefError = null;
+    state.addKindError = null;
+    state.kindAnimate = false;
     state.addError = null;
     state.addHint = addHintOf(draft);
     state.addAnimation = addAnimationOf(draft);
@@ -1570,6 +1593,7 @@ body.insp-closed .inspector{border-left:0}
       x: Math.round(state.addSelection.x), y: Math.round(state.addSelection.y),
       w: Math.round(state.addSelection.w), h: Math.round(state.addSelection.h),
       label: state.addLabel, description: addDescriptionOf({ description: state.addDescription }),
+      ref: refEntry(state.addRef) ? state.addRef : null, kind: state.addKind || null, answers: copy(state.addAnswers || {}),
       hint: addHintOf({ hint: state.addHint }),
       animation: addAnimationOf({ animation: state.addAnimation }),
       duration: addDurationOf({ duration: state.addDuration }),
@@ -1598,6 +1622,9 @@ body.insp-closed .inspector{border-left:0}
     /* A saved Add never loses its description: an emptied field is not synced. */
     var desc = addDescriptionOf({ description: state.addDescription });
     if (desc) draft.description = desc;
+    draft.ref = refEntry(state.addRef) ? state.addRef : null;
+    draft.kind = state.addKind || null;
+    draft.answers = copy(state.addAnswers || {});
     draft.hint = addHintOf({ hint: state.addHint });
     draft.animation = addAnimationOf({ animation: state.addAnimation });
     draft.duration = addDurationOf({ duration: state.addDuration });
@@ -1624,7 +1651,7 @@ body.insp-closed .inspector{border-left:0}
     var before = state.addFieldBefore;
     state.addFieldBefore = null;
     if (!before) return;
-    var fields = ['addLabel', 'addDescription', 'addHint', 'addAnimation', 'addDuration', 'addEasing', 'addSelection', 'addDrafts'];
+    var fields = ['addLabel', 'addDescription', 'addRef', 'addKind', 'addAnswers', 'addHint', 'addAnimation', 'addDuration', 'addEasing', 'addSelection', 'addDrafts'];
     var beforeValues = fields.map(function (key) { return JSON.stringify(before[key]); }).join('|');
     var nowValues = fields.map(function (key) { return JSON.stringify(state[key]); }).join('|');
     if (beforeValues === nowValues) return;
@@ -2166,6 +2193,7 @@ body.insp-closed .inspector{border-left:0}
       state.drawRect = null;
       if (addRect && addRect.w >= MIN_SELECT && addRect.h >= MIN_SELECT) {
         state.addSelection = addRect;
+        if (state.addSelected && findAddDraft(state.addSelected)) { state.addRef = null; state.addKind = null; state.addAnswers = {}; }
         state.addSelected = null;
         syncSelectedAdd();
         commitHistory(drag.before);
@@ -2469,11 +2497,22 @@ body.insp-closed .inspector{border-left:0}
       line.appendChild(el('span', 'list-name', addTitle));
       line.appendChild(el('span', 'chip add hide-on-hover', 'Add'));
       row.appendChild(line);
-      row.appendChild(deleteButton('data-delete-add', draft.id));
+      var actionsWrap = deleteButton('data-delete-add', draft.id);
+      if (refEntry(draft.ref)) {
+        var dlb = el('button', 'row-x');
+        dlb.type = 'button';
+        dlb.setAttribute('data-ref-download', draft.id);
+        dlb.setAttribute('aria-label', 'Download reference ' + refName(draft.ref, draft.id));
+        dlb.setAttribute('data-tip', 'Download reference');
+        dlb.innerHTML = '<svg class="ic" aria-hidden="true" viewBox="0 0 16 16"><path d="M8 2.5v8M4.5 7 8 10.5 11.5 7M3 13.5h10"/></svg>';
+        actionsWrap.insertBefore(dlb, actionsWrap.firstChild);
+      }
+      row.appendChild(actionsWrap);
       var sub = el('div', 'list-sub num');
       sub.appendChild(document.createTextNode(
         Math.round(draft.w) + ' × ' + Math.round(draft.h) + ' · ' +
         (addHasMotion(draft) ? ANIMATION_LABEL[addAnimationOf(draft)] : 'No animation')));
+      if (refEntry(draft.ref)) sub.appendChild(el('span', 'chip ref-badge', refName(draft.ref, draft.id)));
       sub.appendChild(el('span', 'chip unverified', 'Not verified'));
       row.appendChild(sub);
       row.title = draft.id + ' · ' + addTitle;
@@ -3481,8 +3520,8 @@ body.insp-closed .inspector{border-left:0}
     descErr.setAttribute('role', 'alert');
     descErr.hidden = !state.addError;
     descRow.appendChild(descErr);
-    descRow.appendChild(chipBlock('addDescription'));
     form.appendChild(descRow);
+    if (sel) form.appendChild(refSection());
 
     var labelInput = el('input', 'field');
     labelInput.type = 'text';
@@ -5024,6 +5063,7 @@ body.insp-closed .inspector{border-left:0}
     bindSheet();
     bindLoadReport();
     bindImageLoader();
+    bindReferences();
   }
 
   /* =================================================================
@@ -5481,6 +5521,359 @@ body.insp-closed .inspector{border-left:0}
     }
   }
   document.addEventListener('paste', routePaste);
+
+
+  /* =================================================================
+     Add reference: one optional image/GIF per Add request, plus what to copy from it.
+     Files live only in this tab (object URLs in REFS); nothing is stored or sent.
+     ================================================================= */
+  var REF_TYPES = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
+  var REF_MAX = 5 * 1024 * 1024;
+  var REF_MSG_TYPE = 'Use PNG, JPG, WebP or GIF.';
+  var REF_MSG_SIZE = 'File is over 5 MB.';
+  var REF_MSG_ONE = 'One reference per request. Replace it or add another request.';
+  var REF_MSG_KIND = 'Pick what to copy from the reference.';
+  var REFS = {};          /* id -> { url, blob, ext, size } */
+  var refSeq = 0;
+  var KINDS = [['layout', 'Layout'], ['style', 'Style'], ['animation', 'Animation'], ['interaction', 'Interaction']];
+  var KIND_SCOPE = { layout: 'layout', style: 'visual style', animation: 'animation', interaction: 'interaction' };
+  var KIND_PLACEHOLDER = {
+    layout: 'e.g. Cards in a row like the reference', style: 'e.g. Softer shadows, bigger radius',
+    animation: 'e.g. Cards appear one by one', interaction: 'e.g. Button lifts slightly on hover'
+  };
+  var SPEED_MS = { Fast: '~150ms', Medium: '~300ms', Slow: '~600ms' };
+  /* [key, label, options, multi, onlyWhen] */
+  var QUESTIONS = {
+    layout: [['match', 'Match', ['Structure only', 'Structure + spacing', 'Exact']],
+             ['align', 'Alignment', ['Left', 'Center', 'Right']],
+             ['columns', 'Columns', ['1', '2', '3', '4+']]],
+    style: [['copy', 'Copy', ['Colors', 'Typography', 'Shadows & radius', 'Whole look'], true],
+            ['strength', 'Strength', ['Subtle', 'Close match']],
+            ['brand', 'Keep my brand colors', ['Yes', 'No']]],
+    animation: [['effect', 'Effect', ['Fade', 'Slide', 'Scale', 'Rotate']],
+                ['direction', 'Direction', ['Up', 'Down', 'Left', 'Right'], false, function (a) { return a.effect === 'Slide'; }],
+                ['speed', 'Speed', ['Fast', 'Medium', 'Slow']],
+                ['trigger', 'Trigger', ['On load', 'On scroll', 'On hover', 'On click']],
+                ['repeat', 'Repeat', ['Once', 'Loop']]],
+    interaction: [['trigger', 'Trigger', ['Hover', 'Click', 'Drag', 'Focus']],
+                  ['feedback', 'Feedback', ['Color change', 'Lift/shadow', 'Scale', 'Show content']],
+                  ['speed', 'Speed', ['Fast', 'Medium', 'Slow']]]
+  };
+  state.addRef = null;
+  state.addKind = null;
+  state.addAnswers = {};
+  state.addRefError = null;
+  state.addKindError = null;
+
+  function kindLabel(kind) { for (var i = 0; i < KINDS.length; i++) if (KINDS[i][0] === kind) return KINDS[i][1]; return ''; }
+  function refEntry(id) { return id && REFS[id] ? REFS[id] : null; }
+  function refExtOf(file) {
+    if (REF_TYPES[file.type]) return REF_TYPES[file.type];
+    var m = /\.(png|jpe?g|webp|gif)$/i.exec(file.name || '');
+    return m ? (m[1].toLowerCase() === 'jpeg' ? 'jpg' : m[1].toLowerCase()) : null;
+  }
+  /* The number a request has in the Copy prompt list: Moves first, then Adds. */
+  function addRequestNumber(addId) {
+    for (var i = 0; i < state.addDrafts.length; i++) {
+      if (String(state.addDrafts[i].id) === String(addId)) return state.drafts.length + i + 1;
+    }
+    return requestCount() + 1; /* an Add that is not saved yet comes next */
+  }
+  function refName(refId, addId) {
+    var entry = refEntry(refId);
+    return entry ? 'ref-' + addRequestNumber(addId) + '.' + entry.ext : '';
+  }
+  function liveAddId() { return state.addSelected && findAddDraft(state.addSelected) ? state.addSelected : null; }
+
+  function setReference(file, replace) {
+    var ext = file ? refExtOf(file) : null;
+    if (!ext) return refFail(REF_MSG_TYPE);
+    if (file.size > REF_MAX) return refFail(REF_MSG_SIZE);
+    if (state.addRef && refEntry(state.addRef) && !replace) return refFail(REF_MSG_ONE);
+    var before = snapshotState();
+    var old = state.addRef;
+    var id = 'R' + (++refSeq);
+    var url = URL.createObjectURL(file);
+    LOCAL_URLS[url] = true;
+    REFS[id] = { url: url, blob: file, ext: ext, size: file.size };
+    state.addRef = id;
+    state.addRefError = null;
+    syncSelectedAdd();
+    if (old && old !== id) releaseRef(old);
+    commitHistory(before);
+    renderInspector();
+    renderLeft();
+    toast('Reference added');
+    return true;
+  }
+  function releaseRef(id) {
+    var entry = REFS[id];
+    if (!entry) return;
+    /* Keep it while any saved request or the undo history still points at it. */
+    var used = state.addDrafts.some(function (d) { return d.ref === id; }) || state.addRef === id;
+    if (used) return;
+    delete LOCAL_URLS[entry.url];
+    try { URL.revokeObjectURL(entry.url); } catch (err) { /* ignore */ }
+    delete REFS[id];
+  }
+  function removeReference() {
+    var id = state.addRef;
+    if (!id) return;
+    var before = snapshotState();
+    state.addRef = null;
+    var draft = liveAddId() ? findAddDraft(liveAddId()) : null;
+    if (draft) draft.ref = null;
+    releaseRef(id);
+    commitHistory(before);
+    renderInspector();
+    renderLeft();
+    toast('Reference removed');
+  }
+  function refFail(message) {
+    state.addRefError = message;
+    renderInspector();
+    toast(message);
+    return false;
+  }
+  function downloadRef(refId, name) {
+    var entry = refEntry(refId);
+    if (!entry) { toast('This reference is no longer in this tab.'); return; }
+    var a = document.createElement('a');
+    a.href = entry.url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+  function downloadAllRefs() {
+    state.addDrafts.forEach(function (d) { if (refEntry(d.ref)) downloadRef(d.ref, refName(d.ref, d.id)); });
+  }
+
+  function setKind(kind) {
+    var before = snapshotState();
+    state.addKind = state.addKind === kind ? null : kind;
+    state.addAnswers = {};
+    state.addKindError = null;
+    state.kindAnimate = !!state.addKind;
+    syncSelectedAdd();
+    commitHistory(before);
+    renderInspector();
+    renderLeft();
+  }
+  function setAnswer(key, value, multi) {
+    var before = snapshotState();
+    var answers = copy(state.addAnswers || {});
+    if (multi) {
+      var list = Array.isArray(answers[key]) ? answers[key] : [];
+      var at = list.indexOf(value);
+      if (at === -1) list.push(value); else list.splice(at, 1);
+      if (list.length) answers[key] = list; else delete answers[key];
+    } else if (answers[key] === value) {
+      delete answers[key];
+    } else {
+      answers[key] = value;
+    }
+    if (key === 'effect' && answers.effect !== 'Slide') delete answers.direction;
+    state.addAnswers = answers;
+    state.kindAnimate = false;
+    syncSelectedAdd();
+    commitHistory(before);
+    renderInspector();
+  }
+  /* "Effect: slide up · Speed: medium (~300ms) · Trigger: on scroll · Repeat: once" */
+  function answersLine(kind, answers) {
+    var qs = QUESTIONS[kind] || [];
+    var parts = [];
+    answers = answers || {};
+    qs.forEach(function (q) {
+      var key = q[0], value = answers[key];
+      if (value === undefined || (Array.isArray(value) && !value.length)) return;
+      if (key === 'direction') return;
+      var text = Array.isArray(value) ? value.map(function (v) { return v.toLowerCase(); }).join(', ') : String(value).toLowerCase();
+      if (key === 'effect' && value === 'Slide' && answers.direction) text += ' ' + String(answers.direction).toLowerCase();
+      if (key === 'speed' && SPEED_MS[value]) text += ' (' + SPEED_MS[value] + ')';
+      parts.push(q[1] + ': ' + text);
+    });
+    return parts.join(' · ');
+  }
+
+  /* ---------- Add panel sections ---------- */
+  function refSection() {
+    var block = el('div', 'block ref-block');
+    block.appendChild(el('div', 'caption', 'Reference (optional)'));
+    var entry = refEntry(state.addRef);
+    if (entry) {
+      var card = el('div', 'ref-card');
+      var thumb = el('img', 'ref-thumb');
+      thumb.alt = 'Reference image';
+      thumb.src = entry.url;
+      card.appendChild(thumb);
+      var meta = el('div', 'ref-meta');
+      meta.appendChild(el('span', 'ref-name', refName(state.addRef, liveAddId())));
+      meta.appendChild(el('span', 'ref-size num', bytesText(entry.size)));
+      card.appendChild(meta);
+      var tools = el('div', 'ref-tools');
+      var rep = el('button', 'icon-btn');
+      rep.type = 'button';
+      rep.id = 'refReplace';
+      rep.setAttribute('aria-label', 'Replace reference');
+      rep.setAttribute('data-tip', 'Replace reference');
+      rep.innerHTML = '<svg class="ic" aria-hidden="true" viewBox="0 0 16 16"><path d="M13 5.5A5.5 5.5 0 0 0 3.3 4.2M3 2v2.5h2.5M3 10.5a5.5 5.5 0 0 0 9.7 1.3M13 14v-2.5h-2.5"/></svg>';
+      var rem = el('button', 'icon-btn');
+      rem.type = 'button';
+      rem.id = 'refRemove';
+      rem.setAttribute('aria-label', 'Remove reference');
+      rem.setAttribute('data-tip', 'Remove reference');
+      rem.innerHTML = '<svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>';
+      tools.appendChild(rep);
+      tools.appendChild(rem);
+      card.appendChild(tools);
+      block.appendChild(card);
+    } else {
+      var drop = el('button', 'ref-drop');
+      drop.type = 'button';
+      drop.id = 'refDrop';
+      drop.setAttribute('data-ref-drop', '');
+      drop.setAttribute('aria-label', 'Add reference: drop an image or GIF, or paste with Ctrl+V');
+      drop.appendChild(el('span', 'ref-drop-idle', 'Drop an image or GIF, or paste with Ctrl+V'));
+      drop.appendChild(el('span', 'ref-drop-active', 'Drop to add reference'));
+      block.appendChild(drop);
+      var add = el('button', 'btn ref-add');
+      add.type = 'button';
+      add.id = 'refAdd';
+      add.textContent = 'Add reference';
+      block.appendChild(add);
+    }
+    if (state.addRefError) {
+      var err = el('p', 'field-error', state.addRefError);
+      err.setAttribute('role', 'alert');
+      block.appendChild(err);
+    }
+    block.appendChild(el('p', 'hint-note', 'References stay in this tab only. Download them before you close it.'));
+    return block;
+  }
+  function kindSection() {
+    var block = el('div', 'block kind-block');
+    var head = el('div', 'caption', 'What should the AI copy from it?');
+    head.id = 'kindLabel';
+    block.appendChild(head);
+    var row = el('div', 'kind-row');
+    row.setAttribute('role', 'radiogroup');
+    row.setAttribute('aria-labelledby', 'kindLabel');
+    KINDS.forEach(function (k) {
+      var on = state.addKind === k[0];
+      var b = el('button', 'kind-chip' + (on ? ' on' : ''), k[1]);
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+      b.setAttribute('data-kind', k[0]);
+      row.appendChild(b);
+    });
+    block.appendChild(row);
+    if (state.addKindError) {
+      var err = el('p', 'field-error', state.addKindError);
+      err.id = 'kindError';
+      err.setAttribute('role', 'alert');
+      block.appendChild(err);
+    }
+    if (state.addKind) {
+      var qs = el('div', 'questions' + (state.kindAnimate ? ' fade-in' : ''));
+      var answers = state.addAnswers || {};
+      (QUESTIONS[state.addKind] || []).forEach(function (q) {
+        if (q[4] && !q[4](answers)) return;
+        var line = el('div', 'q-row');
+        var label = el('span', 'q-label', q[1]);
+        label.id = 'q-' + q[0];
+        line.appendChild(label);
+        var opts = el('div', 'q-opts');
+        opts.setAttribute('role', q[3] ? 'group' : 'radiogroup');
+        opts.setAttribute('aria-labelledby', label.id);
+        q[2].forEach(function (value) {
+          var picked = q[3] ? (Array.isArray(answers[q[0]]) && answers[q[0]].indexOf(value) !== -1) : answers[q[0]] === value;
+          var b = el('button', 'q-chip' + (picked ? ' on' : ''), value);
+          b.type = 'button';
+          b.setAttribute(q[3] ? 'aria-pressed' : 'aria-checked', picked ? 'true' : 'false');
+          if (!q[3]) b.setAttribute('role', 'radio');
+          b.setAttribute('data-answer', q[0]);
+          b.setAttribute('data-value', value);
+          if (q[3]) b.setAttribute('data-multi', '');
+          opts.appendChild(b);
+        });
+        line.appendChild(opts);
+        qs.appendChild(line);
+      });
+      block.appendChild(qs);
+    }
+    return block;
+  }
+
+  function bindReferences() {
+    var picker = el('input');
+    picker.type = 'file';
+    picker.accept = 'image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif';
+    picker.hidden = true;
+    picker.id = 'refPicker';
+    document.body.appendChild(picker);
+    var replacing = false;
+    picker.addEventListener('change', function () {
+      var file = picker.files && picker.files[0];
+      if (file) setReference(file, replacing);
+      picker.value = '';
+    });
+    var body = document.getElementById('inspectorBody');
+    body.addEventListener('click', function (event) {
+      var t = event.target;
+      if (t.closest('#refAdd') || t.closest('#refDrop')) { replacing = false; picker.click(); return; }
+      if (t.closest('#refReplace')) { replacing = true; picker.click(); return; }
+      if (t.closest('#refRemove')) { removeReference(); return; }
+      var kind = t.closest('[data-kind]');
+      if (kind) { setKind(kind.getAttribute('data-kind')); return; }
+      var ans = t.closest('[data-answer]');
+      if (ans) { setAnswer(ans.getAttribute('data-answer'), ans.getAttribute('data-value'), ans.hasAttribute('data-multi')); return; }
+    });
+    /* The drop zone takes its own drop, so Load images never sees it. */
+    body.addEventListener('dragover', function (event) {
+      var zone = event.target.closest('[data-ref-drop]');
+      if (!zone) return;
+      event.preventDefault();
+      event.stopPropagation();
+      zone.classList.add('drag');
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+    });
+    body.addEventListener('dragleave', function (event) {
+      var zone = event.target.closest('[data-ref-drop]');
+      if (zone && !zone.contains(event.relatedTarget)) zone.classList.remove('drag');
+    });
+    body.addEventListener('drop', function (event) {
+      var zone = event.target.closest('[data-ref-drop]');
+      if (!zone) return;
+      event.preventDefault();
+      event.stopPropagation();
+      zone.classList.remove('drag');
+      var files = event.dataTransfer && event.dataTransfer.files;
+      if (files && files.length) setReference(files[0], false);
+      else toast(REF_MSG_TYPE);
+    });
+    body.addEventListener('click', function (event) {
+      var dl = event.target.closest('[data-ref-download]');
+      if (dl) { var d = findAddDraft(dl.getAttribute('data-ref-download')); if (d) downloadRef(d.ref, refName(d.ref, d.id)); }
+    });
+    document.getElementById('requestList').addEventListener('click', function (event) {
+      var dl = event.target.closest('[data-ref-download]');
+      if (!dl) return;
+      event.stopPropagation();
+      var d = findAddDraft(dl.getAttribute('data-ref-download'));
+      if (d) downloadRef(d.ref, refName(d.ref, d.id));
+    });
+    /* Paste: the reference wins only while the Add panel is open and focused. */
+    claimPaste(function (file) {
+      var active = document.activeElement;
+      var focused = active && document.getElementById('inspector').contains(active);
+      if (state.mode !== 'add' || !state.addSelection || !focused) return false;
+      setReference(file, false);
+      return true;
+    }, true);
+  }
 
 
   function setPrecision(value) {
