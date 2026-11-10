@@ -396,6 +396,12 @@ body.no-report .stage-scroller,body.no-report.mode-review .stage-scroller{--stag
 .rv-handle i{display:block;width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent}
 .rv-handle i.l{border-right:5px solid #2F80FF}.rv-handle i.r{border-left:5px solid #2F80FF}
 .marks{position:absolute;inset:0;z-index:3;pointer-events:none}
+.hover-area{position:absolute;z-index:7;pointer-events:none;border-radius:3px;box-shadow:inset 0 0 0 2px #2F80FF;background:rgba(47,128,255,.12)}
+.draft-area{position:absolute;z-index:2;pointer-events:auto;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(47,128,255,.6);background:rgba(47,128,255,.04)}
+.draft-area.add{box-shadow:inset 0 0 0 1px var(--add)}
+.draft-area.hl{box-shadow:inset 0 0 0 2px #2F80FF;background:rgba(47,128,255,.12)}
+.row-item.hl{background:var(--blue-bg)}
+.mark-box.hl{box-shadow:0 0 0 1px rgba(255,255,255,.75),0 0 0 4px rgba(47,128,255,.4)}
 .rv-grid{position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(to right,rgba(47,128,255,.13) 1px,transparent 1px),linear-gradient(to bottom,rgba(47,128,255,.13) 1px,transparent 1px)}
 .mark-box{position:absolute;border:2px solid #D99A2B;border-radius:3px;pointer-events:auto;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.75)}
 .mark-box.expected,.mark-box.approved{border-color:#188951}
@@ -2065,6 +2071,7 @@ body.insp-closed .inspector{border-left:0}
       layer.appendChild(drawing);
       return;
     }
+    paintDraftAreas(layer, size);
     var sel = state.selection;
     if (!sel) return;
     var rect = ants(el('div', 'move-sel'));
@@ -2086,6 +2093,27 @@ body.insp-closed .inspector{border-left:0}
   }
 
   /* ---------- add mode: overlay ---------- */
+  /* Faint outlines of saved requests on the stage; hover links them with their row. */
+  function paintDraftAreas(layer, size) {
+    var current = state.mode === 'add' ? state.addSelected : state.selectedDraft;
+    state.drafts.forEach(function (d) {
+      if (state.mode === 'move' && String(d.id) === String(current)) return;
+      var n = el('div', 'draft-area');
+      n.setAttribute('data-area-key', 'd:' + d.id);
+      n.setAttribute('data-tip', d.id + ' \u00b7 Move ' + labelOf(d));
+      placeBox(n, d, size);
+      layer.appendChild(n);
+    });
+    state.addDrafts.forEach(function (d) {
+      if (state.mode === 'add' && String(d.id) === String(current)) return;
+      var n = el('div', 'draft-area add');
+      n.setAttribute('data-area-key', 'a:' + d.id);
+      n.setAttribute('data-tip', d.id + ' \u00b7 Add ' + addName(d));
+      placeBox(n, d, size);
+      layer.appendChild(n);
+    });
+  }
+
   function paintAddOverlay() {
     var layer = document.getElementById('moveOverlay');
     if (!layer) return;
@@ -2097,6 +2125,7 @@ body.insp-closed .inspector{border-left:0}
       layer.appendChild(drawing);
       return;
     }
+    paintDraftAreas(layer, size);
     var sel = state.addSelection;
     if (!sel) return;
     var selectedDraft = findAddDraft(state.addSelected);
@@ -3890,6 +3919,57 @@ body.insp-closed .inspector{border-left:0}
     });
   }
 
+  /* Linked hover: a row lights up its area on the stage, an area lights up its row. */
+  function hoverKeyOfRow(node) {
+    if (node.getAttribute('data-box')) return 'b:' + node.getAttribute('data-box');
+    return rowKey(node);
+  }
+  function hoverRect(key) {
+    var parts = key.split(':'), kind = parts[0], id = parts.slice(1).join(':');
+    if (kind === 'b') { var b = findBox(id); return b && b.x !== null ? b : null; }
+    if (kind === 'd') return findDraft(id);
+    if (kind === 'a') return findAddDraft(id);
+    if (kind === 'r') { var r = findRequest(id); return r && r.from ? r.from : null; }
+    return null;
+  }
+  function setLinkedHover(key) {
+    if (state.hoverKey === key) return;
+    state.hoverKey = key;
+    document.querySelectorAll('.hover-area').forEach(function (n) { n.remove(); });
+    document.querySelectorAll('.row-item.hl, .mark-box.hl, .draft-area.hl').forEach(function (n) { n.classList.remove('hl'); });
+    if (!key) return;
+    document.querySelectorAll('.row-item').forEach(function (n) { if (hoverKeyOfRow(n) === key) n.classList.add('hl'); });
+    document.querySelectorAll('[data-area-key="' + key + '"]').forEach(function (n) { n.classList.add('hl'); });
+    if (key.charAt(0) === 'b') document.querySelectorAll('.mark-box[data-box="' + key.slice(2) + '"]').forEach(function (n) { n.classList.add('hl'); });
+    var rect = hoverRect(key);
+    var size = stageSize();
+    if (!rect || !size.w) return;
+    var hosts = document.querySelectorAll('.rv-pic, #moveFrame');
+    hosts.forEach(function (host) {
+      var n = el('div', 'hover-area');
+      n.setAttribute('aria-hidden', 'true');
+      n.style.left = (rect.x / size.w * 100) + '%';
+      n.style.top = (rect.y / size.h * 100) + '%';
+      n.style.width = (rect.w / size.w * 100) + '%';
+      n.style.height = (rect.h / size.h * 100) + '%';
+      host.appendChild(n);
+    });
+  }
+  function bindLinkedHover() {
+    function keyFrom(target) {
+      var row = target.closest && target.closest('.row-item');
+      if (row && !row.classList.contains('row-ghost')) return hoverKeyOfRow(row);
+      var area = target.closest && target.closest('[data-area-key]');
+      if (area) return area.getAttribute('data-area-key');
+      var mark = target.closest && target.closest('.mark-box');
+      if (mark) return 'b:' + mark.getAttribute('data-box');
+      return null;
+    }
+    document.addEventListener('mouseover', function (event) { setLinkedHover(keyFrom(event.target)); });
+    document.addEventListener('focusin', function (event) { setLinkedHover(keyFrom(event.target)); });
+    document.addEventListener('focusout', function (event) { if (!event.relatedTarget) setLinkedHover(null); });
+  }
+
   function revealRow(id) {
     if (state.sidebarTab !== 'changes') { state.sidebarTab = 'changes'; renderSidebarTabs(); }
     var row = document.querySelector('#leftList [data-box="' + String(id).replace(/"/g, '') + '"]');
@@ -5241,6 +5321,7 @@ body.insp-closed .inspector{border-left:0}
     bindLoadReport();
     bindImageLoader();
     bindReferences();
+    bindLinkedHover();
   }
 
   /* =================================================================
