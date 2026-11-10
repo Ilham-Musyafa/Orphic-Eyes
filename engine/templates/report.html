@@ -197,6 +197,10 @@ body.insp-closed{--inspector-cur:0px}
 textarea[aria-disabled="true"],input[aria-disabled="true"],select[aria-disabled="true"]{opacity:.55}
 .link-btn{display:inline-flex;align-items:center;gap:6px;min-height:var(--hit-dense);padding:0 var(--s2);border-radius:6px;color:var(--blue-ink);font-size:var(--fs-sec);font-weight:var(--w-medium)}
 .link-btn:hover{background:var(--hover)}
+.req-counter{font-size:var(--fs-sec);font-weight:var(--w-medium);letter-spacing:0;text-transform:none;color:var(--muted)}
+.req-counter.warn{color:var(--amber)}
+.req-counter.full{color:var(--red);font-weight:var(--w-strong)}
+.req-limit{margin:0 var(--s2) var(--s2);padding:var(--s2) var(--s3);border-radius:var(--r-btn);background:var(--red-bg);color:var(--red);font-size:var(--fs-sec);font-weight:var(--w-medium)}
 .req-foot{display:flex;justify-content:flex-start;padding:var(--s2) 0 0}
 .prompt-text{margin:0;padding:var(--s3) var(--s4);font-family:var(--font-mono);font-size:var(--fs-mono);line-height:var(--lh-body);white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;color:var(--ink);background:var(--soft);flex:1;min-height:0;user-select:text}
 .modal-actions{display:flex;justify-content:flex-end;gap:var(--s2);padding:var(--s3) var(--s4);border-top:1px solid var(--line)}
@@ -734,7 +738,8 @@ body.insp-closed .inspector{border-left:0}
           <div id="leftList"></div>
         </section>
         <section class="sb-pane" id="paneRequests" role="tabpanel" aria-labelledby="tabRequests" hidden>
-          <div class="group-label">Requests</div>
+          <div class="group-label"><span>Requests</span><span class="req-counter num" id="reqCounter" aria-live="polite">0 of 8 requests</span></div>
+          <p class="req-limit" id="reqLimit" hidden>Limit reached. Copy this batch, then start a new one.</p>
           <div id="requestList"></div>
         </section>
       </div>
@@ -857,6 +862,7 @@ body.insp-closed .inspector{border-left:0}
   var MAX_REQUESTS = 8;
   /* Move and Add share one budget of 8 per check. */
   function requestCount() { return state.drafts.length + state.addDrafts.length; }
+  var LIMIT_MSG = 'Limit reached. Copy this batch, then start a new one.';
   var MIN_SELECT = 8;
   var PRECISION = { exact: 'Exact', approximate: 'Approx' };
   var TOOL_KEYS = { move: { v: 'select', m: 'move' }, add: { v: 'select', p: 'place' } };
@@ -1571,7 +1577,7 @@ body.insp-closed .inspector{border-left:0}
   function addDraft() {
     if (!state.report) { toast('No report loaded'); return; }
     if (!state.selection) { toast('Drag an area on the image first'); return; }
-    if (requestCount() >= MAX_REQUESTS) { toast('Up to 8 requests per check'); return; }
+    if (requestCount() >= MAX_REQUESTS) { toast(LIMIT_MSG); return; }
     var before = snapshotState();
     var draft = liveSource();
     draft.label = state.label;
@@ -1671,7 +1677,7 @@ body.insp-closed .inspector{border-left:0}
     }
     state.addKindError = null;
     var isNew = !(state.addSelected && findAddDraft(state.addSelected));
-    if (isNew && requestCount() >= MAX_REQUESTS) { toast('Up to 8 requests per check'); return; }
+    if (isNew && requestCount() >= MAX_REQUESTS) { toast(LIMIT_MSG); return; }
     state.addError = null;
     var before = snapshotState();
     var draft = {
@@ -2544,6 +2550,12 @@ body.insp-closed .inspector{border-left:0}
     var list = $('#requestList');
     var total = state.requests.length + draftCount + addCount;
     $('#requestCount').textContent = String(total);
+    var made = requestCount();
+    var counter = $('#reqCounter');
+    counter.textContent = made + ' of ' + MAX_REQUESTS + ' requests';
+    counter.classList.toggle('warn', made === MAX_REQUESTS - 1);
+    counter.classList.toggle('full', made >= MAX_REQUESTS);
+    $('#reqLimit').hidden = made < MAX_REQUESTS;
     if (state.seenInit && total > (state.prevTotal || 0)) replay($('#requestCount'), 'pop');
     state.prevTotal = total;
     if (!state.seen) state.seen = {};
@@ -3513,12 +3525,12 @@ body.insp-closed .inspector{border-left:0}
     var addBtn = el('button', 'btn', 'Add request');
     addBtn.type = 'button';
     addBtn.id = 'addDraft';
-    explainDisabled(addBtn, !sel ? 'Mark an area first' : '');
+    explainDisabled(addBtn, !sel ? 'Mark an area first' : requestCount() >= MAX_REQUESTS ? LIMIT_MSG : '');
     addBtn.style.width = '100%';
     addBtn.style.justifyContent = 'center';
     actions.appendChild(addBtn);
     if (requestCount() >= MAX_REQUESTS) {
-      var limit = el('p', 'hint-note', 'Up to 8 requests per check');
+      var limit = el('p', 'hint-note', LIMIT_MSG);
       limit.id = 'moveLimit';
       actions.appendChild(limit);
     } else if (state.selectedDraft) {
@@ -3707,12 +3719,12 @@ body.insp-closed .inspector{border-left:0}
     var saveBtn = el('button', 'btn', draft ? 'Save ' + draft.id : 'Add request');
     saveBtn.type = 'button';
     saveBtn.id = 'addDraftSave';
-    explainDisabled(saveBtn, !sel ? 'Mark an area first' : '');
+    explainDisabled(saveBtn, !sel ? 'Mark an area first' : (!draft && requestCount() >= MAX_REQUESTS) ? LIMIT_MSG : '');
     saveBtn.style.width = '100%';
     saveBtn.style.justifyContent = 'center';
     actions.appendChild(saveBtn);
     if (draft) actions.appendChild(el('p', 'hint-note', 'Edits above save to ' + draft.id + '.'));
-    else if (requestCount() >= MAX_REQUESTS) actions.appendChild(el('p', 'hint-note', 'Up to 8 requests per check (Move and Add together).'));
+    else if (requestCount() >= MAX_REQUESTS) actions.appendChild(el('p', 'hint-note', LIMIT_MSG));
     body.appendChild(actions);
   }
 
