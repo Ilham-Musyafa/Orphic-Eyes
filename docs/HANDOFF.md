@@ -1,6 +1,27 @@
 # HANDOFF
 
-## Current task: Settings step 1 of 7 (preferences + auto-save)
+## Current task: Embed UI fonts (Montserrat + JetBrains Mono)
+
+Branch: `feat/fonts` (from `feat/settings-prefs` at b5fb078).
+
+### Done
+- Sources (official GitHub repos): Montserrat `JulietaUla/Montserrat` @ 555facf, `fonts/variable/Montserrat[wght].ttf`, Version 9.000. JetBrains Mono `JetBrains/JetBrainsMono` @ 1937130, `fonts/variable/JetBrainsMono[wght].ttf`, Version 2.305.
+- Built locally with fonttools (not a plugin dependency): weight axis limited (Montserrat 400-700, JetBrains Mono 400-500), name table set to the plain family name so DevTools shows "Montserrat" / "JetBrains Mono", subset to U+0020-007E, U+00A0-00FF, punctuation U+2010-2027 / U+2030-203A, arrows U+2190-2199, € ™ − ↵, features kern/liga/calt/tnum/lnum/case kept, woff2, no hinting. Variable files were smaller than 4+2 statics (57.6 KB vs 90.9 KB).
+- Embedded as base64 `@font-face` (font-display: swap) at the top of the `<style>`; `--font-ui` and `--font-mono` switched to the requested stacks.
+- report.html: 252,296 → 329,531 bytes (+77,235 bytes, about +75 KB; target was under +250 KB). No weights dropped.
+- Spacing fixes: none needed. A before/after scan of every clipped text node (1440: Review, a selected change, Move, Add, all 5 Settings tabs; 390: all 4 bottom-sheet tabs) found the same 7 clipped items at 1440 (existing intentional ellipses) and 0 at 390; no new clipping.
+- Checked with external requests blocked: 0 external requests, DevTools rendered fonts = Montserrat (UI) and JetBrains Mono (mono fields).
+- Licenses: `licenses/Montserrat-OFL.txt`, `licenses/JetBrainsMono-OFL.txt` (copied from upstream); README "Fonts" note under License.
+- Screenshots: `docs/screenshots/fonts/` (main 1440 light/dark, 390 light/dark, Move 1440 light).
+- Diff has no http(s) URLs, `<link>`, fetch, XMLHttpRequest or eval added. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge in the cloud runner).
+
+### Not done
+- ⌘, ✓ and ✕ are not in Montserrat; those few symbols fall back to the system font (they are not in JetBrains Mono's UI use either). Mono text at weight 600 uses the 500 face (the font is cut at 500 as asked).
+
+### Next
+- Settings step 2: Copy Prompt
+
+## Previous task: Settings step 1 of 7 (preferences + auto-save)
 
 Branch: `feat/settings-prefs` (from `feat/helper-chips` at d34fe0a). Only `engine/templates/report.html` and this file.
 
