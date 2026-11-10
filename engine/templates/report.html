@@ -1009,8 +1009,98 @@ body.insp-closed .inspector{border-left:0}
     return lines.join('\n');
   }
 
+  /* ---------- copy message: one entry point, one data source ---------- */
+  /* Everything a message may say, read once from state. Every target uses this list,
+     in this order; only the wrapper text differs between targets. */
+  function messageData() {
+    var report = state.report;
+    var data = { name: report ? (report.name || 'report') : null, size: stageSize(),
+      status: report ? report.status : null, changedPercent: report && report.summary ? report.summary.changed_percent : null,
+      boxes: [], verdicts: [], requests: [] };
+    state.boxes.forEach(function (box) {
+      data.boxes.push({ id: box.id, zone: box.zone, status: boxStatus(box), percent: box.percent,
+        x: box.x, y: box.y, w: box.w, h: box.h });
+    });
+    state.requests.forEach(function (request) {
+      data.verdicts.push({ id: request.id || 'PT-?', type: request.type || 'unknown', status: request.status });
+    });
+    /* Same order as the Hermes text: the fix for unexpected changes first, then new moves, then adds. */
+    data.boxes.forEach(function (box) {
+      if (box.status === 'unexpected') data.requests.push({ kind: 'fix', id: 'Change ' + box.id, box: box });
+    });
+    state.drafts.forEach(function (draft) {
+      var obj = requestObject(draft);
+      data.requests.push({ kind: 'move', id: draft.id, label: labelOf(draft), dx: draft.dx, dy: draft.dy,
+        precision: draft.precision, from: obj.from, to: obj.to });
+    });
+    state.addDrafts.forEach(function (draft) {
+      data.requests.push({ kind: 'add', id: draft.id, label: addName(draft), hint: addHintOf(draft),
+        rect: { x: Math.round(draft.x), y: Math.round(draft.y), w: Math.round(draft.w), h: Math.round(draft.h) },
+        motion: addHasMotion(draft) ? { animation: ANIMATION_LABEL[addAnimationOf(draft)], duration: addDurationOf(draft), easing: addEasingOf(draft) } : null });
+    });
+    return data;
+  }
+
+  function rectWords(r) {
+    if (!r || num(r.x) === null || num(r.y) === null) return 'an unknown spot';
+    return 'x ' + r.x + ', y ' + r.y + ', size ' + r.w + ' × ' + r.h + ' px';
+  }
+
+  var AGENT_INTRO = [
+    'These requests come from a visual review of Before and After screenshots of a web page (made with Orphic Eyes, which only looks at pixels, not code).',
+    'All coordinates are pixels of the After screenshot, measured from its top-left corner: x and y are the position, w × h is the size.',
+    'Please change only what is listed below, keep everything else exactly as it is, and when you are done, report what you changed for each numbered item.'
+  ];
+
+  /* Plain Markdown for any chat AI: no tool names, no commands only one agent understands. */
+  function agentText() {
+    var data = messageData();
+    if (!data.name) return 'Orphic Eyes: no report loaded.';
+    var lines = ['# Visual review: ' + data.name, ''];
+    AGENT_INTRO.forEach(function (line) { lines.push(line); });
+    lines.push('');
+    lines.push('- Page: ' + data.name + ' (' + data.size.w + ' × ' + data.size.h + ' px)');
+    lines.push('- Review result: ' + (STATUS_TEXT[data.status] || 'Unknown') + ' · ' + data.boxes.length +
+      ' changed area' + (data.boxes.length === 1 ? '' : 's') + ' · ' + pct(data.changedPercent) + ' of the page changed');
+    lines.push('');
+    lines.push('## Requests');
+    lines.push('');
+    if (!data.requests.length) {
+      lines.push('No changes requested. Nothing needs to be done.');
+    }
+    data.requests.forEach(function (item, index) {
+      var n = (index + 1) + '. ';
+      if (item.kind === 'move') {
+        lines.push(n + '**Move "' + item.label + '"** (' + item.id + '): move it ' + moveDirection(item.dx, item.dy) + '.');
+        lines.push('   - Now at: ' + rectWords(item.from));
+        lines.push('   - Should end at: ' + rectWords(item.to));
+        lines.push('   - Keep its size and style, and use the existing layout system.');
+        lines.push('   - Precision: ' + (item.precision === 'exact' ? 'Exact (within 2 px)' : 'Approx (within 8 px)'));
+      } else if (item.kind === 'add') {
+        lines.push(n + '**Add a ' + item.hint + ' "' + item.label + '"** (' + item.id + '): place it at ' + rectWords(item.rect) + '.');
+        if (item.motion) lines.push('   - Animation: ' + item.motion.animation + ', ' + item.motion.duration + ' ms, ' + item.motion.easing);
+        lines.push('   - Use the existing layout system.');
+        lines.push('   - A screenshot can only confirm that this area changed; motion cannot be checked.');
+      } else {
+        lines.push(n + '**Fix an unexpected change** (' + item.id + ', ' + zoneLabel(item.box.zone) + '): this area changed but should not have.');
+        lines.push('   - Area: ' + rectWords(item.box));
+        lines.push('   - Make it look like the Before screenshot again. Do not touch approved or expected changes.');
+      }
+    });
+    if (data.verdicts.length) {
+      lines.push('');
+      lines.push('## Checked earlier by Orphic Eyes (context only)');
+      lines.push('');
+      data.verdicts.forEach(function (v) {
+        lines.push('- ' + v.id + ' · ' + (TYPE_WORD[v.type] || word(v.type)) + ' · ' + word(v.status));
+      });
+    }
+    return lines.join('\n');
+  }
+
   function buildMessage(target) {
-    return hermesText();
+    /* Hermes keeps its original text byte-for-byte; every other AI gets plain Markdown. */
+    return target === 'hermes' ? hermesText() : agentText();
   }
 
   function fixText(box) {
