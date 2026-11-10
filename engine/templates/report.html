@@ -331,6 +331,12 @@ body.mode-add .tool.on{background:var(--add-bg);color:var(--add)}
 .chip.add{background:var(--add-bg);color:var(--add)}
 .add-desc{min-height:72px;padding:var(--s2);line-height:var(--lh-body);resize:vertical}
 .add-desc[aria-invalid="true"]{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
+.chip-help{display:flex;flex-direction:column;gap:6px;margin-top:var(--s2)}
+.chip-row{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.chip-topic{min-width:58px;margin-right:2px;font-size:var(--fs-cap);font-weight:var(--w-strong);letter-spacing:.04em;text-transform:uppercase;color:var(--faint)}
+.help-chip{min-height:var(--hit-dense);padding:0 10px;border-radius:var(--r-pill);background:var(--surface);color:var(--ink);font-size:var(--fs-sec);font-weight:var(--w-medium);white-space:nowrap;transition:background var(--t) var(--ease)}
+.help-chip:hover{background:var(--active)}
+.help-chip:active{background:var(--blue-bg);color:var(--blue-ink)}
 .field-error{margin:4px 0 0;color:var(--red);font-size:var(--fs-sec);font-weight:var(--w-medium)}
 
 /* ---------- inspector ---------- */
@@ -805,6 +811,7 @@ body.insp-closed .inspector{border-left:0}
     selection: null,        /* {x,y,w,h} in baseline pixels */
     offset: { dx: 0, dy: 0 },
     label: '',
+    note: '',
     precision: 'exact',
     drafts: [],             /* [{id,x,y,w,h,dx,dy,precision,label}] */
     selectedDraft: null,
@@ -1043,7 +1050,7 @@ body.insp-closed .inspector{border-left:0}
     });
     state.drafts.forEach(function (draft) {
       var obj = requestObject(draft);
-      data.requests.push({ kind: 'move', id: draft.id, label: labelOf(draft), dx: draft.dx, dy: draft.dy,
+      data.requests.push({ kind: 'move', id: draft.id, label: labelOf(draft), note: noteOf(draft), dx: draft.dx, dy: draft.dy,
         precision: draft.precision, from: obj.from, to: obj.to });
     });
     state.addDrafts.forEach(function (draft) {
@@ -1089,6 +1096,7 @@ body.insp-closed .inspector{border-left:0}
         lines.push('   - Should end at: ' + rectWords(item.to));
         lines.push('   - Keep its size and style, and use the existing layout system.');
         lines.push('   - Precision: ' + (item.precision === 'exact' ? 'Exact (within 2 px)' : 'Approx (within 8 px)'));
+        if (item.note) lines.push('   - Note: ' + item.note);
       } else if (item.kind === 'add') {
         lines.push(n + '**Add "' + item.label + '"** (' + item.id + '): ' + addSentence(item.source));
         lines.push('   - Element: ' + item.hint);
@@ -1216,7 +1224,8 @@ body.insp-closed .inspector{border-left:0}
       x: Math.round(sel.x), y: Math.round(sel.y), w: Math.round(sel.w), h: Math.round(sel.h),
       dx: Math.round(state.offset.dx), dy: Math.round(state.offset.dy),
       precision: state.precision === 'approximate' ? 'approximate' : 'exact',
-      label: state.label
+      label: state.label,
+      note: state.note
     };
   }
   /* Schema (engine.requests.validate_requests): id, type, precision, from, to.
@@ -1236,12 +1245,17 @@ body.insp-closed .inspector{border-left:0}
     if (dy !== 0) parts.push(Math.abs(dy) + ' px ' + (dy > 0 ? 'down' : 'up'));
     return parts.length ? parts.join(' and ') : '0 px';
   }
+  function noteOf(source) {
+    return source && typeof source.note === 'string' ? source.note.replace(/\s+/g, ' ').trim() : '';
+  }
   function requestText(source) {
     var label = labelOf(source);
+    var note = noteOf(source);
+    /* The note line exists only when there is a note, so note-less output is unchanged. */
     return 'Move ' + label + ' ' + moveDirection(source.dx, source.dy) +
       '. Keep size and style. Use the existing layout system.\n' +
       'Precision: ' + (source.precision === 'exact' ? 'Exact' : 'Approx') +
-      '. Screenshot coordinates only.';
+      '. Screenshot coordinates only.' + (note ? '\nNote: ' + note : '');
   }
   function requestHeading(source) {
     return source.id + ' Move ' + labelOf(source);
@@ -1333,7 +1347,7 @@ body.insp-closed .inspector{border-left:0}
   function copy(value) { return JSON.parse(JSON.stringify(value)); }
   function snapshotState() {
     return copy({
-      selection: state.selection, offset: state.offset, label: state.label,
+      selection: state.selection, offset: state.offset, label: state.label, note: state.note,
       precision: state.precision, drafts: state.drafts, selectedDraft: state.selectedDraft,
       addSelection: state.addSelection, addSelected: state.addSelected, addDrafts: state.addDrafts,
       addLabel: state.addLabel, addDescription: state.addDescription, addHint: state.addHint, addAnimation: state.addAnimation,
@@ -1344,6 +1358,7 @@ body.insp-closed .inspector{border-left:0}
     state.selection = snap.selection;
     state.offset = snap.offset || { dx: 0, dy: 0 };
     state.label = typeof snap.label === 'string' ? snap.label : '';
+    state.note = typeof snap.note === 'string' ? snap.note : '';
     state.precision = snap.precision === 'approximate' ? 'approximate' : 'exact';
     state.drafts = Array.isArray(snap.drafts) ? snap.drafts : [];
     state.selectedDraft = snap.selectedDraft || null;
@@ -1402,13 +1417,14 @@ body.insp-closed .inspector{border-left:0}
     draft.dy = Math.round(state.offset.dy);
     draft.precision = state.precision;
     draft.label = state.label;
+    draft.note = state.note;
   }
 
   function commitLabel() {
     var before = state.labelBefore;
     state.labelBefore = null;
     if (!before) return;
-    var same = before.label === state.label &&
+    var same = before.label === state.label && (before.note || '') === state.note &&
       JSON.stringify(before.drafts) === JSON.stringify(state.drafts);
     if (same) return;
     commitHistory(before);
@@ -1426,6 +1442,7 @@ body.insp-closed .inspector{border-left:0}
     state.offset = { dx: draft.dx, dy: draft.dy };
     state.precision = draft.precision === 'approximate' ? 'approximate' : 'exact';
     state.label = draft.label || '';
+    state.note = draft.note || '';
     state.drawRect = null;
     render();
   }
@@ -1437,6 +1454,7 @@ body.insp-closed .inspector{border-left:0}
     var before = snapshotState();
     var draft = liveSource();
     draft.label = state.label;
+    draft.note = state.note;
     state.drafts.push(draft);
     state.selectedDraft = draft.id;
     commitHistory(before);
@@ -3058,6 +3076,51 @@ body.insp-closed .inspector{border-left:0}
     body.appendChild(emptyInspector('Select an area or a request to see its details'));
   }
 
+  /* Static helper phrases: tap to append, never to replace. No AI, no network. */
+  var NOTE_CHIPS = [
+    ['Colour', ['wrong colour', 'match the Before colour']],
+    ['Size', ['too big', 'too small', 'same size as Before']],
+    ['Position', ['misaligned', 'spacing too tight', 'spacing too wide']],
+    ['Text', ['text cut off', 'wrong text', 'font too small']]
+  ];
+  function chipBlock(fieldId) {
+    var wrap = el('div', 'chip-help');
+    wrap.setAttribute('role', 'group');
+    wrap.setAttribute('aria-label', 'Quick phrases');
+    NOTE_CHIPS.forEach(function (group) {
+      var row = el('div', 'chip-row');
+      row.appendChild(el('span', 'chip-topic', group[0]));
+      group[1].forEach(function (phrase) {
+        var b = el('button', 'help-chip', phrase);
+        b.type = 'button';
+        b.setAttribute('data-chip', phrase);
+        b.setAttribute('data-chip-for', fieldId);
+        b.setAttribute('aria-label', 'Add \u201c' + phrase + '\u201d to the text');
+        row.appendChild(b);
+      });
+      wrap.appendChild(row);
+    });
+    return wrap;
+  }
+  function appendPhrase(current, phrase) {
+    var text = String(current || '').replace(/\s+$/, '');
+    if (!text) return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+    return text + (/[;,.:!?]$/.test(text) ? ' ' : '; ') + phrase;
+  }
+  function useChip(button) {
+    var field = document.getElementById(button.getAttribute('data-chip-for'));
+    if (!field || field.disabled) return;
+    var next = appendPhrase(field.value, button.getAttribute('data-chip'));
+    if (field.maxLength > 0 && next.length > field.maxLength) { toast('The text is full'); return; }
+    /* One undo step per chip: open the step, change the field, close the step. */
+    if (field.id === 'selectionNote') state.labelBefore = snapshotState();
+    else { state.addFieldBefore = snapshotState(); state.addFocus = field.id; }
+    field.value = next;
+    field.dispatchEvent(new Event('input', { bubbles: true }));
+    if (field.id === 'selectionNote') commitLabel(); else commitAddField();
+    try { field.focus({ preventScroll: true }); field.setSelectionRange(next.length, next.length); } catch (err) { /* ignore */ }
+  }
+
   function emptyInspector(heading) {
     var box = el('div', 'guide');
     box.appendChild(el('strong', null, heading));
@@ -3139,6 +3202,21 @@ body.insp-closed .inspector{border-left:0}
     labelBlock.appendChild(input);
     labelBlock.appendChild(el('p', 'hint-note', 'A label you provide. No page code or DOM data is read.'));
     body.appendChild(labelBlock);
+
+    var noteBlock = el('div', 'block');
+    var noteLabel = el('label', 'caption', 'Note (optional)');
+    noteLabel.setAttribute('for', 'selectionNote');
+    noteBlock.appendChild(noteLabel);
+    var note = el('textarea', 'field add-desc');
+    note.id = 'selectionNote';
+    note.rows = 2;
+    note.maxLength = 240;
+    note.value = state.note;
+    note.placeholder = 'Anything else the AI should know';
+    note.disabled = !sel;
+    noteBlock.appendChild(note);
+    noteBlock.appendChild(chipBlock('selectionNote'));
+    body.appendChild(noteBlock);
 
     /* Before crop */
     var cropBlock = el('div', 'block');
@@ -3313,6 +3391,7 @@ body.insp-closed .inspector{border-left:0}
     descErr.setAttribute('role', 'alert');
     descErr.hidden = !state.addError;
     descRow.appendChild(descErr);
+    descRow.appendChild(chipBlock('addDescription'));
     form.appendChild(descRow);
 
     var labelInput = el('input', 'field');
@@ -3703,6 +3782,8 @@ body.insp-closed .inspector{border-left:0}
       var target = event.target;
       if (target.closest('#precisionExact')) { setPrecision('exact'); return; }
       if (target.closest('#precisionApprox')) { setPrecision('approximate'); return; }
+      var chipBtn = target.closest('[data-chip]');
+      if (chipBtn) { useChip(chipBtn); return; }
       if (target.closest('#addDraft')) { addDraft(); return; }
       if (target.closest('#inspApprove')) { approveSelected(); return; }
       if (target.closest('#inspRequestChange')) { requestChange(findBox(state.selectedBox)); return; }
@@ -3728,7 +3809,7 @@ body.insp-closed .inspector{border-left:0}
 
     body.addEventListener('focusin', function (event) {
       var id = event.target && event.target.id;
-      if (id === 'selectionLabel') {
+      if (id === 'selectionLabel' || id === 'selectionNote') {
         /* One undo step per label edit: snapshot on focus, commit on commit. */
         state.labelBefore = snapshotState();
         return;
@@ -3755,6 +3836,13 @@ body.insp-closed .inspector{border-left:0}
             renderLeft();
           }, 260);
         }
+        return;
+      }
+      if (id === 'selectionNote') {
+        if (!state.selection || state.note === event.target.value) return;
+        state.note = event.target.value;
+        syncSelectedDraft();
+        updateMoveInline();
         return;
       }
       if (id === 'addLabel') {
@@ -3852,7 +3940,7 @@ body.insp-closed .inspector{border-left:0}
 
     body.addEventListener('focusout', function (event) {
       var id = event.target && event.target.id;
-      if (id === 'selectionLabel') { commitLabel(); return; }
+      if (id === 'selectionLabel' || id === 'selectionNote') { commitLabel(); return; }
       if (id && id.indexOf('add') === 0) commitAddField();
     });
 
@@ -3911,6 +3999,8 @@ body.insp-closed .inspector{border-left:0}
       if (event.key === '0') { setZoom('fit'); return; }
       if (state.mode !== 'move' && state.mode !== 'add') return;
       if (event.key === ' ' || event.code === 'Space') {
+        /* A focused button keeps Space for itself (press), so Hand never steals it. */
+        if (event.target && event.target.closest && event.target.closest('button, [role="button"], a, summary')) return;
         event.preventDefault();
         if (!event.repeat && activeTool() !== 'hand') {
           state.spaceReturn = activeTool();
