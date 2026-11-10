@@ -193,6 +193,8 @@ body.insp-closed{--inspector-cur:0px}
 .btn.primary{background:var(--bronze);border-color:var(--bronze);color:var(--on-bronze);font-weight:var(--w-strong);padding:0 var(--s4)}
 .btn.primary:hover:not(:disabled){background:var(--bronze-hover);border-color:var(--bronze-hover)}
 .btn.primary[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+[aria-disabled="true"]:not(.btn.primary){opacity:.45;cursor:not-allowed}
+textarea[aria-disabled="true"],input[aria-disabled="true"],select[aria-disabled="true"]{opacity:.55}
 .link-btn{display:inline-flex;align-items:center;gap:6px;min-height:var(--hit-dense);padding:0 var(--s2);border-radius:6px;color:var(--blue-ink);font-size:var(--fs-sec);font-weight:var(--w-medium)}
 .link-btn:hover{background:var(--hover)}
 .req-foot{display:flex;justify-content:flex-start;padding:var(--s2) 0 0}
@@ -696,8 +698,8 @@ body.insp-closed .inspector{border-left:0}
     <div class="hd-right">
       <span class="status-chip hide-sm" id="readiness" tabindex="0">Draft</span>
       <span class="hd-divider hide-sm" aria-hidden="true"></span>
-      <button type="button" class="icon-btn hide-sm" id="undoBtn" disabled aria-label="Undo" data-tip="Undo" data-kbd="Ctrl+Z"><svg class="ic"><use href="#i-undo"/></svg></button>
-      <button type="button" class="icon-btn hide-sm" id="redoBtn" disabled aria-label="Redo" data-tip="Redo" data-kbd="Ctrl+Shift+Z"><svg class="ic"><use href="#i-redo"/></svg></button>
+      <button type="button" class="icon-btn hide-sm" id="undoBtn" aria-label="Undo" data-tip="Undo" data-kbd="Ctrl+Z"><svg class="ic"><use href="#i-undo"/></svg></button>
+      <button type="button" class="icon-btn hide-sm" id="redoBtn" aria-label="Redo" data-tip="Redo" data-kbd="Ctrl+Shift+Z"><svg class="ic"><use href="#i-redo"/></svg></button>
       <span class="capture-chip hide-sm hide-md" id="captureChip" tabindex="0" data-tip="Capture size comes from the report"><span class="cap-name" id="captureName">Desktop</span><span class="num" id="captureSize">&mdash;</span></span>
       <button type="button" class="icon-btn hide-sm" id="settingsBtn" aria-label="Settings" data-tip="Settings" data-kbd="Ctrl+,"><svg class="ic"><use href="#i-gear"/></svg></button>
       <button type="button" class="btn primary" id="copyMain" aria-label="Copy prompt" data-tip="Copy all requests as one prompt for any AI assistant" data-kbd="Ctrl+Enter"><svg class="ic copy-ic" viewBox="0 0 16 16" aria-hidden="true"><g class="ic-copy"><use href="#i-copy"/></g><path class="ic-check" d="m3 8.5 3.2 3L13 4.75" pathLength="1"/></svg><span class="lbl">Copy prompt</span></button>
@@ -1501,14 +1503,8 @@ body.insp-closed .inspector{border-left:0}
   function updateHistory() {
     var undoBtn = $('#undoBtn');
     var redoBtn = $('#redoBtn');
-    if (undoBtn) {
-      undoBtn.disabled = !state.history.length;
-      undoBtn.title = state.history.length ? 'Undo (Ctrl+Z)' : 'Undo (Ctrl+Z)';
-    }
-    if (redoBtn) {
-      redoBtn.disabled = !state.future.length;
-      redoBtn.title = state.future.length ? 'Redo (Ctrl+Y)' : 'Redo (Ctrl+Y)';
-    }
+    explainDisabled(undoBtn, state.history.length ? '' : 'Nothing to undo', 'Undo');
+    explainDisabled(redoBtn, state.future.length ? '' : 'Nothing to redo', 'Redo');
   }
   function undo() {
     if (!state.history.length) { toast('Nothing to undo'); return; }
@@ -3257,7 +3253,7 @@ body.insp-closed .inspector{border-left:0}
       var approve = el('button', 'btn', status === 'approved' ? 'Approved' : 'Approve');
       approve.type = 'button';
       approve.id = 'inspApprove';
-      approve.disabled = status === 'approved';
+      explainDisabled(approve, status === 'approved' ? 'Already approved' : '');
       actions.appendChild(approve);
       var change = el('button', 'btn', 'Request change');
       change.type = 'button';
@@ -3414,7 +3410,7 @@ body.insp-closed .inspector{border-left:0}
     note.maxLength = 240;
     note.value = state.note;
     note.placeholder = 'Anything else the AI should know';
-    note.disabled = !sel;
+    explainDisabled(note, sel ? '' : 'Mark an area first');
     noteBlock.appendChild(note);
     noteBlock.appendChild(chipBlock('selectionNote'));
     body.appendChild(noteBlock);
@@ -3473,7 +3469,7 @@ body.insp-closed .inspector{border-left:0}
     var addBtn = el('button', 'btn', 'Add request');
     addBtn.type = 'button';
     addBtn.id = 'addDraft';
-    addBtn.disabled = !sel;
+    explainDisabled(addBtn, !sel ? 'Mark an area first' : '');
     addBtn.style.width = '100%';
     addBtn.style.justifyContent = 'center';
     actions.appendChild(addBtn);
@@ -3529,7 +3525,7 @@ body.insp-closed .inspector{border-left:0}
       if (item[0] === value) option.selected = true;
       select.appendChild(option);
     });
-    select.disabled = !!disabled;
+    explainDisabled(select, disabled ? 'Pick an animation first' : '');
     return select;
   }
 
@@ -3545,10 +3541,10 @@ body.insp-closed .inspector{border-left:0}
     var easing = document.getElementById('addEasing');
     if (easing && easing.value !== state.addEasing) easing.value = state.addEasing;
     var motion = addHasMotion({ animation: state.addAnimation });
-    if (easing) easing.disabled = !motion;
+    if (easing) explainDisabled(easing, motion ? '' : 'Pick an animation first');
     var duration = document.getElementById('addDuration');
     if (duration) {
-      duration.disabled = !motion;
+      explainDisabled(duration, motion ? '' : 'Pick an animation first');
       var shown = String(addDurationOf({ duration: state.addDuration }));
       if (document.activeElement !== duration && duration.value !== shown) duration.value = shown;
     }
@@ -3627,7 +3623,7 @@ body.insp-closed .inspector{border-left:0}
     duration.max = '3000';
     duration.step = '10';
     duration.value = String(addDurationOf({ duration: state.addDuration }));
-    duration.disabled = !motion;
+    explainDisabled(duration, motion ? '' : 'Pick an animation first');
     duration.setAttribute('aria-label', 'Animation duration in milliseconds');
     form.appendChild(addFieldRow('Duration (ms)', duration));
 
@@ -3667,7 +3663,7 @@ body.insp-closed .inspector{border-left:0}
     var saveBtn = el('button', 'btn', draft ? 'Save ' + draft.id : 'Add request');
     saveBtn.type = 'button';
     saveBtn.id = 'addDraftSave';
-    saveBtn.disabled = !sel;
+    explainDisabled(saveBtn, !sel ? 'Mark an area first' : '');
     saveBtn.style.width = '100%';
     saveBtn.style.justifyContent = 'center';
     actions.appendChild(saveBtn);
@@ -3694,7 +3690,7 @@ body.insp-closed .inspector{border-left:0}
     var pair = cropPair('box-' + box.id);
     if (pair) crops.appendChild(pair);
     var approve = $('#popApprove');
-    approve.disabled = status === 'approved';
+    explainDisabled(approve, status === 'approved' ? 'Already approved' : '');
     approve.textContent = status === 'approved' ? 'Approved' : 'Approve';
   }
 
@@ -4398,14 +4394,58 @@ body.insp-closed .inspector{border-left:0}
     $('#stepperShort').textContent = 'Step ' + n + ' of ' + STEPS.length;
   }
 
+  /* Disabled controls stay focusable and hoverable (aria-disabled) and say why. */
+  function whyHost() {
+    var host = document.getElementById('whyHost');
+    if (!host) { host = el('div', 'sr-only'); host.id = 'whyHost'; document.body.appendChild(host); }
+    return host;
+  }
+  function explainDisabled(node, reason, enabledTip) {
+    if (!node) return;
+    var id = (node.id || ('w' + Math.random().toString(36).slice(2))) + '-why';
+    if (reason) {
+      node.disabled = false;
+      node.setAttribute('aria-disabled', 'true');
+      node.setAttribute('data-tip', reason);
+      node.setAttribute('data-why', reason);
+      var span = document.getElementById(id);
+      if (!span) { span = el('span'); span.id = id; whyHost().appendChild(span); }
+      span.textContent = reason;
+      node.setAttribute('aria-describedby', id);
+      if (node.tagName === 'TEXTAREA' || (node.tagName === 'INPUT' && node.type !== 'button')) node.readOnly = true;
+    } else {
+      node.setAttribute('aria-disabled', 'false');
+      node.removeAttribute('data-why');
+      if (enabledTip) node.setAttribute('data-tip', enabledTip); else node.removeAttribute('data-tip');
+      if (node.getAttribute('aria-describedby') === id) node.removeAttribute('aria-describedby');
+      if (node.tagName === 'TEXTAREA' || (node.tagName === 'INPUT' && node.type !== 'button')) node.readOnly = false;
+    }
+  }
+  /* One guard for every aria-disabled control: no action, just the reason. */
+  document.addEventListener('click', function (event) {
+    var off = event.target.closest && event.target.closest('[aria-disabled="true"]');
+    if (!off || off.tagName === 'TEXTAREA' || off.tagName === 'INPUT') return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    toast(off.getAttribute('data-why') || off.getAttribute('data-tip') || 'Not available yet');
+  }, true);
+  ['mousedown', 'keydown'].forEach(function (type) {
+    document.addEventListener(type, function (event) {
+      var t = event.target;
+      if (t && t.tagName === 'SELECT' && t.getAttribute('aria-disabled') === 'true' && (type === 'mousedown' || /^(Arrow|Enter| |Home|End|Page)/.test(event.key))) {
+        event.preventDefault();
+        if (type === 'mousedown') toast(t.getAttribute('data-why'));
+      }
+    }, true);
+  });
+
   function renderCopyButton() {
     var button = $('#copyMain');
     if (!button) return;
     var count = requestCount();
     var label = button.querySelector('.lbl');
     if (label && !state.copyTimer) label.textContent = 'Copy prompt';
-    button.setAttribute('aria-disabled', count ? 'false' : 'true');
-    button.setAttribute('data-tip', count ? 'Copy all requests as one prompt for any AI assistant' : 'Add a request first');
+    explainDisabled(button, count ? '' : 'Add a request first', 'Copy all requests as one prompt for any AI assistant');
   }
   function copyPrompt() {
     var count = requestCount();
@@ -4462,7 +4502,8 @@ body.insp-closed .inspector{border-left:0}
     var copyBtn = el('button', 'btn primary', 'Copy prompt');
     copyBtn.type = 'button';
     copyBtn.id = 'previewCopy';
-    if (!count) copyBtn.setAttribute('aria-disabled', 'true');
+    copyBtn.id = 'previewCopy';
+    explainDisabled(copyBtn, count ? '' : 'Add a request first');
     copyBtn.addEventListener('click', function () { copyPrompt(); });
     actions.appendChild(close);
     actions.appendChild(copyBtn);
@@ -5521,10 +5562,10 @@ body.insp-closed .inspector{border-left:0}
     swap.id = compact ? 'slotSwapSide' : 'slotSwap';
     swap.setAttribute('data-slot-swap', '');
     swap.setAttribute('aria-label', 'Swap Before and After');
-    swap.setAttribute('data-tip', state.slots.before || state.slots.after ? 'Swap Before and After' : 'Load an image first');
+    swap.setAttribute('data-tip', 'Swap Before and After');
     swap.innerHTML = '<svg class="ic" aria-hidden="true" viewBox="0 0 16 16"><path d="M4 5h9M10 2l3 3-3 3M12 11H3M6 8l-3 3 3 3"/></svg>';
-    if (!state.slots.before && !state.slots.after) swap.setAttribute('aria-disabled', 'true');
     row.appendChild(swap);
+    explainDisabled(swap, !state.slots.before && !state.slots.after ? 'Load an image first' : '', 'Swap Before and After');
     row.appendChild(slotBlock('after', compact));
     return row;
   }
