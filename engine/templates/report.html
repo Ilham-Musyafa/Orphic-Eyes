@@ -517,6 +517,11 @@ body.insp-closed .inspector{border-left:0}
 .pop-actions .btn{flex:1;min-height:var(--hit-dense);padding:0 var(--s2);font-size:var(--fs-sec)}
 .toast{position:fixed;left:50%;bottom:calc(var(--status-h) + 96px);transform:translate(-50%,8px);z-index:95;background:var(--toast-bg);color:var(--toast-ink);border-radius:10px;padding:9px var(--s4);box-shadow:var(--shadow-pop);font-weight:var(--w-medium);font-size:var(--fs-body);opacity:0;pointer-events:none;transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out);max-width:calc(100vw - 24px);text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.has-action.show{pointer-events:auto;display:flex;align-items:center;gap:var(--s3)}
+.toast-action{color:#8DB8FF;font-weight:var(--w-strong);min-height:var(--hit-dense);padding:0 var(--s2);border-radius:6px}
+:root[data-theme="dark"] .toast-action{color:#1D63D3}
+.toast-action:hover{background:rgba(127,127,127,.18)}
+.prompt-hint{margin:0;padding:var(--s2) var(--s4);font-size:var(--fs-sec);color:var(--muted);border-top:1px solid var(--line)}
 .menu{position:fixed;z-index:60;min-width:220px;padding:var(--s1);border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop)}
 .menu button{display:flex;align-items:center;gap:var(--s2);width:100%;min-height:var(--hit);padding:0 var(--s2);border-radius:6px;text-align:left}
 .menu button:hover,.menu button:focus-visible{background:var(--hover)}
@@ -1078,7 +1083,8 @@ body.insp-closed .inspector{border-left:0}
 
   /* ---------- copy helpers ---------- */
   function writeClipboard(text, message, onDone) {
-    var done = function () { toast(message || 'Copied'); if (onDone) onDone(); };
+    var refAction = /^Prompt copied · Attach /.test(message || '') ? { action: 'Download references', run: downloadAllRefs, duration: 6000 } : null;
+    var done = function () { toast(message || 'Copied', refAction); if (onDone) onDone(); };
     var fallback = function () {
       var ok = false;
       try {
@@ -1104,13 +1110,25 @@ body.insp-closed .inspector{border-left:0}
     }
   }
 
-  function toast(message) {
+  /* toast(message, { action, run, duration }): one optional action button. */
+  function toast(message, opts) {
     var node = $('#toast');
     if (!node) return;
+    opts = opts || {};
     node.textContent = message;
+    node.classList.toggle('has-action', !!opts.action);
+    if (opts.action) {
+      var b = el('button', 'toast-action', opts.action);
+      b.type = 'button';
+      b.addEventListener('click', function () {
+        node.classList.remove('show');
+        if (opts.run) opts.run();
+      });
+      node.appendChild(b);
+    }
     node.classList.add('show');
     if (state.toastTimer) clearTimeout(state.toastTimer);
-    state.toastTimer = setTimeout(function () { node.classList.remove('show'); }, 3000);
+    state.toastTimer = setTimeout(function () { node.classList.remove('show'); }, opts.duration || 3000);
   }
 
   /* ---------- Copy prompt: one neutral prompt for any AI assistant ---------- */
@@ -1126,6 +1144,8 @@ body.insp-closed .inspector{border-left:0}
       list.push({ type: 'add', name: addName(draft),
         rect: { x: Math.round(draft.x), y: Math.round(draft.y), w: Math.round(draft.w), h: Math.round(draft.h) },
         description: addDescriptionOf(draft), hint: addHintOf(draft),
+        kind: draft.kind || null, answers: draft.answers || {},
+        refName: refEntry(draft.ref) ? refName(draft.ref, draft.id) : '',
         motion: addHasMotion(draft) ? ANIMATION_LABEL[addAnimationOf(draft)] + ', ' + addDurationOf(draft) + ' ms, ' + addEasingOf(draft) : '',
         note: '' });
     });
@@ -1143,6 +1163,12 @@ body.insp-closed .inspector{border-left:0}
       var target = opt.coords ? ', to x ' + (r.rect.x + r.dx) + ', y ' + (r.rect.y + r.dy) : '';
       lines.push('Move it ' + moveDirection(r.dx, r.dy) + target + '. Keep its size and style.');
       lines.push('Precision: ' + (r.precision === 'approximate' ? 'Approx (within 8 px)' : 'Exact (within 2 px)') + '.');
+    } else if (r.type === 'add' && (r.kind || r.refName)) {
+      /* Add with a reference or a kind: reference line, answers line, then the note. */
+      if (r.refName) lines.push('Reference: attached file "' + r.refName + '" (' + kindLabel(r.kind) + ' reference; copy the ' + (KIND_SCOPE[r.kind] || 'look') + ', not the content).');
+      var answers = r.kind ? answersLine(r.kind, r.answers) : '';
+      if (answers) lines.push(answers);
+      if (r.description) lines.push('Note: ' + String(r.description).replace(/\s+/g, ' ').trim());
     } else if (r.type === 'add') {
       if (r.description) lines.push('Add: ' + sentence(r.description));
       lines.push('Element: ' + r.hint + '.' + (r.motion ? ' Animation: ' + r.motion + '.' : ''));
@@ -1162,9 +1188,14 @@ body.insp-closed .inspector{border-left:0}
       lines.push('Page: ' + ((state.report && state.report.name) || 'page') + ' · Viewport: ' + size.w + '×' + size.h);
     }
     lines.push('');
+    var refs = requests.filter(function (r) { return r.refName; }).map(function (r) { return r.refName; });
+    if (refs.length) {
+      lines.push('Attachments: ' + refs.join(', ') + ' (please attach these files)');
+      lines.push('');
+    }
     lines.push('Requests (' + requests.length + '):');
     requests.forEach(function (r, i) {
-      var head = (i + 1) + '. [' + (PROMPT_TYPE[r.type] || word(r.type)) + '] ' + r.name;
+      var head = (i + 1) + '. [' + (PROMPT_TYPE[r.type] || word(r.type)) + (r.type === 'add' && r.kind ? ' \u00b7 ' + kindLabel(r.kind) : '') + '] ' + r.name;
       if (opt.coords && r.rect) head += ' — at x ' + r.rect.x + ', y ' + r.rect.y + ', ' + r.rect.w + '×' + r.rect.h + 'px';
       lines.push(head);
       promptDetails(r, opt).forEach(function (line) { lines.push('   ' + line); });
@@ -1173,10 +1204,14 @@ body.insp-closed .inspector{border-left:0}
     });
     lines.push('');
     var reply = 'Reply with a short list of what you changed.';
-    if (opt.ruleScope || opt.ruleAsk) {
+    if (opt.ruleScope || opt.ruleAsk || refs.length) {
       lines.push('Rules:');
       if (opt.ruleScope) lines.push('- Change only what is listed above. Keep everything else as it is.');
       if (opt.ruleAsk) lines.push('- If a request is unclear, ask before changing code.');
+      if (refs.length) {
+        lines.push('- Reference files are attached to this message. Use them only as visual guidance for the listed area.');
+        lines.push('- Respect prefers-reduced-motion for any animation you add.');
+      }
       lines.push('- ' + reply);
     } else {
       lines.push(reply);
@@ -4323,7 +4358,10 @@ body.insp-closed .inspector{border-left:0}
   function copyPrompt() {
     var count = requestCount();
     if (!count) { toast('Add a request first'); return; }
-    writeClipboard(promptText(), 'Prompt copied · ' + count + ' request' + (count === 1 ? '' : 's'), function () {
+    var refCount = promptRequests().filter(function (r) { return r.refName; }).length;
+    var copiedMsg = refCount ? 'Prompt copied · Attach ' + refCount + ' reference file' + (refCount === 1 ? '' : 's') + ' in your AI chat'
+      : 'Prompt copied · ' + count + ' request' + (count === 1 ? '' : 's');
+    writeClipboard(promptText(), copiedMsg, function () {
       var button = $('#copyMain');
       var label = button.querySelector('.lbl');
       if (label) label.textContent = 'Copied';
@@ -4360,6 +4398,9 @@ body.insp-closed .inspector{border-left:0}
     pre.tabIndex = 0;
     pre.setAttribute('aria-label', 'Prompt text');
     modal.appendChild(pre);
+    if (promptRequests().some(function (r) { return r.refName; })) {
+      modal.appendChild(el('p', 'prompt-hint', "Images can't be copied as text. Attach the files listed under Attachments in your AI chat."));
+    }
     var actions = el('div', 'modal-actions');
     var close = el('button', 'btn', 'Close');
     close.type = 'button';
