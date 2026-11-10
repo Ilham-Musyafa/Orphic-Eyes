@@ -4562,8 +4562,6 @@ body.insp-closed .inspector{border-left:0}
     } else if (tab === 'appearance') {
       pane.appendChild(setRow('Theme', null, segControl([['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], prefs.theme, setTheme, 'Theme')));
       pane.appendChild(setRow('Text size', 'Scales every label in the app.', segControl([['s', 'S'], ['m', 'M'], ['l', 'L']], state.textSize, setTextSize, 'Text size')));
-      var accent = el('span', 'chip', 'Bronze · fixed');
-      pane.appendChild(setRow('Accent', 'Used only for the Copy button.', accent));
     } else if (tab === 'canvas') {
       pane.appendChild(setRow('Default view', 'Used when a report opens.', segControl([['side', 'Side by side'], ['slider', 'Slider'], ['overlay', 'Overlay'], ['diff', 'Diff']], prefs.defaultView, function (v) {
         prefs.defaultView = v; state.view = v; savePrefs(); render(); refreshSettings();
