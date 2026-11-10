@@ -148,13 +148,29 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .review-bar .note{font-size:var(--fs-sm);min-width:0}
 .stage-scroller{flex:1;min-height:0;min-width:0;overflow:auto;display:flex;padding:8px;background:var(--surface)}
 .stage-inner{flex:none;margin:auto;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
-.pair{display:flex;align-items:stretch;justify-content:center;gap:8px}
-.pair.fitted{width:100%;height:100%;align-items:center}
-.half{position:relative;background:#fff;border:1px solid var(--line2);border-radius:8px;overflow:hidden;box-shadow:0 1px 6px rgba(37,39,45,.05);display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
-.pair.fitted .half{flex:1 1 0;height:auto;min-width:0}
-.pair.zoomed .half{flex:none}
-.frame{position:relative;overflow:hidden;background:#fff;flex:none;align-self:center;justify-self:center}
-.frame img{display:block;width:100%;height:100%;object-fit:fill}
+
+/* review views: one caption row above each picture, picture box below it */
+.rv-stage{display:flex;gap:8px;align-items:flex-start;justify-content:center;margin:auto;flex:none;min-width:0}
+.rv-stage.stack{flex-direction:column;align-items:center}
+.rv-frame{display:flex;flex-direction:column;flex:none;min-width:0}
+.rv-cap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 2px 4px;min-height:16px;font-size:var(--fs-mono-xs);line-height:var(--lh-tight);font-weight:var(--fw-head);letter-spacing:.02em;color:#6d7076;white-space:nowrap;overflow:hidden;flex:none}
+.rv-cap .rv-side{display:flex;align-items:center;gap:8px;min-width:0}
+.rv-cap .rv-view{color:#4a4b50;text-transform:uppercase;letter-spacing:.05em;overflow:hidden;text-overflow:ellipsis}
+.rv-opacity{display:flex;align-items:center;gap:6px;font-weight:400;font-size:var(--fs-mono-xs);color:#6d7076;min-width:0;overflow:hidden}
+.rv-opacity input[type=range]{width:92px;height:16px;margin:0;padding:0;accent-color:var(--blue);cursor:pointer;flex:none}
+.rv-opacity .rv-opval{font-variant-numeric:tabular-nums;min-width:32px;text-align:right;flex:none}
+.rv-pic{position:relative;background:#fff;border-radius:4px;overflow:hidden;box-shadow:0 0 0 1px var(--line2),0 1px 6px rgba(37,39,45,.05);flex:none}
+.rv-pic img.rv-img,.rv-pic>img{display:block;width:100%;height:100%;object-fit:fill}
+.rv-before,.rv-after{position:absolute;inset:0;z-index:1;overflow:hidden}
+.rv-before img,.rv-after img{display:block;width:100%;height:100%;object-fit:fill}
+.rv-after{pointer-events:none}
+.rv-nodiff{display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:repeating-linear-gradient(45deg,#fafafa,#fafafa 8px,#f3f3f1 8px,#f3f3f1 16px);color:#8a8c91;font-size:var(--fs-sm);text-align:center;padding:12px;line-height:var(--lh-body)}
+.rv-line{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#383c43;z-index:9;pointer-events:none}
+.rv-handle{position:absolute;top:50%;transform:translate(-50%,-50%);width:34px;height:44px;min-width:28px;padding:0;border:1px solid #c7cbd0;border-radius:8px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.22);display:flex;align-items:center;justify-content:center;gap:2px;z-index:10;cursor:ew-resize;touch-action:none;color:#3a3d43}
+.rv-handle:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.rv-handle i{display:block;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent}
+.rv-handle i.l{border-right:6px solid #3a3d43}
+.rv-handle i.r{border-left:6px solid #3a3d43}
 .marks{position:absolute;inset:0;z-index:3;pointer-events:none}
 .mark-box{position:absolute;border:2px solid var(--amber);background:transparent;padding:0;border-radius:2px;pointer-events:auto;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.7)}
 .mark-box.expected,.mark-box.approved{border-color:var(--green)}
@@ -163,7 +179,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
 .mark-box.selected{border-color:var(--blue);box-shadow:0 0 0 2px rgba(47,128,255,.28)}
 .mark-box.ref{border-style:dashed;border-width:2px}
 .mark-box:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
-.tag{position:absolute;top:6px;left:6px;z-index:4;background:#ffffffdd;border:1px solid #ececec;border-radius:6px;padding:2px 7px;font-size:var(--fs-mono-xs);font-weight:var(--fw-head);color:#4a4b50;max-width:calc(100% - 12px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;background:#fff;border:1px dashed var(--line2);border-radius:10px;color:var(--muted);font-size:var(--fs-sm);text-align:center;padding:26px;min-width:260px;min-height:150px;max-width:100%;line-height:var(--lh-body)}
 .placeholder strong{font-size:var(--fs-base);color:var(--ink);font-weight:var(--fw-head)}
 .img-missing{display:flex;align-items:center;justify-content:center;width:100%;height:100%;background:repeating-linear-gradient(45deg,#fafafa,#fafafa 8px,#f3f3f1 8px,#f3f3f1 16px);color:var(--faint);font-size:var(--fs-mono-xs);text-align:center;padding:2px;overflow:hidden}
@@ -382,8 +397,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
     <section class="centerpanel" aria-label="Image stage">
       <div class="review-bar">
         <div class="seg" id="viewSwitch" role="group" aria-label="Review view">
-          <button type="button" data-view="side" class="on" aria-pressed="true">Side by side</button>
-          <button type="button" data-view="slider" aria-pressed="false">Slider</button>
+          <button type="button" data-view="side" aria-pressed="false">Side by side</button>
+          <button type="button" data-view="slider" class="on" aria-pressed="true">Slider</button>
           <button type="button" data-view="overlay" aria-pressed="false">Overlay</button>
           <button type="button" data-view="diff" aria-pressed="false">Diff</button>
         </div>
@@ -432,11 +447,15 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
   <footer class="statusbar">
     <div>
-      <span id="sbCapture">Capture —</span>
-      <span class="sep"></span>
-      <span id="sbZoom">Zoom Fit</span>
+      <span id="sbCapture">No report loaded</span>
     </div>
-    <div><span id="sbPrecision">Exact 2 px · Approx 8 px</span></div>
+    <div>
+      <span id="sbZoom">Zoom Fit</span>
+      <span class="sep"></span>
+      <span id="sbPrecision">Exact 2 px · Approx 8 px</span>
+      <span class="sep" id="sbGridSep" hidden></span>
+      <span id="sbGrid" hidden></span>
+    </div>
   </footer>
 
 </div>
@@ -468,11 +487,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
   /* The report-level status is about pixels only; request verdicts never alter it. */
   var STATUS_TEXT = { pass: 'Looks the same', check: 'Check these changes', fail: 'Big change detected' };
   var VERDICTS = { done: true, not_done: true, unknown: true, skipped: true };
-  var VIEW_PLACEHOLDER = {
-    slider: 'Slider view arrives in a later round.',
-    overlay: 'Overlay view arrives in a later round.',
-    diff: 'Diff view arrives in a later round.'
-  };
   var MAX_REQUESTS = 8;
   var MIN_SELECT = 8;
   var PRECISION = { exact: 'Exact', approximate: 'Approx' };
@@ -520,7 +534,9 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
   var state = {
     mode: 'review',
-    view: 'side',
+    view: 'slider',          /* default view on load, memory only */
+    sliderPct: 50,
+    overlayOpacity: 50,
     zoom: 'fit',
     scale: 1,
     capture: { w: 1280, h: 720 },
@@ -1231,7 +1247,76 @@ button:disabled{opacity:.45;cursor:not-allowed}
   }
 
   /* ---------- move mode: rulers ---------- */
-  /* Ruler numbers are always capture pixels; only tick density follows the zoom. */
+  /* Ruler numbers are always capture pixels; only tick density follows the zoom.
+     Tick positions are untouched by label logic: label steps and skipping are
+     computed separately so a number is never drawn twice or over its neighbour. */
+  var RULER_LABEL_STEPS = [50, 100, 200, 500];
+  var RULER_LABEL_GAP = 48;   /* minimum display px between label anchors */
+  var RULER_LABEL_GUTTER = 6; /* minimum display px between painted labels */
+
+  function rulerFontPx() {
+    var scale = TEXT_SCALE[state.textSize] || 1;
+    return 12 * scale;
+  }
+  /* Exact text width for one label, measured in the page's own ruler font.
+     Falls back to a per-character estimate when measurement is unavailable. */
+  var RULER_MEASURE = null;
+  function rulerTextWidth(text) {
+    var str = String(text);
+    if (RULER_MEASURE === null) {
+      RULER_MEASURE = document.createElement('canvas').getContext('2d');
+    }
+    if (RULER_MEASURE) {
+      try {
+        RULER_MEASURE.font = rulerFontPx() + 'px ' +
+          '"Cascadia Mono","SF Mono",Consolas,"Liberation Mono",ui-monospace,monospace';
+        var measured = RULER_MEASURE.measureText(str).width;
+        if (measured > 0) return measured;
+      } catch (err) { /* fall through to the estimate */ }
+    }
+    return str.length * rulerFontPx() * 0.62;
+  }
+
+  function rulerLabels(capturePx, scale, length, horizontal) {
+    var step = RULER_LABEL_STEPS[RULER_LABEL_STEPS.length - 1];
+    for (var i = 0; i < RULER_LABEL_STEPS.length; i++) {
+      if (RULER_LABEL_STEPS[i] * scale >= RULER_LABEL_GAP) { step = RULER_LABEL_STEPS[i]; break; }
+    }
+    /* The vertical ruler writes rotated text starting 10 px past the tick. */
+    var lead = horizontal ? 2 : 10;
+    var out = [];
+    var lastEnd = -Infinity;
+    for (var value = 0; value <= capturePx; value += step) {
+      var pos = Math.round(value * scale * 10) / 10;
+      var width = rulerTextWidth(value);
+      var start = pos + lead;
+      var end = start + width;
+      /* Never run past the far end, never touch the previous label. */
+      if (end > length) continue;
+      if (start < lastEnd + RULER_LABEL_GUTTER) continue;
+      out.push({ value: value, pos: pos, anchor: 'start' });
+      lastEnd = end;
+    }
+    if (capturePx % step !== 0) {
+      var edge = Math.round(capturePx * scale * 10) / 10;
+      var edgeWidth = rulerTextWidth(capturePx);
+      var edgeEnd = edge - 2;
+      var edgeStart = edgeEnd - edgeWidth;
+      /* The end value is the image size: keep it visible by dropping the last
+         step label when the two would touch. "0" is never dropped. */
+      while (out.length && out[out.length - 1].value !== 0) {
+        var prev = out[out.length - 1];
+        var prevEnd = prev.pos + lead + rulerTextWidth(prev.value);
+        if (edgeStart >= prevEnd + RULER_LABEL_GUTTER) break;
+        out.pop();
+      }
+      if (edgeEnd <= length + 0.5 && edgeStart >= 0) {
+        out.push({ value: capturePx, pos: edge, anchor: 'end' });
+      }
+    }
+    return out;
+  }
+
   function rulerSvg(horizontal, capturePx, scale) {
     var major = 100;
     var choices = [100, 200, 500, 1000];
@@ -1251,23 +1336,28 @@ button:disabled{opacity:.45;cursor:not-allowed}
       var tick = isMajor ? 11 : 4;
       if (horizontal) {
         parts.push('<line x1="' + pos + '" x2="' + pos + '" y1="' + (23 - tick) + '" y2="23"/>');
-        if (isMajor) parts.push('<text x="' + (pos + 2) + '" y="9">' + value + '</text>');
       } else {
         parts.push('<line y1="' + pos + '" y2="' + pos + '" x1="' + (23 - tick) + '" x2="23"/>');
-        if (isMajor) parts.push('<text x="2" y="' + (pos + 10) + '" transform="rotate(90 3 ' + (pos + 10) + ')">' + value + '</text>');
       }
     }
-    /* Close the ruler at the capture edge so the last number is the image size. */
+    /* Close the ruler at the capture edge with a tick only; the end number is
+       placed by the label pass, which knows whether it would collide. */
     if (capturePx % major !== 0) {
-      var end = Math.round(capturePx * scale * 10) / 10;
-      if (horizontal) {
-        parts.push('<line x1="' + end + '" x2="' + end + '" y1="12" y2="23"/>');
-        parts.push('<text x="' + (end - 2) + '" y="9" text-anchor="end">' + capturePx + '</text>');
-      } else {
-        parts.push('<line y1="' + end + '" y2="' + end + '" x1="12" x2="23"/>');
-        parts.push('<text x="2" y="' + (end - 2) + '" transform="rotate(90 3 ' + (end - 2) + ')" text-anchor="end">' + capturePx + '</text>');
-      }
+      var edge = Math.round(capturePx * scale * 10) / 10;
+      if (horizontal) parts.push('<line x1="' + edge + '" x2="' + edge + '" y1="12" y2="23"/>');
+      else parts.push('<line y1="' + edge + '" y2="' + edge + '" x1="12" x2="23"/>');
     }
+    rulerLabels(capturePx, scale, length, horizontal).forEach(function (item) {
+      if (horizontal) {
+        var x = item.anchor === 'end' ? item.pos - 2 : item.pos + 2;
+        parts.push('<text x="' + x + '" y="9"' +
+          (item.anchor === 'end' ? ' text-anchor="end"' : '') + '>' + item.value + '</text>');
+      } else {
+        var y = item.anchor === 'end' ? item.pos - 2 : item.pos + 10;
+        parts.push('<text x="2" y="' + y + '" transform="rotate(90 3 ' + y + ')"' +
+          (item.anchor === 'end' ? ' text-anchor="end"' : '') + '>' + item.value + '</text>');
+      }
+    });
     var w = horizontal ? length : 23;
     var h = horizontal ? 23 : length;
     return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h +
@@ -1282,6 +1372,8 @@ button:disabled{opacity:.45;cursor:not-allowed}
     var px = horizontal ? size.w : size.h;
     var shown = horizontal ? state.frameW : state.frameH;
     if (!shown || !px) { found.innerHTML = ''; return; }
+    /* Scale from the same integer frame size the ruler box uses, so the last
+       label lands exactly on the image edge at Fit and 50/100/200%. */
     found.innerHTML = rulerSvg(horizontal, px, shown / px);
   }
 
@@ -1942,15 +2034,261 @@ button:disabled{opacity:.45;cursor:not-allowed}
     return layer;
   }
 
-  function frameHalf(label, path, size, imageLabel) {
-    var half = el('div', 'half');
-    var tag = el('span', 'tag', label);
-    var frame = el('div', 'frame');
-    frame.appendChild(imageNode(path, imageLabel));
-    frame.appendChild(markLayer(size));
-    half.appendChild(tag);
-    half.appendChild(frame);
-    return { half: half, frame: frame };
+  /* ---------- review views ---------- */
+  /* A caption row sits ABOVE each picture, in its own box, so no label can ever
+     cover picture pixels. Pictures are sized from the stage, never cropped. */
+  function rvCaption(nodes) {
+    var cap = el('div', 'rv-cap');
+    (nodes || []).forEach(function (node) { cap.appendChild(node); });
+    return cap;
+  }
+  function rvLabel(text) { return el('span', 'rv-label', text); }
+  function rvFrame(capNodes) {
+    var frame = el('div', 'rv-frame');
+    var cap = rvCaption(capNodes);
+    var pic = el('div', 'rv-pic');
+    frame.appendChild(cap);
+    frame.appendChild(pic);
+    return { frame: frame, cap: cap, pic: pic };
+  }
+  function rvLayer(cls, path, label) {
+    var layer = el('div', cls);
+    layer.appendChild(imageNode(path, label));
+    return layer;
+  }
+  function diffNode(path) {
+    var safe = safePath(path);
+    if (!safe) return el('div', 'rv-nodiff', 'No diff image in this report');
+    var img = el('img', 'rv-img');
+    img.alt = 'diff';
+    img.src = safe;
+    img.addEventListener('error', function () {
+      var box = el('div', 'rv-nodiff', 'No diff image in this report');
+      if (img.parentNode) img.parentNode.replaceChild(box, img);
+    });
+    return img;
+  }
+  var HANDLE_MIN_INSET = 17; /* half the handle width: keeps it fully inside */
+  function applySlider(value) {
+    state.sliderPct = clamp(Math.round(value), 0, 100);
+    var pic = document.getElementById('rvSliderPic');
+    if (!pic) return;
+    var after = pic.querySelector('.rv-after');
+    var line = pic.querySelector('.rv-line');
+    var handle = pic.querySelector('.rv-handle');
+    if (after) after.style.clipPath = 'inset(0 0 0 ' + state.sliderPct + '%)';
+    if (line) line.style.left = state.sliderPct + '%';
+    if (handle) {
+      /* The split stays exact; the handle is nudged inward at the extremes so it
+         is never half-clipped by the picture box. */
+      handle.style.left = 'clamp(' + HANDLE_MIN_INSET + 'px,' + state.sliderPct +
+        '%,calc(100% - ' + HANDLE_MIN_INSET + 'px))';
+      handle.setAttribute('aria-valuenow', String(state.sliderPct));
+    }
+  }
+  function sliderAt(pic, clientX) {
+    var rect = pic.getBoundingClientRect();
+    if (!rect.width) return;
+    applySlider(clamp((clientX - rect.left) / rect.width, 0, 1) * 100);
+  }
+  function bindSlider(pic) {
+    var drag = false;
+    var grabOffset = 0;
+    pic.addEventListener('pointerdown', function (event) {
+      if (event.button !== 0) return;
+      if (event.target.closest('[data-box]')) return; /* boxes stay clickable */
+      drag = true;
+      var handle = event.target.closest('.rv-handle');
+      var rect = pic.getBoundingClientRect();
+      /* Grabbing the handle keeps its value; clicking the picture jumps there. */
+      if (handle && rect.width) {
+        grabOffset = event.clientX - (rect.left + rect.width * state.sliderPct / 100);
+      } else {
+        grabOffset = 0;
+        sliderAt(pic, event.clientX);
+      }
+      if (pic.setPointerCapture) { try { pic.setPointerCapture(event.pointerId); } catch (err) {} }
+      event.preventDefault();
+    });
+    pic.addEventListener('pointermove', function (event) {
+      if (!drag) return;
+      sliderAt(pic, event.clientX - grabOffset);
+    });
+    var stop = function (event) {
+      if (!drag) return;
+      drag = false;
+      if (pic.releasePointerCapture) { try { pic.releasePointerCapture(event.pointerId); } catch (err) {} }
+    };
+    pic.addEventListener('pointerup', stop);
+    pic.addEventListener('pointercancel', stop);
+  }
+  function sliderHandle() {
+    var handle = el('button', 'rv-handle');
+    handle.type = 'button';
+    handle.id = 'rvSliderHandle';
+    handle.setAttribute('role', 'slider');
+    handle.setAttribute('tabindex', '0');
+    handle.setAttribute('aria-valuemin', '0');
+    handle.setAttribute('aria-valuemax', '100');
+    handle.setAttribute('aria-valuenow', String(state.sliderPct));
+    handle.setAttribute('aria-label', 'Before and after position');
+    handle.title = 'Drag to compare \u00b7 arrows move 1%, Shift moves 10%';
+    handle.appendChild(el('i', 'l'));
+    handle.appendChild(el('i', 'r'));
+    handle.style.left = 'clamp(' + HANDLE_MIN_INSET + 'px,' + state.sliderPct +
+      '%,calc(100% - ' + HANDLE_MIN_INSET + 'px))';
+    handle.addEventListener('keydown', function (event) {
+      var step = event.shiftKey ? 10 : 1;
+      var next = state.sliderPct;
+      if (event.key === 'ArrowLeft') next -= step;
+      else if (event.key === 'ArrowRight') next += step;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = 100;
+      else return;
+      event.preventDefault();
+      applySlider(next);
+    });
+    return handle;
+  }
+  function opacityControl() {
+    var wrap = el('label', 'rv-opacity');
+    wrap.appendChild(el('span', 'rv-optxt', 'After opacity'));
+    var input = document.createElement('input');
+    input.type = 'range';
+    input.min = '0';
+    input.max = '100';
+    input.step = '1';
+    input.value = String(state.overlayOpacity);
+    input.id = 'rvOpacity';
+    input.setAttribute('aria-label', 'After opacity');
+    var out = el('span', 'rv-opval', state.overlayOpacity + '%');
+    input.addEventListener('input', function () {
+      var value = clamp(Math.round(Number(input.value) || 0), 0, 100);
+      state.overlayOpacity = value;
+      out.textContent = value + '%';
+      var layer = document.getElementById('rvOverlayAfter');
+      if (layer) layer.style.opacity = String(value / 100);
+    });
+    wrap.appendChild(input);
+    wrap.appendChild(out);
+    return wrap;
+  }
+
+  function renderReviewStage(inner, scroller, size) {
+    var report = state.report;
+    var images = report.images || {};
+    var view = state.view;
+    var gap = 8;
+    var availW = Math.max(80, (scroller ? scroller.clientWidth : 900) - 16);
+    var availH = Math.max(80, (scroller ? scroller.clientHeight : 600) - 16);
+    var zoom = state.zoom === 'fit' ? null : (Number(state.zoom) || 1);
+    var stage = el('div', 'rv-stage');
+    stage.setAttribute('data-view', view);
+
+    /* Built before measuring: the caption row height is real layout, not a guess. */
+    var frames = [];
+    var sideBefore = null;
+    var sideAfter = null;
+
+    if (view === 'side') {
+      sideBefore = rvFrame([rvLabel('Before')]);
+      sideAfter = rvFrame([rvLabel('After')]);
+      frames.push(sideBefore, sideAfter);
+    } else if (view === 'slider') {
+      /* Both words sit in the SAME caption row: Before at its left end, After at its right. */
+      frames.push(rvFrame([rvLabel('Before'), rvLabel('After')]));
+    } else if (view === 'overlay') {
+      var ovLeft = el('span', 'rv-side');
+      ovLeft.appendChild(el('span', 'rv-view', 'Overlay'));
+      ovLeft.appendChild(rvLabel('Before / After'));
+      frames.push(rvFrame([ovLeft, opacityControl()]));
+    } else {
+      var dfLeft = el('span', 'rv-side');
+      dfLeft.appendChild(el('span', 'rv-view', 'Diff'));
+      frames.push(rvFrame([dfLeft]));
+    }
+    frames.forEach(function (item) { stage.appendChild(item.frame); });
+    if (view === 'side') stage.classList.add('row');
+    inner.appendChild(stage);
+
+    var capH = 0;
+    frames.forEach(function (item) { capH = Math.max(capH, item.cap.offsetHeight || 0); });
+    if (!capH) capH = 20;
+
+    var single = frames[0];
+    var scale;
+    if (zoom !== null) {
+      scale = zoom;
+    } else if (view === 'side') {
+      /* Two candidate layouts at Fit: compare the picture size each would give. */
+      var rowScale = Math.min((availW - gap) / (2 * size.w), (availH - capH) / size.h);
+      var stackScale = Math.min(availW / size.w, (availH - 2 * capH - gap) / (2 * size.h));
+      rowScale = Math.max(0.01, rowScale);
+      stackScale = Math.max(0.01, stackScale);
+      if (stackScale > rowScale) {
+        stage.classList.remove('row');
+        stage.classList.add('stack');
+        scale = stackScale;
+      } else {
+        scale = rowScale;
+      }
+    } else {
+      scale = Math.max(0.01, Math.min(availW / size.w, (availH - capH) / size.h));
+    }
+
+    var pw = Math.max(20, Math.round(size.w * scale));
+    var ph = Math.max(20, Math.round(size.h * scale));
+    frames.forEach(function (item) {
+      item.pic.style.width = pw + 'px';
+      item.pic.style.height = ph + 'px';
+    });
+    if (zoom !== null) {
+      var across = view === 'side' && !stage.classList.contains('stack') ? 2 : 1;
+      var down = view === 'side' && stage.classList.contains('stack') ? 2 : 1;
+      inner.style.minWidth = (pw * across + (across > 1 ? gap : 0)) + 'px';
+      inner.style.minHeight = (ph * down + capH * down + (down > 1 ? gap : 0)) + 'px';
+    }
+    state.scale = scale;
+    state.overlaySize = size;
+
+    if (view === 'side') {
+      sideBefore.pic.appendChild(imageNode(images.before, 'before'));
+      sideBefore.pic.appendChild(markLayer(size));
+      sideAfter.pic.appendChild(imageNode(images.after, 'after'));
+      sideAfter.pic.appendChild(markLayer(size));
+      return;
+    }
+
+    if (view === 'slider') {
+      var pic = single.pic;
+      pic.id = 'rvSliderPic';
+      pic.appendChild(rvLayer('rv-before', images.before, 'before'));
+      var after = rvLayer('rv-after', images.after, 'after');
+      /* Right of the handle is AFTER, left is BEFORE. */
+      after.style.clipPath = 'inset(0 0 0 ' + state.sliderPct + '%)';
+      pic.appendChild(after);
+      pic.appendChild(markLayer(size));
+      var line = el('div', 'rv-line');
+      line.style.left = state.sliderPct + '%';
+      pic.appendChild(line);
+      pic.appendChild(sliderHandle());
+      bindSlider(pic);
+      return;
+    }
+
+    if (view === 'overlay') {
+      var opic = single.pic;
+      opic.appendChild(rvLayer('rv-before', images.before, 'before'));
+      var afterLayer = rvLayer('rv-after', images.after, 'after');
+      afterLayer.id = 'rvOverlayAfter';
+      afterLayer.style.opacity = String(state.overlayOpacity / 100);
+      opic.appendChild(afterLayer);
+      opic.appendChild(markLayer(size));
+      return;
+    }
+
+    single.pic.appendChild(diffNode(images.diff));
+    single.pic.appendChild(markLayer(size));
   }
 
   function renderMoveStage(inner, scroller, size) {
@@ -2061,60 +2399,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
       return;
     }
 
-    if (state.view !== 'side') {
-      var ph = el('div', 'placeholder');
-      ph.appendChild(el('strong', null, state.view.charAt(0).toUpperCase() + state.view.slice(1) + ' view'));
-      ph.appendChild(el('span', null, VIEW_PLACEHOLDER[state.view] || 'Not available yet.'));
-      inner.appendChild(ph);
-      state.scale = 1;
-      return;
-    }
-
-    var gap = 8;
-    var pair = el('div', 'pair');
-    pair.style.gap = gap + 'px';
-    var before = frameHalf('Before', images.before, size, 'before');
-    var after = frameHalf('After', images.after, size, 'after');
-    pair.appendChild(before.half);
-    pair.appendChild(after.half);
-
-    if (state.zoom !== 'fit') {
-      var zoom = Number(state.zoom) || 1;
-      var zw = Math.max(20, Math.round(size.w * zoom));
-      var zh = Math.max(20, Math.round(size.h * zoom));
-      pair.classList.add('zoomed');
-      pair.style.width = (zw * 2 + gap) + 'px';
-      pair.style.height = zh + 'px';
-      [before, after].forEach(function (item) {
-        item.half.style.width = zw + 'px';
-        item.half.style.height = zh + 'px';
-        item.frame.style.width = zw + 'px';
-        item.frame.style.height = zh + 'px';
-      });
-      inner.style.minWidth = (zw * 2 + gap) + 'px';
-      inner.style.minHeight = zh + 'px';
-      state.scale = zoom;
-    } else {
-      /* Fit: the pair fills the stage; each image keeps its aspect ratio and is never cropped. */
-      pair.classList.add('fitted');
-      pair.style.width = '100%';
-      pair.style.height = '100%';
-      inner.style.width = '100%';
-      inner.style.height = '100%';
-      inner.appendChild(pair);
-      var halfW = before.half.clientWidth;
-      var halfH = before.half.clientHeight;
-      var fit = Math.max(0.01, Math.min((halfW || size.w) / size.w, (halfH || size.h) / size.h));
-      var fw = Math.max(20, Math.round(size.w * fit));
-      var fh = Math.max(20, Math.round(size.h * fit));
-      [before, after].forEach(function (item) {
-        item.frame.style.width = fw + 'px';
-        item.frame.style.height = fh + 'px';
-      });
-      state.scale = fit;
-      return;
-    }
-    inner.appendChild(pair);
+    renderReviewStage(inner, scroller, size);
   }
 
   function appendRow(parent, label, value) {
@@ -2642,7 +2927,6 @@ button:disabled{opacity:.45;cursor:not-allowed}
     var note = $('#reviewNote');
     if (!state.report) { note.textContent = ''; return; }
     if (state.mode !== 'review') { note.textContent = ''; return; }
-    if (state.view !== 'side') { note.textContent = 'Placeholder in this round'; return; }
     note.textContent = state.boxes.length
       ? state.boxes.length + ' changed area(s) \u00b7 click one to review'
       : 'No pixel differences beyond the threshold';
@@ -2655,14 +2939,57 @@ button:disabled{opacity:.45;cursor:not-allowed}
     node.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
 
+  /* Basenames only: the status bar never shows a full path. */
+  function baseName(path) {
+    if (typeof path !== 'string' || !path) return '';
+    var parts = path.replace(/\\/g, '/').split('/');
+    return parts[parts.length - 1] || '';
+  }
+  /* DPR is shown only when the report itself carries a DPR/scale field. */
+  function dprText(report) {
+    if (!report) return '';
+    var meta = report.meta && typeof report.meta === 'object' ? report.meta : {};
+    var view = meta.viewport && typeof meta.viewport === 'object' ? meta.viewport : {};
+    var candidates = [meta.dpr, meta.device_pixel_ratio, meta.devicePixelRatio,
+      meta.scale, meta.pixel_ratio, view.dpr, view.scale, report.dpr, report.scale];
+    for (var i = 0; i < candidates.length; i++) {
+      var value = num(candidates[i]);
+      if (value !== null && value > 0) return 'DPR ' + (Math.round(value * 100) / 100);
+    }
+    return '';
+  }
+
   function renderStatusbar() {
     var report = state.report;
     var size = stageSize();
     var label = size.w + 'x' + size.h;
     $('#captureSize').textContent = report ? label : '\u2014';
-    $('#sbCapture').textContent = 'Capture ' + label;
+    if (!report) {
+      $('#sbCapture').textContent = 'No report loaded';
+    } else {
+      var images = report.images && typeof report.images === 'object' ? report.images : {};
+      var parts = [];
+      var name = typeof report.name === 'string' && report.name ? report.name : '';
+      if (name) parts.push(name);
+      var afterName = baseName(images.after);
+      if (afterName) parts.push(afterName);
+      parts.push(label);
+      var dpr = dprText(report);
+      if (dpr) parts.push(dpr);
+      $('#sbCapture').textContent = parts.join(' \u00b7 ');
+    }
     $('#sbZoom').textContent = 'Zoom ' + (state.zoom === 'fit' ? 'Fit' : Math.round(Number(state.zoom) * 100) + '%');
     $('#sbPrecision').textContent = 'Exact 2 px \u00b7 Approx 8 px';
+    var grid = $('#sbGrid');
+    var gridSep = $('#sbGridSep');
+    var editing = state.mode === 'move' || state.mode === 'add';
+    if (grid) {
+      grid.hidden = !editing;
+      grid.textContent = editing
+        ? (state.snap ? 'Snap on \u00b7 Grid 8 px' : 'Snap off \u00b7 Grid 8 px')
+        : '';
+    }
+    if (gridSep) gridSep.hidden = !editing;
     updateHistory();
   }
 
