@@ -1,6 +1,27 @@
 # HANDOFF
 
-## Current task: Add reference
+## Current task: Flow clarity (Prompt A)
+
+Branch: `feat/flow-clarity` (from `feat/add-reference` at a9ac1c4). One commit per item.
+
+### Done
+1. cb355a0 Guided empty state: steps "1 Load before & after", "2 Mark what changed", "3 Copy prompt"; primary "Load images" (opens the existing multi-file picker) and "Try sample" (existing loader); "Load report (.json)" kept. Disappears once images load.
+2. a230d13 Header stepper Load → Review → Request → Copy, derived only from state (report loaded; a change selected, a request made, or no changes to review; ≥1 request; prompt copied this session). Current step in #2F80FF, done steps get a check. Labels hide under 1440 px; under 640 px it becomes "Step 2 of 4".
+3. 6805a58 Disabled controls use aria-disabled (still hoverable/focusable) with a tooltip and aria-describedby reason: Copy prompt / Preview copy ("Add a request first"), Undo/Redo ("Nothing to undo/redo"), Swap ("Load an image first"), Add request / Save ("Mark an area first", limit), Note ("Mark an area first"), Duration/Easing ("Pick an animation first"), Approve ("Already approved"). One capture-phase guard turns a click on any aria-disabled control into a toast with the reason.
+4. 0f8e543 Deleting a request shows "Request deleted" + Undo for 5 s; Undo restores it at the same index, including its reference (references stay in memory while undo history points at them). No confirm setting existed, so none was added.
+5. d1b4723 Linked hover: hovering/focusing a change, request or Add row highlights its area on the stage (blue inset outline, no layout shift); hovering a change box or a saved request outline (now drawn faintly in Move/Add) highlights its row.
+6. d3f114b "{n} of 8 requests" next to the Requests heading: amber at 7, red at 8 with "Limit reached. Copy this batch, then start a new one."; at 8 Add request / Save are locked with that reason.
+- Checked in Chrome (1440 light/dark, 390 dark): all six acceptance items, no console errors. Copy prompt text unchanged (engine report, loaded images, references). Load images and Add reference unchanged.
+- report.html: 406,529 → 419,589 bytes. Diff: no URLs/fetch/XHR/eval. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
+- Screenshots: `docs/screenshots/flow-clarity/`.
+
+### Not done
+- Edge not available in the cloud runner.
+
+### Next
+- Settings step 3: tab restructure
+
+## Previous task: Add reference
 
 Branch: `feat/add-reference` (from `feat/load-images` at dc3b476).
 
