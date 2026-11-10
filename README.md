@@ -387,4 +387,4 @@ Plans, not current features:
 
 ## License
 
-Apache License 2.0. Copyright 2026 Ilham Musyafa.
+Apache License 2.0. See [LICENSE](LICENSE). Copyright 2026 Ilham Musyafa.
