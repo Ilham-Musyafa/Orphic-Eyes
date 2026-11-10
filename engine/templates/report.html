@@ -4568,7 +4568,7 @@ body.insp-closed .inspector{border-left:0}
         state.rulers = v; document.body.classList.toggle('no-rulers', !v); savePrefs(); render(); refreshSettings();
       }, 'Rulers')));
       pane.appendChild(setRow('Default precision', 'Exact = 2 px · Approx = 8 px', segControl([['exact', 'Exact'], ['approximate', 'Approx']], prefs.defaultPrecision, function (v) {
-        prefs.defaultPrecision = v; savePrefs(); refreshSettings();
+        if (state.precision !== v) setPrecision(v); else { prefs.defaultPrecision = v; savePrefs(); refreshSettings(); }
       }, 'Default precision')));
     } else if (tab === 'shortcuts') {
       pane.appendChild(shortcutList());
@@ -4879,6 +4879,10 @@ body.insp-closed .inspector{border-left:0}
     if (state.selection) syncSelectedDraft();
     if (before) commitHistory(before);
     render();
+    /* The toolbar choice IS the saved preference: Settings shows the same value. */
+    prefs.defaultPrecision = state.precision;
+    savePrefs();
+    refreshSettings();
     toast(value === 'exact' ? 'Exact · 2 px' : 'Approx · 8 px');
   }
 
