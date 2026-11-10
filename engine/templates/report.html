@@ -162,6 +162,17 @@ body.insp-closed{--inspector-cur:0px}
 .logo-wrap{width:28px;height:28px;flex:none;background:var(--logo-box);border-radius:7px;padding:3px;display:flex}
 .logo-wrap svg{display:block;width:100%;height:100%}
 .brand-name{font-size:var(--fs-section);font-weight:var(--w-strong);letter-spacing:-.01em;white-space:nowrap}
+.stepper{display:flex;align-items:center;gap:2px;margin:0 0 0 var(--s2);padding:0;list-style:none;flex:none}
+.step{display:flex;align-items:center;gap:6px;padding:0 6px;color:var(--muted);font-size:var(--fs-sec);font-weight:var(--w-medium);white-space:nowrap}
+.step+.step::before{content:"";width:14px;height:1px;background:var(--line2);margin-right:4px}
+.step-dot{width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--surface);color:var(--muted);font-size:var(--fs-cap);font-weight:var(--w-strong);flex:none}
+.step-dot svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.step.done .step-dot{background:var(--green-bg);color:var(--green)}
+.step.current{color:var(--ink)}
+.step.current .step-dot{background:#2F80FF;color:#fff}
+.stepper-short{display:none;font-size:var(--fs-sec);color:var(--muted);white-space:nowrap}
+@media (max-width:1439px){.step-label{display:none}.step+.step::before{width:8px}}
+@media (max-width:639px){.stepper{display:none}.stepper-short{display:inline}}
 .page-tabs{display:flex;align-items:stretch;height:var(--header-h);gap:var(--s1);min-width:0;overflow:hidden}
 .page-tab{position:relative;display:flex;align-items:center;padding:0 var(--s3);font-size:var(--fs-body);color:var(--muted);white-space:nowrap;font-weight:var(--w-medium)}
 .page-tab:hover{color:var(--ink)}
@@ -672,6 +683,8 @@ body.insp-closed .inspector{border-left:0}
         <span class="brand-name">Orphic Eyes</span>
       </div>
       <nav class="page-tabs" id="pageTabs" aria-label="Pages"></nav>
+      <ol class="stepper" id="stepper" aria-label="Progress"></ol>
+      <span class="stepper-short" id="stepperShort" aria-hidden="true"></span>
     </div>
     <div class="hd-center">
       <div class="seg" id="modeSwitch" role="group" aria-label="Mode">
@@ -2319,6 +2332,7 @@ body.insp-closed .inspector{border-left:0}
   function render() {
     renderStatus();
     renderCopyButton();
+    renderStepper();
     renderPages();
     renderZones();
     renderLeft();
@@ -3876,6 +3890,7 @@ body.insp-closed .inspector{border-left:0}
 
   function selectBox(id, clientX, clientY, reveal) {
     state.selectedBox = id;
+    state.reviewed = true;
     state.selectedRequest = null;
     render();
     if (clientX !== undefined && clientY !== undefined) placePopover(clientX, clientY);
@@ -4351,6 +4366,38 @@ body.insp-closed .inspector{border-left:0}
   function setTextSize(size) { applyTextSize(size); savePrefs(); renderStage(); refreshSettings(); }
 
   /* Copy prompt: copy-and-paste only, never a network call. */
+  /* Progress from existing state only: Load, Review, Request, Copy. */
+  var STEPS = [['load', 'Load'], ['review', 'Review'], ['request', 'Request'], ['copy', 'Copy']];
+  function stepDone(key) {
+    if (key === 'load') return !!state.report;
+    if (key === 'review') return !!state.report && (!!state.reviewed || requestCount() > 0 || !state.boxes.length);
+    if (key === 'request') return requestCount() > 0;
+    return !!state.copiedOnce;
+  }
+  function renderStepper() {
+    var list = $('#stepper');
+    if (!list) return;
+    list.innerHTML = '';
+    var current = -1;
+    STEPS.forEach(function (st, i) { if (current === -1 && !stepDone(st[0])) current = i; });
+    STEPS.forEach(function (st, i) {
+      var done = stepDone(st[0]);
+      var li = el('li', 'step' + (done ? ' done' : '') + (i === current ? ' current' : ''));
+      if (i === current) li.setAttribute('aria-current', 'step');
+      var dot = el('span', 'step-dot');
+      dot.setAttribute('aria-hidden', 'true');
+      if (done) dot.innerHTML = '<svg viewBox="0 0 12 12"><path d="M3 6.3 5 8.2 9 4"/></svg>';
+      else dot.textContent = String(i + 1);
+      li.appendChild(dot);
+      li.appendChild(el('span', 'step-label', st[1]));
+      if (done) li.appendChild(el('span', 'sr-only', ' (done)'));
+      li.setAttribute('data-tip', st[1] + (done ? ' \u00b7 done' : i === current ? ' \u00b7 current step' : ''));
+      list.appendChild(li);
+    });
+    var n = current === -1 ? STEPS.length : current + 1;
+    $('#stepperShort').textContent = 'Step ' + n + ' of ' + STEPS.length;
+  }
+
   function renderCopyButton() {
     var button = $('#copyMain');
     if (!button) return;
@@ -4373,6 +4420,8 @@ body.insp-closed .inspector{border-left:0}
       button.classList.remove('copied');
       void button.offsetWidth;
       button.classList.add('copied');
+      state.copiedOnce = true;
+      renderStepper();
       var live = $('#liveRegion');
       if (live) { live.textContent = ''; setTimeout(function () { live.textContent = 'Prompt copied'; }, 30); }
       clearTimeout(state.copyTimer);
