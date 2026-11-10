@@ -293,6 +293,7 @@ body.no-report .stage-scroller,body.no-report.mode-review .stage-scroller{--stag
 .rv-handle i{display:block;width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent}
 .rv-handle i.l{border-right:5px solid #2F80FF}.rv-handle i.r{border-left:5px solid #2F80FF}
 .marks{position:absolute;inset:0;z-index:3;pointer-events:none}
+.rv-grid{position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(to right,rgba(47,128,255,.13) 1px,transparent 1px),linear-gradient(to bottom,rgba(47,128,255,.13) 1px,transparent 1px)}
 .mark-box{position:absolute;border:2px solid #D99A2B;border-radius:3px;pointer-events:auto;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.75)}
 .mark-box.expected,.mark-box.approved{border-color:#188951}
 .mark-box:hover{box-shadow:0 0 0 1px rgba(255,255,255,.75),0 0 0 4px rgba(47,128,255,.22)}
@@ -837,7 +838,6 @@ body.insp-closed .inspector{border-left:0}
     addAnimation: 'none',
     addDuration: 300,
     addEasing: 'ease',
-    addGrid: true,
     addFieldBefore: null,
     addFocus: null,
     addTimer: null,
@@ -2746,6 +2746,14 @@ body.insp-closed .inspector{border-left:0}
     }
     state.scale = scale;
     state.overlaySize = size;
+    if (state.grid) {
+      var gstep = Math.max(4, (state.gridSize || 8) * scale);
+      frames.forEach(function (item) {
+        var g = el('div', 'rv-grid');
+        g.style.backgroundSize = gstep + 'px ' + gstep + 'px';
+        item.pic.appendChild(g);
+      });
+    }
 
     if (view === 'side') {
       sideBefore.pic.appendChild(imageNode(images.before, 'before'));
@@ -2818,7 +2826,7 @@ body.insp-closed .inspector{border-left:0}
     rulerLeft.style.height = frameH + 'px';
 
     var grid = el('div', 'move-grid');
-    var wantGrid = state.mode === 'add' ? state.addGrid : state.grid;
+    var wantGrid = state.grid;
     if (wantGrid) {
       var step = Math.max(4, (state.gridSize || 8) * frameW / size.w);
       grid.style.backgroundImage = 'linear-gradient(to right,rgba(47,128,255,.13) 1px,transparent 1px),' +
@@ -3544,7 +3552,7 @@ body.insp-closed .inspector{border-left:0}
     toggleOption('#axisBtn', state.axisLock);
     toggleOption('#exactBtn', state.precision === 'exact');
     toggleOption('#approxBtn', state.precision === 'approximate');
-    toggleOption('#addGridBtn', state.addGrid);
+    toggleOption('#addGridBtn', state.grid);
     var zooms = document.querySelectorAll('#zoomPill [data-zoom]');
     for (var z = 0; z < zooms.length; z++) {
       var zon = zooms[z].getAttribute('data-zoom') === String(state.zoom);
@@ -3730,7 +3738,7 @@ body.insp-closed .inspector{border-left:0}
       } else if (id === 'exactBtn' || id === 'approxBtn') {
         setPrecision(id === 'exactBtn' ? 'exact' : 'approximate');
       } else if (id === 'addGridBtn') {
-        state.addGrid = !state.addGrid;
+        state.grid = !state.grid;
         savePrefs();
         renderChrome();
         renderStage();
@@ -4038,7 +4046,7 @@ body.insp-closed .inspector{border-left:0}
   var PREFS_KEY = 'orphic-eyes.prefs.v1';
   var PREF_DEFAULTS = {
     theme: 'light', textSize: 'm', sidebarCollapsed: null, sidebarTab: 'changes',
-    inspectorOpen: true, defaultView: 'slider', grid: true, snap: true, gridSize: 8,
+    inspectorOpen: true, defaultView: 'slider', showGrid: true, snap: true, gridSize: 8,
     rulers: true, defaultPrecision: 'exact', tourDone: false, copyTarget: 'hermes'
   };
   var prefs = copy(PREF_DEFAULTS);
@@ -4060,8 +4068,10 @@ body.insp-closed .inspector{border-left:0}
     if (!copyTargetOf(prefs.copyTarget)) prefs.copyTarget = 'hermes';
     state.textSize = prefs.textSize;
     state.view = prefs.defaultView;
-    state.grid = prefs.grid !== false;
-    state.addGrid = prefs.grid !== false;
+    /* One grid switch for Review, Move and Add. Older saves used "grid". */
+    if (saved && typeof saved === 'object' && saved.showGrid === undefined && typeof saved.grid === 'boolean') prefs.showGrid = saved.grid;
+    prefs.showGrid = prefs.showGrid !== false;
+    state.grid = prefs.showGrid;
     state.snap = prefs.snap !== false;
     state.gridSize = prefs.gridSize;
     state.rulers = prefs.rulers !== false;
@@ -4073,7 +4083,7 @@ body.insp-closed .inspector{border-left:0}
 
   function savePrefs() {
     prefs.textSize = state.textSize;
-    prefs.grid = state.grid;
+    prefs.showGrid = state.grid;
     prefs.snap = state.snap;
     prefs.gridSize = state.gridSize;
     prefs.rulers = state.rulers;
@@ -4558,6 +4568,9 @@ body.insp-closed .inspector{border-left:0}
       pane.appendChild(setRow('Default view', 'Used when a report opens.', segControl([['side', 'Side by side'], ['slider', 'Slider'], ['overlay', 'Overlay'], ['diff', 'Diff']], prefs.defaultView, function (v) {
         prefs.defaultView = v; state.view = v; savePrefs(); render(); refreshSettings();
       }, 'Default view')));
+      pane.appendChild(setRow('Show grid', 'Grid lines over the picture in Review, Move and Add.', switchControl(state.grid, function (v) {
+        state.grid = v; savePrefs(); render(); refreshSettings();
+      }, 'Show grid')));
       pane.appendChild(setRow('Grid size', 'Grid lines and snapping in Move and Add.', segControl([[4, '4 px'], [8, '8 px'], [16, '16 px']], state.gridSize, function (v) {
         state.gridSize = Number(v); savePrefs(); render(); refreshSettings();
       }, 'Grid size')));
