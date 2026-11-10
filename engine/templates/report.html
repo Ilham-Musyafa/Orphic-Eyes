@@ -435,7 +435,16 @@ body.mode-add .tool.on{background:var(--add-bg);color:var(--add)}
 .ref-name{font-family:var(--font-mono);font-size:var(--fs-mono);color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ref-size{font-size:var(--fs-sec);color:var(--muted)}
 .ref-tools{display:flex;gap:2px}
-.chip.ref-badge{background:var(--blue-bg);color:var(--blue-ink);font-family:var(--font-mono);font-weight:var(--w-medium);margin-left:6px}
+.chip.ref-badge{background:var(--blue-bg);color:var(--blue-ink);font-family:var(--font-mono);font-weight:var(--w-medium);margin-right:6px;vertical-align:1px}
+.kind-row{display:flex;flex-wrap:wrap;gap:6px}
+.kind-chip,.q-chip{height:28px;padding:0 12px;border-radius:var(--r-pill);background:var(--surface);color:var(--ink);font-size:calc(12px * var(--fs-scale));font-weight:var(--w-medium);white-space:nowrap;transition:background-color var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out)}
+.kind-chip:hover,.q-chip:hover{background:var(--active)}
+.kind-chip.on,.q-chip.on{background:#2F80FF;color:#fff}
+.questions{display:flex;flex-direction:column;gap:6px;margin-top:var(--s3)}
+.questions.fade-in{animation:oe-fade-in var(--dur-fast) var(--ease-out)}
+.q-row{display:flex;align-items:flex-start;gap:var(--s2)}
+.q-label{width:72px;flex:none;padding-top:6px;font-size:calc(12px * var(--fs-scale));color:var(--muted);line-height:1.25}
+.q-opts{display:flex;flex-wrap:wrap;gap:4px;min-width:0}
 .field-error{margin:4px 0 0;color:var(--red);font-size:var(--fs-sec);font-weight:var(--w-medium)}
 
 /* ---------- inspector ---------- */
@@ -1584,6 +1593,15 @@ body.insp-closed .inspector{border-left:0}
     if (!state.report) { toast('No report loaded'); return; }
     if (!state.addSelection) { toast('Drag an area on the image first'); return; }
     if (addDescriptionMissing()) return;
+    if (refEntry(state.addRef) && !state.addKind) {
+      state.addKindError = REF_MSG_KIND;
+      renderInspector();
+      toast(REF_MSG_KIND);
+      var firstKind = document.querySelector('[data-kind]');
+      if (firstKind) firstKind.focus();
+      return;
+    }
+    state.addKindError = null;
     var isNew = !(state.addSelected && findAddDraft(state.addSelected));
     if (isNew && requestCount() >= MAX_REQUESTS) { toast('Up to 8 requests per check'); return; }
     state.addError = null;
@@ -2512,7 +2530,7 @@ body.insp-closed .inspector{border-left:0}
       sub.appendChild(document.createTextNode(
         Math.round(draft.w) + ' × ' + Math.round(draft.h) + ' · ' +
         (addHasMotion(draft) ? ANIMATION_LABEL[addAnimationOf(draft)] : 'No animation')));
-      if (refEntry(draft.ref)) sub.appendChild(el('span', 'chip ref-badge', refName(draft.ref, draft.id)));
+      if (refEntry(draft.ref)) sub.insertBefore(el('span', 'chip ref-badge', refName(draft.ref, draft.id)), sub.firstChild);
       sub.appendChild(el('span', 'chip unverified', 'Not verified'));
       row.appendChild(sub);
       row.title = draft.id + ' · ' + addTitle;
@@ -3509,7 +3527,7 @@ body.insp-closed .inspector{border-left:0}
     desc.rows = 3;
     desc.maxLength = 240;
     desc.value = state.addDescription;
-    desc.placeholder = 'e.g. A "Log in" button, same style as Start trial';
+    desc.placeholder = state.addKind ? KIND_PLACEHOLDER[state.addKind] : 'e.g. A "Log in" button, same style as Start trial';
     desc.required = true;
     desc.setAttribute('aria-required', 'true');
     desc.setAttribute('aria-describedby', 'addDescError');
@@ -3521,7 +3539,15 @@ body.insp-closed .inspector{border-left:0}
     descErr.hidden = !state.addError;
     descRow.appendChild(descErr);
     form.appendChild(descRow);
-    if (sel) form.appendChild(refSection());
+    if (sel) {
+      form.appendChild(refSection());
+      form.appendChild(kindSection());
+      /* Existing helper chips stay as Quick notes, under the questions. */
+      var quick = el('div', 'block');
+      quick.appendChild(el('div', 'caption', 'Quick notes'));
+      quick.appendChild(chipBlock('addDescription'));
+      form.appendChild(quick);
+    }
 
     var labelInput = el('input', 'field');
     labelInput.type = 'text';
