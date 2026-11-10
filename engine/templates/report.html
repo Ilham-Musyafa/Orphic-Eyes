@@ -326,6 +326,11 @@ body.no-report .stage-scroller,body.no-report.mode-review .stage-scroller{--stag
 
 /* empty canvas */
 .loader{display:flex;flex-direction:column;align-items:center;gap:var(--s3);width:min(680px,calc(100vw - 48px));text-align:center;padding:var(--s4)}
+.steps-guide{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--s2) var(--s4);margin:0;padding:0;list-style:none;color:var(--muted);font-size:var(--fs-body)}
+.steps-guide li{display:flex;align-items:center;gap:6px}
+.steps-guide b{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--surface);color:var(--ink);font-size:var(--fs-cap);font-weight:var(--w-strong)}
+.steps-guide li.now{color:var(--ink);font-weight:var(--w-medium)}
+.steps-guide li.now b{background:#2F80FF;color:#fff}
 .loader-title{font-size:var(--fs-empty);font-weight:var(--w-strong);color:var(--ink);line-height:1.25;text-wrap:balance}
 .loader-sub{color:var(--muted);max-width:460px}
 .slots{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:var(--s3);align-items:center;width:100%;margin-top:var(--s2)}
@@ -5477,14 +5482,27 @@ body.insp-closed .inspector{border-left:0}
   function renderLoader(inner) {
     var box = el('div', 'loader');
     box.appendChild(el('strong', 'loader-title', 'Load a Before and After screenshot to start'));
-    box.appendChild(el('span', 'loader-sub', 'Drop two images, choose them, or paste with Ctrl+V. They stay in this tab and are never uploaded.'));
+    var steps = el('ol', 'steps-guide');
+    steps.setAttribute('aria-label', 'How it works');
+    [['1', 'Load before & after'], ['2', 'Mark what changed'], ['3', 'Copy prompt']].forEach(function (st, i) {
+      var li = el('li', i === 0 ? 'now' : '');
+      li.appendChild(el('b', null, st[0]));
+      li.appendChild(el('span', null, st[1]));
+      steps.appendChild(li);
+    });
+    box.appendChild(steps);
     box.appendChild(slotsRow(false));
+    box.appendChild(el('span', 'loader-sub', 'Drop two images, choose them, or paste with Ctrl+V. They stay in this tab and are never uploaded.'));
     if (state.loaderError || state.loadError) {
       var err = el('p', 'field-error', state.loaderError || state.loadError);
       err.setAttribute('role', 'alert');
       box.appendChild(err);
     }
     var actions = el('div', 'ph-actions');
+    var loadBtn = el('button', 'btn blue', 'Load images');
+    loadBtn.type = 'button';
+    loadBtn.id = 'loadImagesBtn';
+    actions.appendChild(loadBtn);
     var sample = el('button', 'btn', 'Try sample');
     sample.type = 'button';
     sample.id = 'trySample';
@@ -5526,6 +5544,7 @@ body.insp-closed .inspector{border-left:0}
         return;
       }
       if (t.closest('#trySample')) trySample();
+      if (t.closest('#loadImagesBtn')) choose(null);
     });
 
     /* Drag and drop: files only. Dropped web addresses stay blocked, and a stray
