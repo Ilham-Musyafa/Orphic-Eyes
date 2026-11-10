@@ -1,6 +1,31 @@
 # HANDOFF
 
-## Current task: Add action
+## Current task: Helper chips
+
+Branch: `feat/helper-chips` (from `feat/add-action` at 6329be2).
+
+### What I found
+- Only Move and Add can be created in the UI (hide/revert/comment are engine-only, see the Add action notes).
+- Add already has a free-text field (the required description). Move has only a short label, no note.
+
+### Plan (report.html + this file only)
+- Move gets an optional **Note** field (`#selectionNote`, max 240 chars). In the export it is one extra line `Note: …`, written ONLY when the note is not empty, so a Move without a note exports byte-for-byte as before. The note stays out of the engine JSON (the contract has no note field).
+- Under the Move note and under the Add description: chip groups Colour / Size / Position / Text with the 11 static English phrases from the task.
+- Tap (or Enter/Space) appends the phrase to the field: empty field → the phrase with a capital first letter; otherwise `; ` + phrase. Never replaces typed text. Focus returns to the field with the caret at the end; one undo step per chip.
+- Chips are plain `<button>`s (Tab-reachable), Mockup E pill style, tokens only, so light/dark work. No network, no dependencies.
+
+### Done
+- Move: optional Note field with undo (one step per edit or chip). Export adds `Note: …` (Hermes) / `- Note: …` (other AIs) only when filled; verified a note-less Move export is byte-identical to `feat/add-action`.
+- Chips (Colour, Size, Position, Text; 11 phrases) under the Move note and the Add description. Append rule: empty → capitalised phrase; else `; ` + phrase. Never erases text; caret returns to the field.
+- Keyboard: Tab to a chip, Enter or Space presses it. Fixed: Space on a focused button no longer switches to the Hand tool.
+- Tests: 113 passed, the same 5 Edge-capture failures as before.
+
+### Next
+- Owner check: are the 11 phrases the right ones? They are one array (`NOTE_CHIPS`) and easy to change.
+- Hide / revert / comment still have no UI; when they get one, reuse `chipBlock(fieldId)` for their note.
+- Merge order when approved: `ui-overhaul` → `feat/copy-targets` → `feat/add-action` → `feat/helper-chips`.
+
+## Previous task: Add action
 
 Branch: `feat/add-action` (from `feat/copy-targets` at 2cd2104).
 
