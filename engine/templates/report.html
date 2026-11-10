@@ -130,9 +130,14 @@ body.insp-closed{--inspector-cur:0px}
 .btn.ghost:hover:not(:disabled){color:var(--ink);background:var(--hover)}
 .btn.primary{background:var(--bronze);border-color:var(--bronze);color:var(--on-bronze);font-weight:var(--w-strong);padding:0 var(--s4)}
 .btn.primary:hover:not(:disabled){background:var(--bronze-hover);border-color:var(--bronze-hover)}
-.copy-split{display:inline-flex;align-items:stretch;flex:none}
-.copy-split #copyMain{border-top-right-radius:0;border-bottom-right-radius:0}
-.copy-split .copy-caret{border-top-left-radius:0;border-bottom-left-radius:0;padding:0 6px;border-left:1px solid rgba(27,27,25,.22);min-width:var(--hit-dense)}
+.btn.primary[aria-disabled="true"]{opacity:.5;cursor:not-allowed}
+.link-btn{display:inline-flex;align-items:center;gap:6px;min-height:var(--hit-dense);padding:0 var(--s2);border-radius:6px;color:var(--blue-ink);font-size:var(--fs-sec);font-weight:var(--w-medium)}
+.link-btn:hover{background:var(--hover)}
+.req-foot{display:flex;justify-content:flex-start;padding:var(--s2) 0 0}
+.prompt-text{margin:0;padding:var(--s3) var(--s4);font-family:var(--font-mono);font-size:var(--fs-mono);line-height:var(--lh-body);white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;color:var(--ink);background:var(--soft);flex:1;min-height:0;user-select:text}
+.modal-actions{display:flex;justify-content:flex-end;gap:var(--s2);padding:var(--s3) var(--s4);border-top:1px solid var(--line)}
+.info-card{margin-top:var(--s3);padding:var(--s3);border-radius:var(--r-btn);background:var(--surface);color:var(--muted);font-size:var(--fs-sec);line-height:var(--lh-body)}
+.info-card p{margin:0 0 var(--s2)}
 .menu button[aria-checked="true"]{font-weight:var(--w-strong)}
 .menu .mark-slot{width:16px;flex:none;display:inline-flex;color:var(--blue-ink)}
 .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:var(--w-strong)}
@@ -574,10 +579,7 @@ body.insp-closed .inspector{border-left:0}
       <button type="button" class="icon-btn hide-sm" id="redoBtn" disabled aria-label="Redo" data-tip="Redo" data-kbd="Ctrl+Shift+Z"><svg class="ic"><use href="#i-redo"/></svg></button>
       <span class="capture-chip hide-sm hide-md" id="captureChip" tabindex="0" data-tip="Capture size comes from the report"><span class="cap-name" id="captureName">Desktop</span><span class="num" id="captureSize">&mdash;</span></span>
       <button type="button" class="icon-btn hide-sm" id="settingsBtn" aria-label="Settings" data-tip="Settings" data-kbd="Ctrl+,"><svg class="ic"><use href="#i-gear"/></svg></button>
-      <div class="copy-split" role="group" aria-label="Copy message">
-        <button type="button" class="btn primary" id="copyMain" aria-label="Copy for Hermes" data-tip="Copy a message for Hermes" data-kbd="Ctrl+Enter"><svg class="ic"><use href="#i-copy"/></svg><span class="lbl">Copy for Hermes</span></button>
-        <button type="button" class="btn primary copy-caret" id="copyTarget" aria-haspopup="menu" aria-expanded="false" aria-label="Choose who the message is for" data-tip="Choose the AI"><svg class="ic"><use href="#i-chevron"/></svg></button>
-      </div>
+      <button type="button" class="btn primary" id="copyMain" aria-label="Copy prompt" data-tip="Copy all requests as one prompt for any AI assistant" data-kbd="Ctrl+Enter"><svg class="ic"><use href="#i-copy"/></svg><span class="lbl">Copy prompt</span></button>
     </div>
   </header>
 
@@ -994,144 +996,81 @@ body.insp-closed .inspector{border-left:0}
     state.toastTimer = setTimeout(function () { node.classList.remove('show'); }, 2500);
   }
 
-  function hermesText() {
-    var report = state.report;
-    if (!report) return 'Orphic Eyes: no report loaded.';
-    var summary = report.summary || {};
-    var lines = ['[Orphic Eyes] ' + (report.name || 'report')];
-    lines.push('Status: ' + (report.status || 'unknown') + ' \u00b7 ' + state.boxes.length +
-      ' changed area(s) \u00b7 ' + pct(summary.changed_percent) + ' of the page changed');
-    state.boxes.forEach(function (box) {
-      lines.push('- ' + box.id + ' \u00b7 ' + zoneLabel(box.zone) + ' \u00b7 ' + boxStatus(box) + ' \u00b7 area ' + pct(box.percent));
-    });
-    state.requests.forEach(function (request) {
-      lines.push('- Request ' + (request.id || 'PT-?') + ' \u00b7 ' + (request.type || 'unknown') + ' \u00b7 ' + request.status);
-    });
-    /* Only ask for a fix when something is actually unexpected. */
-    var unexpected = state.boxes.some(function (box) { return boxStatus(box) === 'unexpected'; });
-    if (unexpected) lines.push('Please fix the unexpected changes without altering approved areas.');
-    /* Drafts append only when they exist, so the review message stays byte-identical otherwise. */
-    if (state.drafts.length) {
-      lines.push('');
-      lines.push('New requests');
-      state.drafts.forEach(function (draft) {
-        lines.push('');
-        lines.push(requestHeading(draft));
-        lines.push(requestText(draft));
-        lines.push(requestJson(draft));
-      });
-      lines.push('');
-      lines.push('Pass these to orphic_compare as requests. from is baseline pixels, to is after pixels.');
-    }
-    /* Adds are instructions for a human or agent, never engine requests. */
-    if (state.addDrafts.length) {
-      lines.push('');
-      lines.push('Add instructions (not verified by the engine)');
-      state.addDrafts.forEach(function (draft) {
-        lines.push('');
-        lines.push(addText(draft));
-      });
-    }
-    return lines.join('\n');
-  }
-
-  /* ---------- copy message: one entry point, one data source ---------- */
-  /* Everything a message may say, read once from state. Every target uses this list,
-     in this order; only the wrapper text differs between targets. */
-  function messageData() {
-    var report = state.report;
-    var data = { name: report ? (report.name || 'report') : null, size: stageSize(),
-      status: report ? report.status : null, changedPercent: report && report.summary ? report.summary.changed_percent : null,
-      boxes: [], verdicts: [], requests: [] };
-    state.boxes.forEach(function (box) {
-      data.boxes.push({ id: box.id, zone: box.zone, status: boxStatus(box), percent: box.percent,
-        x: box.x, y: box.y, w: box.w, h: box.h });
-    });
-    state.requests.forEach(function (request) {
-      data.verdicts.push({ id: request.id || 'PT-?', type: request.type || 'unknown', status: request.status });
-    });
-    /* Same order as the Hermes text: the fix for unexpected changes first, then new moves, then adds. */
-    data.boxes.forEach(function (box) {
-      if (box.status === 'unexpected') data.requests.push({ kind: 'fix', id: 'Change ' + box.id, box: box });
-    });
+  /* ---------- Copy prompt: one neutral prompt for any AI assistant ---------- */
+  var PROMPT_TYPE = { move: 'Move', revert: 'Revert', hide: 'Hide', comment: 'Comment', add: 'Add' };
+  /* The requests the prompt sends, in list order: new Moves, then Adds. */
+  function promptRequests() {
+    var list = [];
     state.drafts.forEach(function (draft) {
-      var obj = requestObject(draft);
-      data.requests.push({ kind: 'move', id: draft.id, label: labelOf(draft), note: noteOf(draft), dx: draft.dx, dy: draft.dy,
-        precision: draft.precision, from: obj.from, to: obj.to });
+      list.push({ type: 'move', name: labelOf(draft), rect: { x: draft.x, y: draft.y, w: draft.w, h: draft.h },
+        dx: draft.dx, dy: draft.dy, precision: draft.precision, note: noteOf(draft) });
     });
     state.addDrafts.forEach(function (draft) {
-      data.requests.push({ kind: 'add', id: draft.id, label: addName(draft), hint: addHintOf(draft), source: draft,
+      list.push({ type: 'add', name: addName(draft),
         rect: { x: Math.round(draft.x), y: Math.round(draft.y), w: Math.round(draft.w), h: Math.round(draft.h) },
-        motion: addHasMotion(draft) ? { animation: ANIMATION_LABEL[addAnimationOf(draft)], duration: addDurationOf(draft), easing: addEasingOf(draft) } : null });
+        description: addDescriptionOf(draft), hint: addHintOf(draft),
+        motion: addHasMotion(draft) ? ANIMATION_LABEL[addAnimationOf(draft)] + ', ' + addDurationOf(draft) + ' ms, ' + addEasingOf(draft) : '',
+        note: '' });
     });
-    return data;
+    return list;
   }
-
-  function rectWords(r) {
-    if (!r || num(r.x) === null || num(r.y) === null) return 'an unknown spot';
-    return 'x ' + r.x + ', y ' + r.y + ', size ' + r.w + ' × ' + r.h + ' px';
+  function promptOptions() {
+    return { coords: prefs.promptCoords !== false, ruleScope: prefs.promptRuleScope !== false,
+      ruleAsk: prefs.promptRuleAsk !== false, page: prefs.promptPage !== false };
   }
-
-  var AGENT_INTRO = [
-    'These requests come from a visual review of Before and After screenshots of a web page (made with Orphic Eyes, which only looks at pixels, not code).',
-    'All coordinates are pixels of the After screenshot, measured from its top-left corner: x and y are the position, w × h is the size.',
-    'Please change only what is listed below, keep everything else exactly as it is, and when you are done, report what you changed for each numbered item.'
-  ];
-
-  /* Plain Markdown for any chat AI: no tool names, no commands only one agent understands. */
-  function agentText() {
-    var data = messageData();
-    if (!data.name) return 'Orphic Eyes: no report loaded.';
-    var lines = ['# Visual review: ' + data.name, ''];
-    AGENT_INTRO.forEach(function (line) { lines.push(line); });
-    lines.push('');
-    lines.push('- Page: ' + data.name + ' (' + data.size.w + ' × ' + data.size.h + ' px)');
-    lines.push('- Review result: ' + (STATUS_TEXT[data.status] || 'Unknown') + ' · ' + data.boxes.length +
-      ' changed area' + (data.boxes.length === 1 ? '' : 's') + ' · ' + pct(data.changedPercent) + ' of the page changed');
-    lines.push('');
-    lines.push('## Requests');
-    lines.push('');
-    if (!data.requests.length) {
-      lines.push('No changes requested. Nothing needs to be done.');
+  function sentence(text) { var t = String(text || '').replace(/\s+/g, ' ').trim().replace(/[.\s]+$/, ''); return t ? t + '.' : ''; }
+  /* Per-type detail lines under the request line. */
+  function promptDetails(r, opt) {
+    var lines = [];
+    if (r.type === 'move') {
+      var target = opt.coords ? ', to x ' + (r.rect.x + r.dx) + ', y ' + (r.rect.y + r.dy) : '';
+      lines.push('Move it ' + moveDirection(r.dx, r.dy) + target + '. Keep its size and style.');
+      lines.push('Precision: ' + (r.precision === 'approximate' ? 'Approx (within 8 px)' : 'Exact (within 2 px)') + '.');
+    } else if (r.type === 'add') {
+      if (r.description) lines.push('Add: ' + sentence(r.description));
+      lines.push('Element: ' + r.hint + '.' + (r.motion ? ' Animation: ' + r.motion + '.' : ''));
+    } else if (r.type === 'hide') {
+      lines.push('Hide this element.');
+    } else if (r.type === 'revert') {
+      lines.push('Make it look like the Before screenshot again.');
     }
-    data.requests.forEach(function (item, index) {
-      var n = (index + 1) + '. ';
-      if (item.kind === 'move') {
-        lines.push(n + '**Move "' + item.label + '"** (' + item.id + '): move it ' + moveDirection(item.dx, item.dy) + '.');
-        lines.push('   - Now at: ' + rectWords(item.from));
-        lines.push('   - Should end at: ' + rectWords(item.to));
-        lines.push('   - Keep its size and style, and use the existing layout system.');
-        lines.push('   - Precision: ' + (item.precision === 'exact' ? 'Exact (within 2 px)' : 'Approx (within 8 px)'));
-        if (item.note) lines.push('   - Note: ' + item.note);
-      } else if (item.kind === 'add') {
-        lines.push(n + '**Add "' + item.label + '"** (' + item.id + '): ' + addSentence(item.source));
-        lines.push('   - Element: ' + item.hint);
-        if (item.motion) lines.push('   - Animation: ' + item.motion.animation + ', ' + item.motion.duration + ' ms, ' + item.motion.easing);
-        lines.push('   - Use the existing layout system.');
-        lines.push('   - A screenshot can only confirm that this area changed; motion cannot be checked.');
-      } else {
-        lines.push(n + '**Fix an unexpected change** (' + item.id + ', ' + zoneLabel(item.box.zone) + '): this area changed but should not have.');
-        lines.push('   - Area: ' + rectWords(item.box));
-        lines.push('   - Make it look like the Before screenshot again. Do not touch approved or expected changes.');
-      }
+    return lines;
+  }
+  /* One function builds the whole text, so later features (references) can extend it. */
+  function buildPrompt(requests, opt) {
+    opt = opt || promptOptions();
+    var lines = ['Please update the UI to match the requests below.'];
+    if (opt.page) {
+      var size = stageSize();
+      lines.push('Page: ' + ((state.report && state.report.name) || 'page') + ' · Viewport: ' + size.w + '×' + size.h);
+    }
+    lines.push('');
+    lines.push('Requests (' + requests.length + '):');
+    requests.forEach(function (r, i) {
+      var head = (i + 1) + '. [' + (PROMPT_TYPE[r.type] || word(r.type)) + '] ' + r.name;
+      if (opt.coords && r.rect) head += ' — at x ' + r.rect.x + ', y ' + r.rect.y + ', ' + r.rect.w + '×' + r.rect.h + 'px';
+      lines.push(head);
+      promptDetails(r, opt).forEach(function (line) { lines.push('   ' + line); });
+      var note = String(r.note || '').replace(/\s+/g, ' ').trim();
+      if (note) lines.push('   Note: ' + note);
     });
-    if (data.verdicts.length) {
-      lines.push('');
-      lines.push('## Checked earlier by Orphic Eyes (context only)');
-      lines.push('');
-      data.verdicts.forEach(function (v) {
-        lines.push('- ' + v.id + ' · ' + (TYPE_WORD[v.type] || word(v.type)) + ' · ' + word(v.status));
-      });
+    lines.push('');
+    var reply = 'Reply with a short list of what you changed.';
+    if (opt.ruleScope || opt.ruleAsk) {
+      lines.push('Rules:');
+      if (opt.ruleScope) lines.push('- Change only what is listed above. Keep everything else as it is.');
+      if (opt.ruleAsk) lines.push('- If a request is unclear, ask before changing code.');
+      lines.push('- ' + reply);
+    } else {
+      lines.push(reply);
     }
     return lines.join('\n');
   }
+  function promptText() { return buildPrompt(promptRequests(), promptOptions()); }
+  /* Read-only hook for tests and later features: build a prompt from plain request objects. */
+  try { Object.defineProperty(window, 'OrphicPrompt', { value: Object.freeze({ build: function (requests, opt) { return buildPrompt(requests || [], opt); } }) }); } catch (err) { /* ignore */ }
 
-  function buildMessage(target) {
-    /* Hermes keeps its original text byte-for-byte; every other AI gets plain Markdown. */
-    return target === 'hermes' ? hermesText() : agentText();
-  }
-
-  function fixText(box) {
+    function fixText(box) {
     if (!box) return '';
     var lines = ['[Orphic Eyes] Fix visual change ' + box.id];
     lines.push('Area: ' + zoneLabel(box.zone));
@@ -2198,6 +2137,7 @@ body.insp-closed .inspector{border-left:0}
   /* ---------- rendering ---------- */
   function render() {
     renderStatus();
+    renderCopyButton();
     renderPages();
     renderZones();
     renderLeft();
@@ -2381,7 +2321,7 @@ body.insp-closed .inspector{border-left:0}
     }
 
     if (draftCount || addCount) list.appendChild(el('div', 'group-label', 'New · included when you copy'));
-    /* Drafts first: they are this session's work and the ones Copy for Hermes sends. */
+    /* Drafts first: they are this session's work and the ones Copy prompt sends. */
     state.drafts.forEach(function (draft) {
       var selected = state.selectedDraft !== null && String(state.selectedDraft) === String(draft.id);
       var row = el('div', 'row-item' + (selected ? ' selected' : ''));
@@ -2444,6 +2384,15 @@ body.insp-closed .inspector{border-left:0}
       row.title = (request.id || 'Request') + ' · ' + subText;
       list.appendChild(row);
     });
+    /* Bottom of the Requests panel: a quiet link to see the exact prompt. */
+    if (draftCount || addCount) {
+      var foot = el('div', 'req-foot');
+      var pv = el('button', 'link-btn', 'Preview prompt');
+      pv.type = 'button';
+      pv.setAttribute('data-preview-prompt', '');
+      foot.appendChild(pv);
+      list.appendChild(foot);
+    }
   }
 
   function imageNode(path, label) {
@@ -3701,7 +3650,7 @@ body.insp-closed .inspector{border-left:0}
       render();
     });
 
-    document.getElementById('copyMain').addEventListener('click', copyForHermes);
+    document.getElementById('copyMain').addEventListener('click', copyPrompt);
 
     document.getElementById('popApprove').addEventListener('click', approveSelected);
     document.getElementById('popCopy').addEventListener('click', function () {
@@ -3969,7 +3918,7 @@ body.insp-closed .inspector{border-left:0}
         if (key === 'b') { event.preventDefault(); toggleSidebar(); return; }
         if (key === 'i') { event.preventDefault(); toggleInspector(); return; }
         if (key === ',') { event.preventDefault(); openSettings(); return; }
-        if (key === 'enter') { event.preventDefault(); copyForHermes(); return; }
+        if (key === 'enter') { event.preventDefault(); copyPrompt(); return; }
         if (key === 'z') {
           event.preventDefault();
           if (event.shiftKey) redo(); else undo();
@@ -4053,7 +4002,8 @@ body.insp-closed .inspector{border-left:0}
   var PREF_DEFAULTS = {
     theme: 'light', textSize: 'm', sidebarCollapsed: null, sidebarTab: 'changes',
     inspectorOpen: true, defaultView: 'slider', showGrid: true, snap: true, gridSize: 8,
-    rulers: true, defaultPrecision: 'exact', tourDone: false, copyTarget: 'hermes'
+    rulers: true, defaultPrecision: 'exact', tourDone: false,
+    promptCoords: true, promptRuleScope: true, promptRuleAsk: true, promptPage: true
   };
   var prefs = copy(PREF_DEFAULTS);
 
@@ -4067,7 +4017,7 @@ body.insp-closed .inspector{border-left:0}
       });
     }
     /* Older or hand-edited saves: unknown keys (e.g. accent) are dropped, wrong types fall back. */
-    ['snap', 'rulers', 'inspectorOpen', 'tourDone', 'showGrid'].forEach(function (key) {
+    ['snap', 'rulers', 'inspectorOpen', 'tourDone', 'showGrid', 'promptCoords', 'promptRuleScope', 'promptRuleAsk', 'promptPage'].forEach(function (key) {
       if (typeof prefs[key] !== 'boolean') prefs[key] = PREF_DEFAULTS[key];
     });
     if (prefs.sidebarCollapsed !== true && prefs.sidebarCollapsed !== false) prefs.sidebarCollapsed = null;
@@ -4077,7 +4027,6 @@ body.insp-closed .inspector{border-left:0}
     if ([4, 8, 16].indexOf(prefs.gridSize) === -1) prefs.gridSize = 8;
     if (['side', 'slider', 'overlay', 'diff'].indexOf(prefs.defaultView) === -1) prefs.defaultView = 'slider';
     if (['changes', 'pages', 'requests'].indexOf(prefs.sidebarTab) === -1) prefs.sidebarTab = 'changes';
-    if (!copyTargetOf(prefs.copyTarget)) prefs.copyTarget = 'hermes';
     state.textSize = prefs.textSize;
     state.view = prefs.defaultView;
     /* One grid switch for Review, Move and Add. Older saves used "grid". */
@@ -4116,95 +4065,62 @@ body.insp-closed .inspector{border-left:0}
   function setTheme(theme) { applyTheme(theme); savePrefs(); refreshSettings(); }
   function setTextSize(size) { applyTextSize(size); savePrefs(); renderStage(); refreshSettings(); }
 
-  /* Copy targets: copy-and-paste only, never a network call. */
-  var COPY_TARGETS = [
-    { id: 'hermes', name: 'Hermes' }, { id: 'chatgpt', name: 'ChatGPT' }, { id: 'claude', name: 'Claude' },
-    { id: 'gemini', name: 'Gemini' }, { id: 'antigravity', name: 'Antigravity' }
-  ];
-  function copyTargetOf(id) {
-    for (var i = 0; i < COPY_TARGETS.length; i++) if (COPY_TARGETS[i].id === id) return COPY_TARGETS[i];
-    return null;
-  }
-  function currentTarget() { return copyTargetOf(prefs.copyTarget) || COPY_TARGETS[0]; }
-  function copyLabel() { return 'Copy for ' + currentTarget().name; }
-
+  /* Copy prompt: copy-and-paste only, never a network call. */
   function renderCopyButton() {
     var button = $('#copyMain');
+    if (!button) return;
+    var count = requestCount();
     var label = button.querySelector('.lbl');
-    if (label && !state.copyTimer) label.textContent = copyLabel();
-    button.setAttribute('aria-label', copyLabel());
-    button.setAttribute('data-tip', 'Copy a message for ' + currentTarget().name);
+    if (label && !state.copyTimer) label.textContent = 'Copy prompt';
+    button.setAttribute('aria-disabled', count ? 'false' : 'true');
+    button.setAttribute('data-tip', count ? 'Copy all requests as one prompt for any AI assistant' : 'Add a request first');
   }
-
-  function setCopyTarget(id) {
-    if (!copyTargetOf(id)) return;
-    prefs.copyTarget = id;
-    savePrefs();
-    renderCopyButton();
-  }
-
-  function copyForHermes() {
-    var target = currentTarget();
-    writeClipboard(buildMessage(target.id), 'Copied for ' + target.name);
+  function copyPrompt() {
+    var count = requestCount();
+    if (!count) { toast('Add a request first'); return; }
+    writeClipboard(promptText(), 'Prompt copied · ' + count + ' request' + (count === 1 ? '' : 's'));
     var label = $('#copyMain').querySelector('.lbl');
     if (!label) return;
     label.textContent = 'Copied';
     clearTimeout(state.copyTimer);
     state.copyTimer = setTimeout(function () { state.copyTimer = null; renderCopyButton(); }, 1500);
   }
-
-  function openCopyMenu(focusIndex) {
-    var anchor = $('#copyTarget');
-    var menu = el('div', 'menu');
-    menu.setAttribute('role', 'menu');
-    menu.setAttribute('aria-label', 'Copy for');
-    var current = currentTarget().id;
-    COPY_TARGETS.forEach(function (target) {
-      var b = el('button');
-      b.type = 'button';
-      b.setAttribute('role', 'menuitemradio');
-      b.setAttribute('aria-checked', target.id === current ? 'true' : 'false');
-      b.setAttribute('data-copy-target', target.id);
-      var slot = el('span', 'mark-slot');
-      if (target.id === current) slot.appendChild(icon('check'));
-      b.appendChild(slot);
-      b.appendChild(el('span', null, target.name));
-      b.addEventListener('click', function () {
-        setCopyTarget(target.id);
-        closeLayer();
-        toast('Copy target: ' + target.name);
-      });
-      menu.appendChild(b);
-    });
-    trapKeys(menu);
-    menu.addEventListener('keydown', function (event) {
-      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Home' && event.key !== 'End') return;
-      event.preventDefault();
-      var items = Array.prototype.slice.call(menu.querySelectorAll('button'));
-      var i = items.indexOf(document.activeElement);
-      if (event.key === 'Home') i = 0;
-      else if (event.key === 'End') i = items.length - 1;
-      else i = (i + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
-      items[i].focus();
-    });
-    anchor.setAttribute('aria-expanded', 'true');
-    openLayer(menu, { onClose: function () { anchor.setAttribute('aria-expanded', 'false'); } });
-    var items = menu.querySelectorAll('button');
-    var start = typeof focusIndex === 'number' ? focusIndex : Math.max(0, COPY_TARGETS.indexOf(currentTarget()));
-    setTimeout(function () { if (items[start]) items[start].focus(); }, 0);
-    var r = anchor.getBoundingClientRect();
-    var mr = menu.getBoundingClientRect();
-    menu.style.left = Math.round(clamp(r.right - mr.width, 8, window.innerWidth - mr.width - 8)) + 'px';
-    menu.style.top = Math.round(r.bottom + 6) + 'px';
-    setTimeout(function () {
-      document.addEventListener('mousedown', function off(event) {
-        if (!menu.contains(event.target)) closeLayer(true);
-        document.removeEventListener('mousedown', off);
-      });
-    }, 0);
+  function openPromptPreview() {
+    var modal = el('div', 'modal');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Preview prompt');
+    var head = el('div', 'modal-head');
+    head.appendChild(el('h2', null, 'Preview prompt'));
+    var x = el('button', 'icon-btn');
+    x.type = 'button';
+    x.setAttribute('aria-label', 'Close');
+    x.appendChild(icon('x'));
+    x.addEventListener('click', function () { closeLayer(); });
+    head.appendChild(x);
+    modal.appendChild(head);
+    var count = requestCount();
+    var pre = el('pre', 'prompt-text', count ? promptText() : 'Add a request first. The prompt lists every Move and Add request you create.');
+    pre.id = 'promptPreview';
+    pre.tabIndex = 0;
+    pre.setAttribute('aria-label', 'Prompt text');
+    modal.appendChild(pre);
+    var actions = el('div', 'modal-actions');
+    var close = el('button', 'btn', 'Close');
+    close.type = 'button';
+    close.addEventListener('click', function () { closeLayer(); });
+    var copyBtn = el('button', 'btn primary', 'Copy prompt');
+    copyBtn.type = 'button';
+    copyBtn.id = 'previewCopy';
+    if (!count) copyBtn.setAttribute('aria-disabled', 'true');
+    copyBtn.addEventListener('click', function () { copyPrompt(); });
+    actions.appendChild(close);
+    actions.appendChild(copyBtn);
+    modal.appendChild(actions);
+    openLayer(scrim(modal), { focus: count ? '#previewCopy' : '.modal-actions .btn' });
   }
 
-  function setZoom(value) {
+    function setZoom(value) {
     state.zoom = value === 'fit' ? 'fit' : String(value);
     renderStage();
     renderStatusbar();
@@ -4494,7 +4410,7 @@ body.insp-closed .inspector{border-left:0}
   /* shortcuts */
   var SHORTCUTS = [
     ['General', null],
-    ['Command palette', 'Ctrl+K'], ['Copy the message', 'Ctrl+Enter'], ['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Shift+Z'],
+    ['Command palette', 'Ctrl+K'], ['Copy prompt', 'Ctrl+Enter'], ['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Shift+Z'],
     ['Toggle sidebar', 'Ctrl+B'], ['Toggle details panel', 'Ctrl+I'], ['Settings', 'Ctrl+,'], ['Keyboard shortcuts', '?'],
     ['Close / clear selection', 'Esc'],
     ['Modes', null], ['Review', '1'], ['Move', '2'], ['Add', '3'],
@@ -4593,6 +4509,22 @@ body.insp-closed .inspector{border-left:0}
       pane.appendChild(setRow('Default precision', 'Exact = 2 px · Approx = 8 px', segControl([['exact', 'Exact'], ['approximate', 'Approx']], prefs.defaultPrecision, function (v) {
         if (state.precision !== v) setPrecision(v); else { prefs.defaultPrecision = v; savePrefs(); refreshSettings(); }
       }, 'Default precision')));
+    } else if (tab === 'prompt') {
+      [['promptCoords', 'Include coordinates', 'Adds x, y, width and height for each area.'],
+       ['promptRuleScope', "Add 'change nothing else' rule", 'Change only what is listed above. Keep everything else as it is.'],
+       ['promptRuleAsk', 'Ask before guessing', 'Tells the AI to ask when a request is unclear.'],
+       ['promptPage', 'Include page and viewport size', 'Adds the page name and the screenshot size.']].forEach(function (row) {
+        pane.appendChild(setRow(row[1], row[2], switchControl(prefs[row[0]] !== false, function (v) {
+          prefs[row[0]] = v; savePrefs(); refreshSettings();
+        }, row[1])));
+      });
+      var card = el('div', 'info-card');
+      card.appendChild(el('p', null, 'Up to 8 requests per prompt. Smaller batches give AI assistants clearer instructions and fewer mistakes. Notes can be up to 240 characters.'));
+      var link = el('button', 'link-btn', 'Preview prompt');
+      link.type = 'button';
+      link.setAttribute('data-preview-prompt', '');
+      card.appendChild(link);
+      pane.appendChild(card);
     } else if (tab === 'shortcuts') {
       pane.appendChild(shortcutList());
     } else {
@@ -4621,7 +4553,7 @@ body.insp-closed .inspector{border-left:0}
     var bodyNode = el('div', 'modal-body');
     var nav = el('div', 'modal-nav');
     nav.setAttribute('role', 'tablist');
-    [['general', 'General'], ['appearance', 'Appearance'], ['canvas', 'Canvas'], ['shortcuts', 'Shortcuts'], ['about', 'About']].forEach(function (t) {
+    [['general', 'General'], ['appearance', 'Appearance'], ['canvas', 'Canvas'], ['prompt', 'Copy prompt'], ['shortcuts', 'Shortcuts'], ['about', 'About']].forEach(function (t) {
       var b = el('button', settingsTab === t[0] ? 'on' : '', t[1]);
       b.type = 'button';
       b.setAttribute('role', 'tab');
@@ -4658,11 +4590,8 @@ body.insp-closed .inspector{border-left:0}
   function paletteActions() {
     var list = [];
     function add(group, label, run, kbd) { list.push({ group: group, label: label, run: run, kbd: kbd || '' }); }
-    add('Action', copyLabel(), copyForHermes, 'Ctrl+Enter');
-    COPY_TARGETS.forEach(function (target) {
-      if (target.id === currentTarget().id) return;
-      add('Copy', 'Copy for ' + target.name, function () { setCopyTarget(target.id); copyForHermes(); });
-    });
+    add('Action', 'Copy prompt', copyPrompt, 'Ctrl+Enter');
+    add('Action', 'Preview prompt', openPromptPreview);
     ['review', 'move', 'add'].forEach(function (m, i) {
       add('Mode', 'Switch to ' + m.charAt(0).toUpperCase() + m.slice(1) + ' mode', function () { setMode(m); }, String(i + 1));
     });
@@ -4766,7 +4695,7 @@ body.insp-closed .inspector{border-left:0}
     { target: '#modeSwitch', title: 'Pick a mode', text: 'Review compares Before and After. Move and Add turn what you point at into requests.' },
     { target: '#sidebar', alt: '#sheetBar', title: 'Changes and requests', text: 'Every changed area and every request lives here. Click one to see its details.' },
     { target: '#canvas', title: 'Point at the picture', text: 'Use the top bar to switch views and the tool dock to select or move an area.' },
-    { target: '.copy-split', title: 'Copy for your AI', text: 'One click copies a clear message with all requests. The arrow picks Hermes, ChatGPT, Claude, Gemini or Antigravity.' }
+    { target: '#copyMain', title: 'Copy prompt', text: 'One click copies all your requests as one clear prompt. Paste it into any AI assistant.' }
   ];
   function maybeStartTour() {
     if (!prefs.tourDone && state.report) startTour();
@@ -4885,10 +4814,8 @@ body.insp-closed .inspector{border-left:0}
     $('#settingsBtn').addEventListener('click', function () { openSettings(); });
     $('#settingsBtn2').addEventListener('click', function () { openSettings(); });
     $('#helpBtn').addEventListener('click', function (event) { event.stopPropagation(); openHelpMenu($('#helpBtn')); });
-    $('#copyTarget').addEventListener('click', function (event) { event.stopPropagation(); openCopyMenu(); });
-    $('#copyTarget').addEventListener('keydown', function (event) {
-      if (event.key === 'ArrowDown') { event.preventDefault(); openCopyMenu(); }
-      else if (event.key === 'ArrowUp') { event.preventDefault(); openCopyMenu(COPY_TARGETS.length - 1); }
+    document.addEventListener('click', function (event) {
+      if (event.target.closest('[data-preview-prompt]')) { event.preventDefault(); openPromptPreview(); }
     });
     renderCopyButton();
     document.addEventListener('keydown', function (event) {
