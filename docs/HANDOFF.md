@@ -1,6 +1,26 @@
 # HANDOFF
 
-## Current task: Helper chips
+## Current task: Settings step 1 of 7 (preferences + auto-save)
+
+Branch: `feat/settings-prefs` (from `feat/helper-chips` at d34fe0a). Only `engine/templates/report.html` and this file.
+
+### Done
+1. Precision: the toolbar Exact/Approx toggle saves `defaultPrecision` at once and is restored on load; changing "Default precision" in Settings calls the same `setPrecision`, so the toolbar updates immediately (no reload). Note: like the toolbar, it also applies to the Move request being edited.
+2. Grid: one pref `showGrid` (old `grid` is migrated) drives Review, Move and Add; the Add-mode Grid button and Settings > Canvas > "Show grid" flip the same value. Review now draws the same grid over its pictures. Grid size stays in Canvas.
+3. Accent row removed from Settings; an old `accent` key is ignored and dropped on the next save.
+4. Every Settings control still applies and saves instantly; the modal has a footer "Changes save automatically." (no Save button).
+5. Old prefs: unknown keys dropped, wrong types fall back to defaults, broken JSON or cleared storage loads defaults with no errors.
+- Checked in Chrome: precision survives reload, Settings → toolbar at once, grid off/on matches in all three modes and survives reload, old prefs `{accent, grid:false, snap:'yes', textSize:'xl', ...}` load without console errors, footer visible in light and dark.
+- Diff contains no added fetch / XMLHttpRequest / eval.
+- Tests: 113 passed; the same 5 Edge-capture failures (test_plugin ×2, test_roundtrip ×3); `tests/test_browser.py` 7 errors because no Edge in the cloud runner (unchanged).
+
+### Not done
+- Review mode has no Grid button in its toolbar; the grid there is controlled from Settings (and from the Move/Add buttons). Copy for Hermes / targets untouched (step 2). Tabs not restructured (step 3).
+
+### Next
+- Settings step 2: Copy Prompt
+
+## Previous task: Helper chips
 
 Branch: `feat/helper-chips` (from `feat/add-action` at 6329be2).
 
