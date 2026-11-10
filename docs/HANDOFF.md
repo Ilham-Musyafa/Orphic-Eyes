@@ -1,6 +1,29 @@
 # HANDOFF
 
-## Current task: Micro-animations
+## Current task: Load images in the UI
+
+Branch: `feat/load-images` (from `feat/micro-animations` at 17038f5).
+
+### Done
+1. Empty report: Before / After drop zones (focusable buttons, "Drop image or click to choose", PNG/JPG/WebP) with a file picker; "Load report (.json)" kept as a secondary link.
+2. Drag & drop: 2 files fill Before then After (names with before/baseline or after/current win); 1 file fills the zone it was dropped on, otherwise the first empty slot. Each slot shows thumbnail, file name, pixel size, file size, Replace and Remove; a Swap button between them. While reviewing loaded images the same slots sit in the Pages panel.
+3. Paste: one router (`routePaste` + `claimPaste(fn, first)`); Load images is the default claimer, toast "Pasted into Before/After". Add reference can register with `first=true` to take paste when its panel is focused. Plain text paste is untouched.
+4. Both slots filled: canvas diff in the browser using the engine's rules (tolerance 0, 32 px tiles, 8-way clusters, 3x3 zones, fail at 5% unexpected pixels), red-on-dimmed diff image, before/after crops (first 40 changes). All views, marking, requests and Copy prompt work. Page name = After file name without extension; viewport = image size. Different sizes: padded at the top-left (never stretched) + notice "Images have different sizes (A×B vs C×D). Aligned to top-left." Limits: over 20 MB or over 8000 px rejected with a message.
+5. Try sample: a synthetic "Tidyday" mockup pair made for this task with Pillow (Montserrat text), 18 KB total, embedded as base64.
+7. Errors: unsupported type, unreadable image, and dropped web addresses ("Web addresses can't be loaded. Drop an image file instead.") — non-local URLs stay blocked. A stray file drop never navigates the page away.
+- `safePath` allows only blob: URLs this page created (tracked in `LOCAL_URLS`, revoked on remove/replace). Nothing goes to localStorage.
+- report.html: 336,912 → 383,740 bytes (+46.8 KB, mostly the sample pair as base64 and the loader code).
+- Checked in Chrome (1440 light, 390 dark): picker, drop, paste, Swap, Replace, Remove, Try sample, size notice (aspect kept 1.778), size/type/URL errors, keyboard focus on drop zones, requests + Copy prompt on loaded images, Load report (.json) and engine reports unchanged (Copy prompt text identical), no external requests, no console errors.
+- Diff: no http(s) URLs, fetch, XMLHttpRequest or eval added; no localStorage writes. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge in the cloud runner).
+
+### Not done
+- 6 (optional, several pairs as Pages): not done.
+- Edge not available in the cloud runner. Large images take a moment to compare; there is no progress indicator.
+
+### Next
+- Add reference (branch from `feat/load-images`).
+
+## Previous task: Micro-animations
 
 Branch: `feat/micro-animations` (from `feat/copy-prompt` at 578f076).
 
