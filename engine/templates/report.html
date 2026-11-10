@@ -124,6 +124,11 @@ body.insp-closed{--inspector-cur:0px}
 .btn.ghost:hover:not(:disabled){color:var(--ink);background:var(--hover)}
 .btn.primary{background:var(--bronze);border-color:var(--bronze);color:var(--on-bronze);font-weight:var(--w-strong);padding:0 var(--s4)}
 .btn.primary:hover:not(:disabled){background:var(--bronze-hover);border-color:var(--bronze-hover)}
+.copy-split{display:inline-flex;align-items:stretch;flex:none}
+.copy-split #copyMain{border-top-right-radius:0;border-bottom-right-radius:0}
+.copy-split .copy-caret{border-top-left-radius:0;border-bottom-left-radius:0;padding:0 6px;border-left:1px solid rgba(27,27,25,.22);min-width:var(--hit-dense)}
+.menu button[aria-checked="true"]{font-weight:var(--w-strong)}
+.menu .mark-slot{width:16px;flex:none;display:inline-flex;color:var(--blue-ink)}
 .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:var(--w-strong)}
 .btn.blue:hover:not(:disabled){filter:brightness(.95)}
 .btn.block{width:100%}
@@ -515,6 +520,7 @@ body.insp-closed .inspector{border-left:0}
   <symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5z"/></symbol>
   <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.25M8 13.25v1.25M14.5 8h-1.25M2.75 8H1.5M12.6 3.4l-.9.9M4.3 11.7l-.9.9M12.6 12.6l-.9-.9M4.3 4.3l-.9-.9"/></symbol>
   <symbol id="i-text" viewBox="0 0 16 16"><path d="M2.5 4V3h7v1M6 3v10M4.5 13h3M9.5 8.5V8h4v.5M11.5 8v5M10.5 13h2"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 16 16"><path d="m4.5 6.25 3.5 3.5 3.5-3.5"/></symbol>
   <symbol id="i-file" viewBox="0 0 16 16"><path d="M2.25 4.25a1 1 0 0 1 1-1h3l1.5 1.5h5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-9.5a1 1 0 0 1-1-1z"/></symbol>
 </svg>
 
@@ -546,7 +552,10 @@ body.insp-closed .inspector{border-left:0}
       <button type="button" class="icon-btn hide-sm" id="redoBtn" disabled aria-label="Redo" data-tip="Redo" data-kbd="Ctrl+Shift+Z"><svg class="ic"><use href="#i-redo"/></svg></button>
       <span class="capture-chip hide-sm hide-md" id="captureChip" tabindex="0" data-tip="Capture size comes from the report"><span class="cap-name" id="captureName">Desktop</span><span class="num" id="captureSize">&mdash;</span></span>
       <button type="button" class="icon-btn hide-sm" id="settingsBtn" aria-label="Settings" data-tip="Settings" data-kbd="Ctrl+,"><svg class="ic"><use href="#i-gear"/></svg></button>
-      <button type="button" class="btn primary" id="copyMain" aria-label="Copy for Hermes" data-tip="Copy a message for Hermes" data-kbd="Ctrl+Enter"><svg class="ic"><use href="#i-copy"/></svg><span class="lbl">Copy for Hermes</span></button>
+      <div class="copy-split" role="group" aria-label="Copy message">
+        <button type="button" class="btn primary" id="copyMain" aria-label="Copy for Hermes" data-tip="Copy a message for Hermes" data-kbd="Ctrl+Enter"><svg class="ic"><use href="#i-copy"/></svg><span class="lbl">Copy for Hermes</span></button>
+        <button type="button" class="btn primary copy-caret" id="copyTarget" aria-haspopup="menu" aria-expanded="false" aria-label="Choose who the message is for" data-tip="Choose the AI"><svg class="ic"><use href="#i-chevron"/></svg></button>
+      </div>
     </div>
   </header>
 
@@ -998,6 +1007,10 @@ body.insp-closed .inspector{border-left:0}
       });
     }
     return lines.join('\n');
+  }
+
+  function buildMessage(target) {
+    return hermesText();
   }
 
   function fixText(box) {
@@ -2126,7 +2139,7 @@ body.insp-closed .inspector{border-left:0}
     var box = el('div', 'guide');
     box.appendChild(el('strong', null, state.report ? 'No changes to show' : 'No report loaded'));
     var steps = el('ol');
-    ['1|Pick a mode: Review, Move or Add', '2|Point at the image', '3|Copy for Hermes'].forEach(function (step) {
+    ['1|Pick a mode: Review, Move or Add', '2|Point at the image', '3|Copy the message for your AI'].forEach(function (step) {
       var parts = step.split('|');
       var li = el('li');
       li.appendChild(el('b', null, parts[0]));
@@ -2187,7 +2200,7 @@ body.insp-closed .inspector{border-left:0}
       var empty = el('div', 'guide');
       empty.appendChild(el('strong', null, 'No requests yet'));
       var steps = el('ol');
-      ['1|Switch to Move or Add', '2|Drag an area on the image', '3|Press Add request, then Copy for Hermes'].forEach(function (step) {
+      ['1|Switch to Move or Add', '2|Drag an area on the image', '3|Press Add request, then Copy'].forEach(function (step) {
         var parts = step.split('|');
         var li = el('li');
         li.appendChild(el('b', null, parts[0]));
@@ -2199,7 +2212,7 @@ body.insp-closed .inspector{border-left:0}
       return;
     }
 
-    if (draftCount || addCount) list.appendChild(el('div', 'group-label', 'New · copied with Hermes message'));
+    if (draftCount || addCount) list.appendChild(el('div', 'group-label', 'New · included when you copy'));
     /* Drafts first: they are this session's work and the ones Copy for Hermes sends. */
     state.drafts.forEach(function (draft) {
       var selected = state.selectedDraft !== null && String(state.selectedDraft) === String(draft.id);
@@ -2905,7 +2918,7 @@ body.insp-closed .inspector{border-left:0}
     var box = el('div', 'guide');
     box.appendChild(el('strong', null, heading));
     var steps = el('ol');
-    ['1|Review: click a coloured box on the image', '2|Move or Add: drag an area to create a request', '3|Copy for Hermes to send everything'].forEach(function (step) {
+    ['1|Review: click a coloured box on the image', '2|Move or Add: drag an area to create a request', '3|Copy the message for your AI'].forEach(function (step) {
       var parts = step.split('|');
       var li = el('li');
       li.appendChild(el('b', null, parts[0]));
@@ -3753,7 +3766,7 @@ body.insp-closed .inspector{border-left:0}
   var PREF_DEFAULTS = {
     theme: 'light', textSize: 'm', sidebarCollapsed: null, sidebarTab: 'changes',
     inspectorOpen: true, defaultView: 'slider', grid: true, snap: true, gridSize: 8,
-    rulers: true, defaultPrecision: 'exact', tourDone: false
+    rulers: true, defaultPrecision: 'exact', tourDone: false, copyTarget: 'hermes'
   };
   var prefs = copy(PREF_DEFAULTS);
 
@@ -3771,6 +3784,7 @@ body.insp-closed .inspector{border-left:0}
     if ([4, 8, 16].indexOf(prefs.gridSize) === -1) prefs.gridSize = 8;
     if (['side', 'slider', 'overlay', 'diff'].indexOf(prefs.defaultView) === -1) prefs.defaultView = 'slider';
     if (['changes', 'pages', 'requests'].indexOf(prefs.sidebarTab) === -1) prefs.sidebarTab = 'changes';
+    if (!copyTargetOf(prefs.copyTarget)) prefs.copyTarget = 'hermes';
     state.textSize = prefs.textSize;
     state.view = prefs.defaultView;
     state.grid = prefs.grid !== false;
@@ -3807,14 +3821,92 @@ body.insp-closed .inspector{border-left:0}
   function setTheme(theme) { applyTheme(theme); savePrefs(); refreshSettings(); }
   function setTextSize(size) { applyTextSize(size); savePrefs(); renderStage(); refreshSettings(); }
 
-  function copyForHermes() {
-    writeClipboard(hermesText(), 'Copied for Hermes');
+  /* Copy targets: copy-and-paste only, never a network call. */
+  var COPY_TARGETS = [
+    { id: 'hermes', name: 'Hermes' }, { id: 'chatgpt', name: 'ChatGPT' }, { id: 'claude', name: 'Claude' },
+    { id: 'gemini', name: 'Gemini' }, { id: 'antigravity', name: 'Antigravity' }
+  ];
+  function copyTargetOf(id) {
+    for (var i = 0; i < COPY_TARGETS.length; i++) if (COPY_TARGETS[i].id === id) return COPY_TARGETS[i];
+    return null;
+  }
+  function currentTarget() { return copyTargetOf(prefs.copyTarget) || COPY_TARGETS[0]; }
+  function copyLabel() { return 'Copy for ' + currentTarget().name; }
+
+  function renderCopyButton() {
     var button = $('#copyMain');
     var label = button.querySelector('.lbl');
+    if (label && !state.copyTimer) label.textContent = copyLabel();
+    button.setAttribute('aria-label', copyLabel());
+    button.setAttribute('data-tip', 'Copy a message for ' + currentTarget().name);
+  }
+
+  function setCopyTarget(id) {
+    if (!copyTargetOf(id)) return;
+    prefs.copyTarget = id;
+    savePrefs();
+    renderCopyButton();
+  }
+
+  function copyForHermes() {
+    var target = currentTarget();
+    writeClipboard(buildMessage(target.id), 'Copied for ' + target.name);
+    var label = $('#copyMain').querySelector('.lbl');
     if (!label) return;
     label.textContent = 'Copied';
     clearTimeout(state.copyTimer);
-    state.copyTimer = setTimeout(function () { label.textContent = 'Copy for Hermes'; }, 1500);
+    state.copyTimer = setTimeout(function () { state.copyTimer = null; renderCopyButton(); }, 1500);
+  }
+
+  function openCopyMenu(focusIndex) {
+    var anchor = $('#copyTarget');
+    var menu = el('div', 'menu');
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('aria-label', 'Copy for');
+    var current = currentTarget().id;
+    COPY_TARGETS.forEach(function (target) {
+      var b = el('button');
+      b.type = 'button';
+      b.setAttribute('role', 'menuitemradio');
+      b.setAttribute('aria-checked', target.id === current ? 'true' : 'false');
+      b.setAttribute('data-copy-target', target.id);
+      var slot = el('span', 'mark-slot');
+      if (target.id === current) slot.appendChild(icon('check'));
+      b.appendChild(slot);
+      b.appendChild(el('span', null, target.name));
+      b.addEventListener('click', function () {
+        setCopyTarget(target.id);
+        closeLayer();
+        toast('Copy target: ' + target.name);
+      });
+      menu.appendChild(b);
+    });
+    trapKeys(menu);
+    menu.addEventListener('keydown', function (event) {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Home' && event.key !== 'End') return;
+      event.preventDefault();
+      var items = Array.prototype.slice.call(menu.querySelectorAll('button'));
+      var i = items.indexOf(document.activeElement);
+      if (event.key === 'Home') i = 0;
+      else if (event.key === 'End') i = items.length - 1;
+      else i = (i + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length;
+      items[i].focus();
+    });
+    anchor.setAttribute('aria-expanded', 'true');
+    openLayer(menu, { onClose: function () { anchor.setAttribute('aria-expanded', 'false'); } });
+    var items = menu.querySelectorAll('button');
+    var start = typeof focusIndex === 'number' ? focusIndex : Math.max(0, COPY_TARGETS.indexOf(currentTarget()));
+    setTimeout(function () { if (items[start]) items[start].focus(); }, 0);
+    var r = anchor.getBoundingClientRect();
+    var mr = menu.getBoundingClientRect();
+    menu.style.left = Math.round(clamp(r.right - mr.width, 8, window.innerWidth - mr.width - 8)) + 'px';
+    menu.style.top = Math.round(r.bottom + 6) + 'px';
+    setTimeout(function () {
+      document.addEventListener('mousedown', function off(event) {
+        if (!menu.contains(event.target)) closeLayer(true);
+        document.removeEventListener('mousedown', off);
+      });
+    }, 0);
   }
 
   function setZoom(value) {
@@ -4107,7 +4199,7 @@ body.insp-closed .inspector{border-left:0}
   /* shortcuts */
   var SHORTCUTS = [
     ['General', null],
-    ['Command palette', 'Ctrl+K'], ['Copy for Hermes', 'Ctrl+Enter'], ['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Shift+Z'],
+    ['Command palette', 'Ctrl+K'], ['Copy the message', 'Ctrl+Enter'], ['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Shift+Z'],
     ['Toggle sidebar', 'Ctrl+B'], ['Toggle details panel', 'Ctrl+I'], ['Settings', 'Ctrl+,'], ['Keyboard shortcuts', '?'],
     ['Close / clear selection', 'Esc'],
     ['Modes', null], ['Review', '1'], ['Move', '2'], ['Add', '3'],
@@ -4188,7 +4280,7 @@ body.insp-closed .inspector{border-left:0}
       pane.appendChild(setRow('Theme', null, segControl([['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], prefs.theme, setTheme, 'Theme')));
       pane.appendChild(setRow('Text size', 'Scales every label in the app.', segControl([['s', 'S'], ['m', 'M'], ['l', 'L']], state.textSize, setTextSize, 'Text size')));
       var accent = el('span', 'chip', 'Bronze · fixed');
-      pane.appendChild(setRow('Accent', 'Used only for Copy for Hermes.', accent));
+      pane.appendChild(setRow('Accent', 'Used only for the Copy button.', accent));
     } else if (tab === 'canvas') {
       pane.appendChild(setRow('Default view', 'Used when a report opens.', segControl([['side', 'Side by side'], ['slider', 'Slider'], ['overlay', 'Overlay'], ['diff', 'Diff']], prefs.defaultView, function (v) {
         prefs.defaultView = v; state.view = v; savePrefs(); render(); refreshSettings();
@@ -4266,7 +4358,11 @@ body.insp-closed .inspector{border-left:0}
   function paletteActions() {
     var list = [];
     function add(group, label, run, kbd) { list.push({ group: group, label: label, run: run, kbd: kbd || '' }); }
-    add('Action', 'Copy for Hermes', copyForHermes, 'Ctrl+Enter');
+    add('Action', copyLabel(), copyForHermes, 'Ctrl+Enter');
+    COPY_TARGETS.forEach(function (target) {
+      if (target.id === currentTarget().id) return;
+      add('Copy', 'Copy for ' + target.name, function () { setCopyTarget(target.id); copyForHermes(); });
+    });
     ['review', 'move', 'add'].forEach(function (m, i) {
       add('Mode', 'Switch to ' + m.charAt(0).toUpperCase() + m.slice(1) + ' mode', function () { setMode(m); }, String(i + 1));
     });
@@ -4370,7 +4466,7 @@ body.insp-closed .inspector{border-left:0}
     { target: '#modeSwitch', title: 'Pick a mode', text: 'Review compares Before and After. Move and Add turn what you point at into requests.' },
     { target: '#sidebar', alt: '#sheetBar', title: 'Changes and requests', text: 'Every changed area and every request lives here. Click one to see its details.' },
     { target: '#canvas', title: 'Point at the picture', text: 'Use the top bar to switch views and the tool dock to select or move an area.' },
-    { target: '#copyMain', title: 'Copy for Hermes', text: 'One click copies a clear message with all requests for the agent.' }
+    { target: '.copy-split', title: 'Copy for your AI', text: 'One click copies a clear message with all requests. The arrow picks Hermes, ChatGPT, Claude, Gemini or Antigravity.' }
   ];
   function maybeStartTour() {
     if (!prefs.tourDone && state.report) startTour();
@@ -4489,6 +4585,12 @@ body.insp-closed .inspector{border-left:0}
     $('#settingsBtn').addEventListener('click', function () { openSettings(); });
     $('#settingsBtn2').addEventListener('click', function () { openSettings(); });
     $('#helpBtn').addEventListener('click', function (event) { event.stopPropagation(); openHelpMenu($('#helpBtn')); });
+    $('#copyTarget').addEventListener('click', function (event) { event.stopPropagation(); openCopyMenu(); });
+    $('#copyTarget').addEventListener('keydown', function (event) {
+      if (event.key === 'ArrowDown') { event.preventDefault(); openCopyMenu(); }
+      else if (event.key === 'ArrowUp') { event.preventDefault(); openCopyMenu(COPY_TARGETS.length - 1); }
+    });
+    renderCopyButton();
     document.addEventListener('keydown', function (event) {
       if (event.key === 'Escape' && overlayOpen()) { event.preventDefault(); closeLayer(); }
     });
