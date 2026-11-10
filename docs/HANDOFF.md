@@ -1,6 +1,27 @@
 # HANDOFF
 
-## Current task: Embed UI fonts (Montserrat + JetBrains Mono)
+## Current task: Settings step 2 (one neutral Copy prompt)
+
+Branch: `feat/copy-prompt` (from `feat/fonts` at 917cda6).
+
+### Done
+- Header: one bronze "Copy prompt" button (copy icon, tooltip "Copy all requests as one prompt for any AI assistant", Ctrl+Enter). With 0 requests it is `aria-disabled` with tooltip "Add a request first" (kept hoverable so the tooltip shows). Toast "Prompt copied · {n} requests".
+- Removed: the target picker, `COPY_TARGETS`, `hermesText`, `agentText`, `messageData`, `buildMessage`. Old `prefs.copyTarget` is ignored and dropped on the next save. "Hermes" is gone from buttons, toasts, menus and the tour (About text left for a later step).
+- `buildPrompt(requests, options)` builds the whole text; `promptRequests()` gives Move then Add drafts; `window.OrphicPrompt.build` is a read-only hook (tests, later references). Type labels Move / Revert / Hide / Comment / Add; per-type detail lines (Move target + precision, Add description + element/animation, Hide, Revert); "Note:" only when filled.
+- "Preview prompt" link at the bottom of the Requests panel and in Ctrl+K; modal with read-only monospace text, Copy prompt + Close, Esc closes. Preview text equals the clipboard text (checked).
+- Settings tab "Copy prompt" (after Canvas): Include coordinates, Add 'change nothing else' rule, Ask before guessing, Include page and viewport size (all default on, saved in prefs, survive reload) + info card with "Preview prompt".
+- Verified in Chrome: all switches change the copied text immediately and after reload; all five types through `OrphicPrompt.build`; no console errors; light and dark.
+- Screenshots: `docs/screenshots/copy-prompt/` (header disabled/enabled, Requests panel, Preview, Settings tab; light + dark).
+- Diff: no http(s) URLs, fetch, XMLHttpRequest or eval added. Tests unchanged: 113 passed, the same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge in the cloud runner).
+
+### Not done
+- Manual test in Edge: not possible in the cloud runner (Chrome only). Revert / Hide / Comment still have no UI to create them; they are covered by the builder and tested through the hook.
+- The Review "Copy fix message" (single change) keeps its own short text.
+
+### Next
+- Load images (branch from `feat/copy-prompt`).
+
+## Previous task: Embed UI fonts (Montserrat + JetBrains Mono)
 
 Branch: `feat/fonts` (from `feat/settings-prefs` at b5fb078).
 
