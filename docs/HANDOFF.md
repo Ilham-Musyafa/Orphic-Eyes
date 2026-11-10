@@ -1,6 +1,29 @@
 # HANDOFF
 
-## Current task: Settings step 2 (one neutral Copy prompt)
+## Current task: Micro-animations
+
+Branch: `feat/micro-animations` (from `feat/copy-prompt` at 578f076).
+
+### Done
+- Motion tokens on `:root`: `--dur-fast:120ms`, `--dur:200ms`, `--dur-slow:300ms`, `--dur-panel:160ms`, `--ease-out:cubic-bezier(.2,.8,.2,1)`. All keyframes are prefixed `oe-` and sit in one block before the reduced-motion rule.
+- 1 Copy prompt: copy icon fades/scales out, a check draws with stroke-dashoffset (300 ms), holds 1.5 s, returns; label "Copied"; `#liveRegion` announces "Prompt copied". Runs only after the clipboard write succeeds.
+- 2 New request row: fade + translateY(4px→0); the Requests badge pops 1→1.15→1. Only new rows animate, never ordinary re-renders.
+- 3 Toasts: fade + translateY(8px→0) in, fade out, auto-dismiss after 3 s.
+- 4 Selected area (Move selection, Add selection, selected change box): SVG marching ants, 1 s linear loop, blue #2F80FF (Add keeps its violet).
+- 5 Delete: the row is removed at once; a copy fades + scales to .98 on top while the rows below slide up (FLIP, transform only).
+- 6 Done verdict: a circle turns into a green check (stroke draw), once, the first time the Requests panel shows it.
+- 7 Settings modal, palette, menus and tour slide + fade (160 ms); the inspector and the expanded sidebar slide in when opened; the mid-width drawer uses the 160 ms token. Removed the old grid-template-columns transition (layout property).
+- 8 Pictures: shimmer only while an image is really loading, then a fade-in; cached pictures appear at once.
+- Reduced motion: `@media (prefers-reduced-motion: reduce)` disables every animation and transition (incl. ::before/::after); keyframes animate FROM the hidden state, so the end state shows instantly (check visible, rows visible). JS skips the delete ghost and the replay classes. The app has no separate Reduce motion setting.
+- Checked in Chrome with normal and reduced motion: all 8 behaviours, no console errors; Copy prompt text unchanged; no added URLs/fetch/XHR/eval. Tests: 113 passed, same 5 Edge-capture failures.
+
+### Not done
+- No in-app Reduce motion switch (none existed; the OS setting is the switch). Not tested in Edge (cloud has Chrome only).
+
+### Next
+- Load images (branch from `feat/micro-animations`).
+
+## Previous task: Settings step 2 (one neutral Copy prompt)
 
 Branch: `feat/copy-prompt` (from `feat/fonts` at 917cda6).
 
