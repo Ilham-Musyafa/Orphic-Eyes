@@ -388,3 +388,12 @@ Plans, not current features:
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE). Copyright 2026 Ilham Musyafa.
+
+### Fonts
+
+The report UI embeds two fonts inside `engine/templates/report.html`, so it works offline:
+
+- **Montserrat** (UI text) by The Montserrat Project Authors, SIL Open Font License 1.1. See [licenses/Montserrat-OFL.txt](licenses/Montserrat-OFL.txt).
+- **JetBrains Mono** (numbers, coordinates, code) by The JetBrains Mono Project Authors, SIL Open Font License 1.1. See [licenses/JetBrainsMono-OFL.txt](licenses/JetBrainsMono-OFL.txt).
+
+Both are subset to Latin, Latin-1 and common punctuation. The font license applies to the font data only; the rest of the project stays Apache 2.0.
