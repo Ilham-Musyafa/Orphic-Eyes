@@ -230,6 +230,8 @@ body.sb-collapsed .sidebar{align-items:center}
 .canvas{position:relative;min-width:0;min-height:0;overflow:hidden;background-color:var(--canvas);background-image:radial-gradient(var(--dot) 1px,transparent 1.2px);background-size:16px 16px}
 .stage-scroller{position:absolute;inset:0;overflow:auto;display:flex;padding:var(--stage-pad-top) var(--stage-pad-x) var(--stage-pad-bottom)}
 body.mode-review .stage-scroller{--stage-pad-bottom:64px}
+/* No report: nothing floats over the canvas, so the empty state sits dead centre in every mode. */
+body.no-report .stage-scroller,body.no-report.mode-review .stage-scroller{--stage-pad-bottom:var(--stage-pad-top)}
 .stage-inner{flex:none;margin:auto;display:flex;align-items:center;justify-content:center;min-width:0;min-height:0}
 .float{position:absolute;z-index:20;display:flex;align-items:center;gap:2px;padding:4px;border-radius:var(--r-pill);background:var(--panel);box-shadow:var(--shadow-float);max-width:calc(100% - 2 * var(--float-gap))}
 .float-top{top:var(--float-gap);left:50%;transform:translateX(-50%)}
@@ -466,6 +468,7 @@ body.insp-closed .inspector{border-left:0}
   .canvas{grid-column:1}
   .stage-scroller{padding-bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 72px)}
   body.mode-review .stage-scroller{padding-bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 60px)}
+  body.no-report .stage-scroller,body.no-report.mode-review .stage-scroller{padding-bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + var(--stage-pad-top))}
   .dock{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 10px)}
   .zoom-pill{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 10px)}
   body:not(.mode-review) .zoom-pill{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 62px)}
@@ -3258,6 +3261,7 @@ body.insp-closed .inspector{border-left:0}
     }
     document.body.classList.remove('mode-review', 'mode-move', 'mode-add');
     document.body.classList.add('mode-' + state.mode);
+    document.body.classList.toggle('no-report', !state.report);
     var toolbar = $('#moveToolbar');
     var editing = state.mode === 'move' || state.mode === 'add';
     if (toolbar) toolbar.hidden = !editing || !state.report;
