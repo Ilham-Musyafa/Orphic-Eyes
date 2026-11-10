@@ -48,6 +48,9 @@
   --font-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
   /* motion */
   --ease:cubic-bezier(.2,.7,.3,1);--t:170ms;
+  /* motion tokens: every animation below uses these; reduced motion turns them all off */
+  --dur-fast:120ms;--dur:200ms;--dur-slow:300ms;--dur-panel:160ms;
+  --ease-out:cubic-bezier(.2,.8,.2,1);
 
   /* colours — light */
   color-scheme:light;
@@ -95,11 +98,59 @@ button:disabled{opacity:.42;cursor:not-allowed}
 .hidden,[hidden]{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .ic{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;display:block}
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+/* Reduced motion: no animation or transition anywhere; every state still changes, instantly.
+   (The app has no separate Reduce motion setting; the OS setting is the switch.) */
+/* ---------- micro-animations (opacity, transform, stroke-dashoffset only) ---------- */
+/* Each keyframe animates FROM a hidden start TO the element's normal style,
+   so with animation turned off the final state is simply there. */
+@keyframes oe-draw{from{stroke-dashoffset:1}}
+@keyframes oe-row-in{from{opacity:0;transform:translateY(4px)}}
+@keyframes oe-row-out{to{opacity:0;transform:scale(.98)}}
+@keyframes oe-pop{50%{transform:scale(1.15)}}
+@keyframes oe-ants{to{stroke-dashoffset:-10}}
+@keyframes oe-panel-up{from{opacity:0;transform:translateY(6px)}}
+@keyframes oe-panel-left{from{opacity:0;transform:translateX(-8px)}}
+@keyframes oe-panel-right{from{opacity:0;transform:translateX(8px)}}
+@keyframes oe-fade-in{from{opacity:0}}
+@keyframes oe-shimmer{to{transform:translateX(100%)}}
+/* 1. copy icon morphs into a drawn check */
+.copy-ic g,.copy-ic path{transform-box:fill-box;transform-origin:center}
+.copy-ic .ic-copy{transition:opacity var(--dur-fast) var(--ease-out),transform var(--dur-fast) var(--ease-out)}
+.copy-ic .ic-check{opacity:0;stroke-dasharray:1;stroke-dashoffset:1}
+#copyMain.copied .ic-copy{opacity:0;transform:scale(.6)}
+#copyMain.copied .ic-check{opacity:1;stroke-dashoffset:0;animation:oe-draw var(--dur-slow) var(--ease-out)}
+/* 2. new request row + count pop */
+.row-new{animation:oe-row-in var(--dur) var(--ease-out)}
+.badge.pop{animation:oe-pop var(--dur) var(--ease-out)}
+/* 4. marching ants on the selected area */
+.ants{position:absolute;left:-2px;top:-2px;width:calc(100% + 4px);height:calc(100% + 4px);overflow:visible;pointer-events:none;z-index:1}
+.ants rect{fill:none;stroke:#2F80FF;stroke-width:2;stroke-dasharray:6 4;animation:oe-ants 1s linear infinite}
+.add-sel .ants rect{stroke:var(--add)}
+.has-ants,.mark-box.selected{border-color:transparent!important}
+/* 5. deleted row fades out while the rest slide up */
+#requestList{position:relative}
+.row-ghost{position:absolute;margin:0;pointer-events:none;animation:oe-row-out var(--dur-fast) var(--ease-out) forwards}
+/* 6. Done: a circle turns into a drawn green check */
+.done-ic{width:11px;height:11px;margin-right:4px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.done-ic circle{opacity:0;transform-box:fill-box;transform-origin:center}
+.done-ic path{stroke-dasharray:1;stroke-dashoffset:0}
+.done-ic.anim circle{animation:oe-circle var(--dur-slow) var(--ease-out) backwards}
+@keyframes oe-circle{from{opacity:1;transform:scale(1)}to{opacity:0;transform:scale(.6)}}
+.done-ic.anim path{animation:oe-draw var(--dur-slow) var(--ease-out) var(--dur-fast) backwards}
+/* 7. panels slide + fade in */
+.modal,.palette,.menu,.tour{animation:oe-panel-up var(--dur-panel) var(--ease-out)}
+.inspector.panel-in .inspector-header,.inspector.panel-in .summary-card,.inspector.panel-in .inspector-body{animation:oe-panel-right var(--dur-panel) var(--ease-out)}
+.sb-body.panel-in{animation:oe-panel-left var(--dur-panel) var(--ease-out)}
+/* 8. image loading: shimmer, then the picture fades in */
+.rv-pic.loading::after{content:"";position:absolute;inset:0;z-index:4;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);transform:translateX(-100%);animation:oe-shimmer 1s linear infinite}
+.rv-pic.loading{background:var(--surface)}
+img.pending{opacity:0}
+img.img-in{animation:oe-fade-in var(--dur) var(--ease-out)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 
 /* ---------- app shell ---------- */
 .app{height:100%;display:grid;grid-template-rows:var(--header-h) minmax(0,1fr) var(--status-h);min-height:0}
-.main{min-height:0;display:grid;grid-template-columns:var(--sidebar-cur,var(--sidebar-w)) minmax(0,1fr) var(--inspector-cur,var(--inspector-w));position:relative;transition:grid-template-columns var(--t) var(--ease)}
+.main{min-height:0;display:grid;grid-template-columns:var(--sidebar-cur,var(--sidebar-w)) minmax(0,1fr) var(--inspector-cur,var(--inspector-w));position:relative}
 body.sb-collapsed{--sidebar-cur:var(--rail-w)}
 body.insp-closed{--inspector-cur:0px}
 
@@ -417,7 +468,7 @@ body.insp-closed .inspector{border-left:0}
 .pop .crop-img{height:52px}
 .pop-actions{display:flex;gap:6px}
 .pop-actions .btn{flex:1;min-height:var(--hit-dense);padding:0 var(--s2);font-size:var(--fs-sec)}
-.toast{position:fixed;left:50%;bottom:calc(var(--status-h) + 96px);transform:translate(-50%,8px);z-index:95;background:var(--toast-bg);color:var(--toast-ink);border-radius:10px;padding:9px var(--s4);box-shadow:var(--shadow-pop);font-weight:var(--w-medium);font-size:var(--fs-body);opacity:0;pointer-events:none;transition:opacity var(--t) var(--ease),transform var(--t) var(--ease);max-width:calc(100vw - 24px);text-align:center}
+.toast{position:fixed;left:50%;bottom:calc(var(--status-h) + 96px);transform:translate(-50%,8px);z-index:95;background:var(--toast-bg);color:var(--toast-ink);border-radius:10px;padding:9px var(--s4);box-shadow:var(--shadow-pop);font-weight:var(--w-medium);font-size:var(--fs-body);opacity:0;pointer-events:none;transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out);max-width:calc(100vw - 24px);text-align:center}
 .toast.show{opacity:1;transform:translate(-50%,0)}
 .menu{position:fixed;z-index:60;min-width:220px;padding:var(--s1);border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop)}
 .menu button{display:flex;align-items:center;gap:var(--s2);width:100%;min-height:var(--hit);padding:0 var(--s2);border-radius:6px;text-align:left}
@@ -474,7 +525,7 @@ body.insp-closed .inspector{border-left:0}
 .lbl-wide{display:inline}
 @media (max-width:1279px){
   .main{grid-template-columns:var(--sidebar-cur,var(--sidebar-w)) minmax(0,1fr)}
-  .inspector{position:absolute;top:0;right:0;bottom:0;width:var(--inspector-w);z-index:30;box-shadow:var(--shadow-pop);border-left:0;transform:translateX(0);transition:transform var(--t) var(--ease)}
+  .inspector{position:absolute;top:0;right:0;bottom:0;width:var(--inspector-w);z-index:30;box-shadow:var(--shadow-pop);border-left:0;transform:translateX(0);transition:transform var(--dur-panel) var(--ease-out)}
   body.insp-closed .inspector{transform:translateX(calc(100% + 24px));box-shadow:none}
   .capture-chip .cap-name{display:none}
 }
@@ -579,7 +630,7 @@ body.insp-closed .inspector{border-left:0}
       <button type="button" class="icon-btn hide-sm" id="redoBtn" disabled aria-label="Redo" data-tip="Redo" data-kbd="Ctrl+Shift+Z"><svg class="ic"><use href="#i-redo"/></svg></button>
       <span class="capture-chip hide-sm hide-md" id="captureChip" tabindex="0" data-tip="Capture size comes from the report"><span class="cap-name" id="captureName">Desktop</span><span class="num" id="captureSize">&mdash;</span></span>
       <button type="button" class="icon-btn hide-sm" id="settingsBtn" aria-label="Settings" data-tip="Settings" data-kbd="Ctrl+,"><svg class="ic"><use href="#i-gear"/></svg></button>
-      <button type="button" class="btn primary" id="copyMain" aria-label="Copy prompt" data-tip="Copy all requests as one prompt for any AI assistant" data-kbd="Ctrl+Enter"><svg class="ic"><use href="#i-copy"/></svg><span class="lbl">Copy prompt</span></button>
+      <button type="button" class="btn primary" id="copyMain" aria-label="Copy prompt" data-tip="Copy all requests as one prompt for any AI assistant" data-kbd="Ctrl+Enter"><svg class="ic copy-ic" viewBox="0 0 16 16" aria-hidden="true"><g class="ic-copy"><use href="#i-copy"/></g><path class="ic-check" d="m3 8.5 3.2 3L13 4.75" pathLength="1"/></svg><span class="lbl">Copy prompt</span></button>
     </div>
   </header>
 
@@ -707,6 +758,7 @@ body.insp-closed .inspector{border-left:0}
 
 <div class="tip" id="tip" role="tooltip"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="sr-only" id="liveRegion" aria-live="polite" aria-atomic="true"></div>
 <div id="layer"></div>
 
 <!--ORPHIC_REPORT_JSON-->
@@ -775,6 +827,22 @@ body.insp-closed .inspector{border-left:0}
   }
 
   function $(sel) { return document.querySelector(sel); }
+  var motionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  function reducedMotion() { return !!(motionQuery && motionQuery.matches); }
+  /* Restart a one-shot CSS animation class on a node. */
+  function replay(node, cls) {
+    if (!node || reducedMotion()) return;
+    node.classList.remove(cls);
+    void node.offsetWidth;
+    node.classList.add(cls);
+    node.addEventListener('animationend', function done() { node.classList.remove(cls); node.removeEventListener('animationend', done); });
+  }
+  /* Marching-ants outline drawn as an SVG stroke, so only stroke-dashoffset animates. */
+  function ants(node) {
+    node.classList.add('has-ants');
+    node.insertAdjacentHTML('beforeend', '<svg class="ants" aria-hidden="true" focusable="false"><rect width="100%" height="100%" rx="2"/></svg>');
+    return node;
+  }
   function el(tag, cls, text) {
     var node = document.createElement(tag);
     if (cls) node.className = cls;
@@ -960,8 +1028,8 @@ body.insp-closed .inspector{border-left:0}
   }
 
   /* ---------- copy helpers ---------- */
-  function writeClipboard(text, message) {
-    var done = function () { toast(message || 'Copied'); };
+  function writeClipboard(text, message, onDone) {
+    var done = function () { toast(message || 'Copied'); if (onDone) onDone(); };
     var fallback = function () {
       var ok = false;
       try {
@@ -977,7 +1045,7 @@ body.insp-closed .inspector{border-left:0}
         ok = document.execCommand('copy');
         document.body.removeChild(area);
       } catch (err) { ok = false; }
-      if (ok) toast(message || 'Copied');
+      if (ok) { toast(message || 'Copied'); if (onDone) onDone(); }
       else toast('Copy unavailable \u2014 select the text instead');
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -993,7 +1061,7 @@ body.insp-closed .inspector{border-left:0}
     node.textContent = message;
     node.classList.add('show');
     if (state.toastTimer) clearTimeout(state.toastTimer);
-    state.toastTimer = setTimeout(function () { node.classList.remove('show'); }, 2500);
+    state.toastTimer = setTimeout(function () { node.classList.remove('show'); }, 3000);
   }
 
   /* ---------- Copy prompt: one neutral prompt for any AI assistant ---------- */
@@ -1856,14 +1924,14 @@ body.insp-closed .inspector{border-left:0}
     var size = state.overlaySize || imageSize();
     layer.innerHTML = '';
     if (state.drawRect) {
-      var drawing = el('div', 'move-sel');
+      var drawing = ants(el('div', 'move-sel'));
       placeBox(drawing, state.drawRect, size);
       layer.appendChild(drawing);
       return;
     }
     var sel = state.selection;
     if (!sel) return;
-    var rect = el('div', 'move-sel');
+    var rect = ants(el('div', 'move-sel'));
     placeBox(rect, sel, size);
     layer.appendChild(rect);
 
@@ -1888,7 +1956,7 @@ body.insp-closed .inspector{border-left:0}
     var size = state.overlaySize || imageSize();
     layer.innerHTML = '';
     if (state.drawRect) {
-      var drawing = el('div', 'add-sel');
+      var drawing = ants(el('div', 'add-sel'));
       placeBox(drawing, state.drawRect, size);
       layer.appendChild(drawing);
       return;
@@ -1901,7 +1969,7 @@ body.insp-closed .inspector{border-left:0}
       placeBox(original, selectedDraft, size);
       layer.appendChild(original);
     }
-    var rect = el('div', 'add-sel');
+    var rect = ants(el('div', 'add-sel'));
     placeBox(rect, sel, size);
     layer.appendChild(rect);
     /* Corner ticks make a thin/tall selection readable without hiding the image. */
@@ -2302,7 +2370,19 @@ body.insp-closed .inspector{border-left:0}
     }
 
     var list = $('#requestList');
-    $('#requestCount').textContent = String(state.requests.length + draftCount + addCount);
+    var total = state.requests.length + draftCount + addCount;
+    $('#requestCount').textContent = String(total);
+    if (state.seenInit && total > (state.prevTotal || 0)) replay($('#requestCount'), 'pop');
+    state.prevTotal = total;
+    if (!state.seen) state.seen = {};
+    var seen = state.seen;
+    var firstPass = !state.seenInit;
+    state.seenInit = true;
+    /* A row animates in only the first time it appears, never on ordinary re-renders. */
+    function markNew(row, key) {
+      if (!seen[key] && !firstPass) row.classList.add('row-new');
+      seen[key] = true;
+    }
     list.innerHTML = '';
     if (!state.requests.length && !draftCount && !addCount) {
       var empty = el('div', 'guide');
@@ -2326,6 +2406,7 @@ body.insp-closed .inspector{border-left:0}
       var selected = state.selectedDraft !== null && String(state.selectedDraft) === String(draft.id);
       var row = el('div', 'row-item' + (selected ? ' selected' : ''));
       row.setAttribute('data-draft', draft.id);
+      markNew(row, 'd:' + draft.id);
       row.setAttribute('role', 'button');
       row.setAttribute('tabindex', '0');
       var line = el('div', 'line1');
@@ -2347,6 +2428,7 @@ body.insp-closed .inspector{border-left:0}
       var selected = state.addSelected !== null && String(state.addSelected) === String(draft.id);
       var row = el('div', 'row-item' + (selected ? ' selected' : ''));
       row.setAttribute('data-add-draft', draft.id);
+      markNew(row, 'a:' + draft.id);
       row.setAttribute('role', 'button');
       row.setAttribute('tabindex', '0');
       var line = el('div', 'line1');
@@ -2374,7 +2456,16 @@ body.insp-closed .inspector{border-left:0}
       var line = el('div', 'line1');
       line.appendChild(el('span', 'id-pill muted', request.id || 'PT-?'));
       line.appendChild(el('span', 'list-name', (TYPE_WORD[request.type] || word(request.type || 'request')) + ' request'));
-      line.appendChild(el('span', 'chip ' + request.status, word(request.status)));
+      var verdictChip = el('span', 'chip ' + request.status, word(request.status));
+      if (request.status === 'done') {
+        /* Plays once, the first time the row is shown in a visible Requests panel. */
+        var paneShown = !$('#paneRequests').hidden || document.body.getAttribute('data-sheet') === 'sidebar';
+        var key = 'v:' + request.id;
+        var anim = paneShown && !seen[key];
+        if (paneShown) seen[key] = true;
+        verdictChip.insertAdjacentHTML('afterbegin', '<svg class="done-ic' + (anim ? ' anim' : '') + '" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.5"/><path d="M3.4 6.2 5.2 7.9 8.7 4.3" pathLength="1"/></svg>');
+      }
+      line.appendChild(verdictChip);
       row.appendChild(line);
       var parts = [];
       if (request.precision) parts.push(request.precision === 'exact' ? 'Exact' : request.precision === 'approximate' ? 'Approx' : word(request.precision));
@@ -2401,6 +2492,22 @@ body.insp-closed .inspector{border-left:0}
     var img = el('img');
     img.alt = label || '';
     img.src = safe;
+    /* Shimmer only while a picture is really loading; cached pictures show at once. */
+    if (!img.complete) {
+      img.classList.add('pending');
+      requestAnimationFrame(function () {
+        var pic = img.closest && img.closest('.rv-pic');
+        if (pic && img.classList.contains('pending')) pic.classList.add('loading');
+      });
+      var settle = function (ok) {
+        img.classList.remove('pending');
+        if (ok && !reducedMotion()) img.classList.add('img-in');
+        var pic = img.closest && img.closest('.rv-pic');
+        if (pic && !pic.querySelector('img.pending')) pic.classList.remove('loading');
+      };
+      img.addEventListener('load', function () { settle(true); });
+      img.addEventListener('error', function () { settle(false); });
+    }
     img.addEventListener('error', function () {
       var box = el('div', 'img-missing', 'image not found');
       if (img.parentNode) img.parentNode.replaceChild(box, img);
@@ -2478,7 +2585,7 @@ body.insp-closed .inspector{border-left:0}
       node.style.top = (box.y / size.h * 100) + '%';
       node.style.width = (box.w / size.w * 100) + '%';
       node.style.height = (box.h / size.h * 100) + '%';
-      if (isBoxSelected(box)) node.classList.add('selected');
+      if (isBoxSelected(box)) { node.classList.add('selected'); ants(node); }
       layer.appendChild(node);
     });
     return layer;
@@ -3584,6 +3691,55 @@ body.insp-closed .inspector{border-left:0}
   }
 
   /* ---------- events ---------- */
+  var seenKeys = true;
+  function rowKey(node) {
+    return node.getAttribute('data-draft') ? 'd:' + node.getAttribute('data-draft')
+      : node.getAttribute('data-add-draft') ? 'a:' + node.getAttribute('data-add-draft')
+      : node.getAttribute('data-request') ? 'r:' + node.getAttribute('data-request') : null;
+  }
+  /* The action runs at once; a copy of the old row fades out on top and the
+     rows below slide up into place (transform only, no layout animation). */
+  function removeWithMotion(row, action) {
+    var list = row && row.parentNode;
+    if (!list || reducedMotion()) { action(); return; }
+    var listRect = list.getBoundingClientRect();
+    var rowRect = row.getBoundingClientRect();
+    var before = {};
+    list.querySelectorAll('.row-item').forEach(function (node) {
+      var key = rowKey(node);
+      if (key) before[key] = node.getBoundingClientRect().top;
+    });
+    var ghost = row.cloneNode(true);
+    ghost.removeAttribute('data-draft');
+    ghost.removeAttribute('data-add-draft');
+    ghost.removeAttribute('role');
+    ghost.removeAttribute('tabindex');
+    ghost.setAttribute('aria-hidden', 'true');
+    ghost.querySelectorAll('[data-delete-draft],[data-delete-add]').forEach(function (n) { n.remove(); });
+    action();
+    var fresh = document.getElementById(list.id) || list;
+    ghost.classList.add('row-ghost');
+    ghost.classList.remove('row-new', 'selected');
+    ghost.style.left = (rowRect.left - listRect.left) + 'px';
+    ghost.style.top = (rowRect.top - listRect.top + fresh.scrollTop) + 'px';
+    ghost.style.width = rowRect.width + 'px';
+    fresh.appendChild(ghost);
+    var cleanup = function () { if (ghost.parentNode) ghost.parentNode.removeChild(ghost); };
+    ghost.addEventListener('animationend', cleanup);
+    setTimeout(cleanup, 400);
+    fresh.querySelectorAll('.row-item:not(.row-ghost)').forEach(function (node) {
+      var key = rowKey(node);
+      if (!key || before[key] === undefined) return;
+      var delta = before[key] - node.getBoundingClientRect().top;
+      if (!delta) return;
+      node.style.transform = 'translateY(' + delta + 'px)';
+      void node.offsetWidth;
+      node.style.transition = 'transform var(--dur) var(--ease-out)';
+      node.style.transform = '';
+      node.addEventListener('transitionend', function done() { node.style.transition = ''; node.removeEventListener('transitionend', done); });
+    });
+  }
+
   function revealRow(id) {
     if (state.sidebarTab !== 'changes') { state.sidebarTab = 'changes'; renderSidebarTabs(); }
     var row = document.querySelector('#leftList [data-box="' + String(id).replace(/"/g, '') + '"]');
@@ -3708,12 +3864,16 @@ body.insp-closed .inspector{border-left:0}
       }
       var removeAdd = event.target.closest('[data-delete-add]');
       if (removeAdd) {
-        deleteAddDraft(removeAdd.getAttribute('data-delete-add'));
+        var addId = removeAdd.getAttribute('data-delete-add');
+        if (seenKeys) delete state.seen['a:' + addId];
+        removeWithMotion(removeAdd.closest('.row-item'), function () { deleteAddDraft(addId); });
         return;
       }
       var remove = event.target.closest('[data-delete-draft]');
       if (remove) {
-        deleteDraft(remove.getAttribute('data-delete-draft'));
+        var draftId = remove.getAttribute('data-delete-draft');
+        if (seenKeys) delete state.seen['d:' + draftId];
+        removeWithMotion(remove.closest('.row-item'), function () { deleteDraft(draftId); });
         return;
       }
       var addRow = event.target.closest('[data-add-draft]');
@@ -4078,12 +4238,22 @@ body.insp-closed .inspector{border-left:0}
   function copyPrompt() {
     var count = requestCount();
     if (!count) { toast('Add a request first'); return; }
-    writeClipboard(promptText(), 'Prompt copied · ' + count + ' request' + (count === 1 ? '' : 's'));
-    var label = $('#copyMain').querySelector('.lbl');
-    if (!label) return;
-    label.textContent = 'Copied';
-    clearTimeout(state.copyTimer);
-    state.copyTimer = setTimeout(function () { state.copyTimer = null; renderCopyButton(); }, 1500);
+    writeClipboard(promptText(), 'Prompt copied · ' + count + ' request' + (count === 1 ? '' : 's'), function () {
+      var button = $('#copyMain');
+      var label = button.querySelector('.lbl');
+      if (label) label.textContent = 'Copied';
+      button.classList.remove('copied');
+      void button.offsetWidth;
+      button.classList.add('copied');
+      var live = $('#liveRegion');
+      if (live) { live.textContent = ''; setTimeout(function () { live.textContent = 'Prompt copied'; }, 30); }
+      clearTimeout(state.copyTimer);
+      state.copyTimer = setTimeout(function () {
+        state.copyTimer = null;
+        button.classList.remove('copied');
+        renderCopyButton();
+      }, 1500 + 300);
+    });
   }
   function openPromptPreview() {
     var modal = el('div', 'modal');
@@ -4176,6 +4346,12 @@ body.insp-closed .inspector{border-left:0}
       state.lastSelKey = key;
     }
     var closed = kind === 'desktop' ? prefs.inspectorOpen === false : kind === 'mid' ? !state.drawerOpen : false;
+    if (state.panelsInit && state.inspClosed && !closed && kind === 'desktop') replay($('#inspector'), 'panel-in');
+    var collapsedNow = sidebarCollapsed();
+    if (state.panelsInit && state.sbCollapsed && !collapsedNow && kind !== 'mobile') replay(document.querySelector('.sb-body'), 'panel-in');
+    state.inspClosed = closed;
+    state.sbCollapsed = collapsedNow;
+    state.panelsInit = true;
     body.classList.toggle('insp-closed', closed);
     var toggle = $('#sbToggle');
     var label = sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar';
@@ -4212,8 +4388,10 @@ body.insp-closed .inspector{border-left:0}
     setTimeout(function () { renderStage(); renderChrome(); }, 190);
   }
   function setSidebarTab(tab) {
+    var changed = state.sidebarTab !== tab;
     state.sidebarTab = tab;
     state.sheet = tab;
+    if (changed && tab === 'requests') setTimeout(renderLeft, 0);
     if (viewportKind() !== 'mobile' && sidebarCollapsed()) {
       prefs.sidebarCollapsed = false;
       applyPanels();
