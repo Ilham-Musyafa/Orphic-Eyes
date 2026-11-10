@@ -1593,6 +1593,7 @@ body.insp-closed .inspector{border-left:0}
     }
     if (index < 0) return;
     var before = snapshotState();
+    var removed = copy(state.drafts[index]);
     state.drafts.splice(index, 1);
     if (state.selectedDraft !== null && String(state.selectedDraft) === String(id)) {
       state.selectedDraft = null;
@@ -1601,7 +1602,19 @@ body.insp-closed .inspector{border-left:0}
     }
     commitHistory(before);
     render();
-    toast('Request removed');
+    toast('Request deleted', { action: 'Undo', duration: 5000, run: function () { restoreRequest('move', removed, index); } });
+  }
+  /* Undo from the toast: put the request back at the same position (its reference too). */
+  function restoreRequest(kind, item, index) {
+    var list = kind === 'move' ? state.drafts : state.addDrafts;
+    if (list.some(function (d) { return String(d.id) === String(item.id); })) return;
+    if (requestCount() >= MAX_REQUESTS) { toast('Limit reached. Copy this batch, then start a new one.'); return; }
+    var before = snapshotState();
+    list.splice(Math.min(index, list.length), 0, item);
+    if (kind === 'move') state.selectedDraft = item.id; else state.addSelected = item.id;
+    commitHistory(before);
+    render();
+    toast('Request restored');
   }
 
   function selectAddDraft(id) {
@@ -1701,14 +1714,16 @@ body.insp-closed .inspector{border-left:0}
     var draft = findAddDraft(id);
     if (!draft) return;
     var before = snapshotState();
-    state.addDrafts.splice(state.addDrafts.indexOf(draft), 1);
+    var addIndex = state.addDrafts.indexOf(draft);
+    var addRemoved = copy(draft);
+    state.addDrafts.splice(addIndex, 1);
     if (state.addSelected !== null && String(state.addSelected) === String(id)) {
       state.addSelected = null;
       if (state.addDrafts.length) state.addSelected = state.addDrafts[0].id;
     }
     commitHistory(before);
     render();
-    toast('Add removed');
+    toast('Request deleted', { action: 'Undo', duration: 5000, run: function () { restoreRequest('add', addRemoved, addIndex); } });
   }
   /* Text and select fields commit one undo step per editing burst. */
   function commitAddField() {
@@ -5786,7 +5801,8 @@ body.insp-closed .inspector{border-left:0}
     var entry = REFS[id];
     if (!entry) return;
     /* Keep it while any saved request or the undo history still points at it. */
-    var used = state.addDrafts.some(function (d) { return d.ref === id; }) || state.addRef === id;
+    var used = state.addDrafts.some(function (d) { return d.ref === id; }) || state.addRef === id ||
+      (state.history || []).some(function (snap) { return snap.addRef === id || (snap.addDrafts || []).some(function (d) { return d.ref === id; }); });
     if (used) return;
     delete LOCAL_URLS[entry.url];
     try { URL.revokeObjectURL(entry.url); } catch (err) { /* ignore */ }
