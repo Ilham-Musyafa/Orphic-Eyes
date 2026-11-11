@@ -1,5 +1,7 @@
 # HANDOFF
 
+`docs/roadmap-v2` (from a0411b98): added Before/After slider, Hermes result card, macOS, auto-verify hook, and protected areas to the roadmap. Docs only.
+
 ## Current task: Final pre-demo audit (fix/final-audit)
 
 Branch: `fix/final-audit` from release/hackathon after merging origin/fix/test-reliability (5736938) → `9cb2ef8` and origin/docs/roadmap (cad0ea2) → `82f009e`. Both merge commits had a HANDOFF-only conflict; both sides were kept and no line from either side was lost.
