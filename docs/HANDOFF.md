@@ -21,6 +21,19 @@ Branch: `feat/verify-loop` (from `feat/shortcut-rebind` at a5fe92b). Only `engin
 
 ### Status
 - Step 1 done: Verify dialog (Requests panel "Verify fixes" link, phone sheet "Verify" button), Round 2 by drop / choose / paste with the Load images rules, size check (clear message, no results), per-request checks (Move / Revert / Hide / Comment / Add) with After vs Round 2 crops and one reason each. - Step 2 done: unexpected changes. After vs Round 2 with the existing exact-pixel rule, outside every request area (padded 16 px; moves block both old and target places), counted per 3×3 zone; a zone at 5%+ is listed as "Unexpected change" with a crop; smaller changes are summed in one note. - Step 3 done: "Copy follow-up prompt" builds the same general format (Page line, numbered items with the usual per-type lines, "Last check: …", "Please restore (n)" for unexpected zones, same Rules), only Fail/Unclear items + unexpected changes. It opens in the existing preview dialog (`openPromptPreview(custom)`; no argument = the normal preview, unchanged) and copies exactly the previewed text. - Step 4 done: rounds + shortcut. "Use Round N as new After" archives this round (summary per round, in memory), clears this round's requests and undo history, and rebuilds the comparison Before vs the checked screenshot; the next Verify is "Round N+1" and lists earlier rounds. Shortcut `verify.open` = Shift+V (editable, no overlap with existing bindings), palette item "Verify fixes" (only when something can be verified), tooltip on the Requests link. Phone: dialog full screen, results stack (crops under the reason), 44px buttons, one Close (top left).
+- Test Round 2 (made with PIL from the Tidyday After, `mkround.py` in the session scratchpad): request 1 (Start free trial, 96 px left) copied exactly to its target and its old place filled with the page background → Pass; request 2 (Help, 16 px left) left as is → Fail "Still at its old place"; a grey footer bar at 80,498 300×31 → Unexpected in Bottom left (12.9%); the same image resized to 960×600 → size message, no results. Engine-style report with move / revert / hide / comment served from 127.0.0.1: Pass / Pass / Pass / Needs your eyes; with After unchanged: revert Fail, hide Unclear. Opened from file:// the page can't read its pixels → clear message, no results.
+- Checks: Verify acceptance 86/86 (1440 + 390, light + dark), engine types 8/8, rebinding 92/92, Shortcuts 35/35 (21 rows), Settings 168/168, mobile 64/92/68/84, Load images / Add reference / flow / motion unchanged. Copy prompt text byte-identical (promptchk vs saved output). Main app pixel-identical to `feat/shortcut-rebind` except the new "Verify fixes" link (desktop Requests list) and "Verify" button (phone Requests sheet). Tests: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge). 0 JS errors.
+- Screenshots: `docs/screenshots/verify-loop/`.
+
+### Not done / limits
+- Move is a template match (sampled pixels within 24 per channel, 95% must agree). It can't verify resizing, restyling or an element that also changed its look; plain areas, repeated patterns and elements that also match their old place are Unclear.
+- Hide can only say the area changed a lot and the element isn't within 16 px; "changed to something else" can look the same as "hidden" — reason text says what was measured.
+- Unexpected changes use 3×3 zones with the 5% rule, so a small change inside a large zone is only counted in the note.
+- Engine reports opened from disk (file://) can't be verified (browser blocks reading the pixels); served pages and Load images work.
+- Starting the next round clears this round's requests (their coordinates belong to the old After) and the undo history; history is a summary only, in memory.
+
+### Next
+- UI polish (Prompt B)
 
 ## Previous task: Rebindable keyboard shortcuts
 
