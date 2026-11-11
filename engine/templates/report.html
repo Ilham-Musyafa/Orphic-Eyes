@@ -343,7 +343,7 @@ body.no-report .stage-scroller,body.no-report.mode-review .stage-scroller{--stag
 .zoom-pill .zoom-now:hover{background:transparent}
 /* tooltips */
 [data-tip]{position:relative}
-.tip{position:fixed;z-index:90;pointer-events:none;background:var(--toast-bg);color:var(--toast-ink);font-size:var(--fs-sec);font-weight:var(--w-medium);line-height:1.3;padding:5px 8px;border-radius:6px;white-space:nowrap;opacity:0;transition:opacity 120ms var(--ease);max-width:280px}
+.tip{position:fixed;z-index:90;pointer-events:none;background:var(--toast-bg);color:var(--toast-ink);font-size:var(--fs-sec);font-weight:var(--w-medium);line-height:1.3;padding:5px 8px;border-radius:6px;white-space:normal;overflow-wrap:anywhere;opacity:0;transition:opacity 120ms var(--ease);max-width:280px}
 .tip.show{opacity:1}
 .tip kbd{font-family:var(--font-mono);font-size:var(--fs-cap);opacity:.75;margin-left:6px}
 
@@ -2383,6 +2383,7 @@ body.insp-closed .inspector{border-left:0}
   /* ---------- rendering ---------- */
   function render() {
     renderStatus();
+    setTimeout(function () { ['#leftList', '#requestList', '#pageList'].forEach(function (sel) { var n = $(sel); if (n) tipLabels(n); }); }, 0);
     renderCopyButton();
     renderStepper();
     renderPages();
@@ -2516,6 +2517,13 @@ body.insp-closed .inspector{border-left:0}
     return wrap;
   }
 
+  /* Give every row label its full text as a tooltip, so ellipsis never hides content. */
+  function tipLabels(root) {
+    root.querySelectorAll('.list-name, .list-sub, .page-name').forEach(function (n) {
+      var full = n.textContent.trim();
+      if (full) n.setAttribute('data-tip', full);
+    });
+  }
   function renderLeft() {
     var holder = $('#leftList');
     $('#listCount').textContent = String(state.boxes.length);
@@ -3261,7 +3269,7 @@ body.insp-closed .inspector{border-left:0}
 
     var request = findRequest(state.selectedRequest);
     if (request) {
-      title.textContent = 'Request ' + (request.id || '');
+      title.textContent = (TYPE_WORD[request.type] || 'Request') + ' request \u00b7 ' + (request.id || '');
       chip.className = 'chip ' + request.status;
       chip.textContent = word(request.status);
       var asked = el('div', 'detail');
@@ -3404,7 +3412,7 @@ body.insp-closed .inspector{border-left:0}
 
   function renderMoveInspector(title, chip, body) {
     var sel = state.selection;
-    title.textContent = 'Selection';
+    title.textContent = state.selectedDraft && findDraft(state.selectedDraft) ? 'Move request \u00b7 ' + state.selectedDraft : 'Selection';
     chip.className = 'chip count';
     chip.textContent = state.drafts.length + ' draft' + (state.drafts.length === 1 ? '' : 's');
 
@@ -3615,7 +3623,7 @@ body.insp-closed .inspector{border-left:0}
   function renderAddInspector(title, chip, body) {
     var sel = state.addSelection;
     var draft = state.addSelected ? findAddDraft(state.addSelected) : null;
-    title.textContent = draft ? 'Add ' + draft.id : 'Add';
+    title.textContent = draft ? 'Add request \u00b7 ' + draft.id : 'Add request';
     chip.className = 'chip count';
     chip.textContent = state.addDrafts.length + ' add' + (state.addDrafts.length === 1 ? '' : 's');
 
