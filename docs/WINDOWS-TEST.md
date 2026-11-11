@@ -104,6 +104,7 @@ The repository command below works without Hermes; `/orphic doctor` is a Hermes 
 ```powershell
 $Candidates = @(
     "$env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+    "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe",
     "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
     "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe"
 )
@@ -154,7 +155,7 @@ If public capture succeeded, start its server in the background for 15 minutes. 
 $ServeOut = Join-Path $Work 'report-server.stdout.log'
 $ServeErr = Join-Path $Work 'report-server.stderr.log'
 $ServeArgs = "-B -m engine.cli serve --store `"$Store`" --timeout 900"
-$ReportServer = Start-Process -FilePath $Python -ArgumentList $ServeArgs -PassThru -RedirectStandardOutput $ServeOut -RedirectStandardError $ServeErr
+$ReportServer = Start-Process -FilePath $Python -ArgumentList $ServeArgs -WorkingDirectory $Repo -PassThru -RedirectStandardOutput $ServeOut -RedirectStandardError $ServeErr
 for ($Try = 0; $Try -lt 30; $Try++) {
     if ((Test-Path $ServeOut) -and ((Get-Item $ServeOut).Length -gt 0)) { break }
     Start-Sleep -Milliseconds 500
@@ -201,7 +202,7 @@ Set-Content -Path (Join-Path $Site 'current.html') -Value $CurrentHtml -Encoding
 $SiteOut = Join-Path $Work 'site.stdout.log'
 $SiteErr = Join-Path $Work 'site.stderr.log'
 $SiteArgs = "-m http.server 8765 --bind 127.0.0.1 --directory `"$Site`""
-$SiteServer = Start-Process -FilePath $Python -ArgumentList $SiteArgs -PassThru -RedirectStandardOutput $SiteOut -RedirectStandardError $SiteErr
+$SiteServer = Start-Process -FilePath $Python -ArgumentList $SiteArgs -WorkingDirectory $Repo -PassThru -RedirectStandardOutput $SiteOut -RedirectStandardError $SiteErr
 Start-Sleep -Seconds 1
 (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8765/current.html).StatusCode
 $LoopName = 'loop-' + (Get-Date -Format 'yyyyMMdd-HHmmss')
@@ -304,3 +305,5 @@ Copy this checklist, fill the blanks, and include the relevant log tails. Never 
 Previous Linux runs timed out in `URLBrowserTests.test_default_viewport_repeated_pixels_and_motion_disabled` (capture's real 30-second deadline) and `ReportServerTests.test_registry_discovery_across_processes_and_stale_cleanup` (5-second test-only child-process limit). They passed individually afterward; quiet full runs failed in different places. This suggests load/startup sensitivity but does not establish a root cause. The demo also hit a real matcher deadline. A successful isolated retry does not prove three consecutive suites are reliable.
 
 Do not increase production navigation/matching budgets to turn failures into passes. A larger test-only child-process startup timeout could be appropriate **only after** proving the child is healthy but simply slow. A navigation wait can instead indicate a browser/network lifecycle problem requiring a separate engine fix. This documentation task makes neither change without that evidence. Final Linux three-run results and investigation notes are in [HANDOFF.md](HANDOFF.md); they are not Windows validation.
+
+Latest Linux investigation (not a Windows result): three sequential suites each ran 182 tests. Run 1 had two matcher-related failures; run 2 had one 20-second browser subprocess timeout; run 3 had one browser-cleanup failure. The pair/shift checks subsequently passed alone; shift search completed in 0.167s with a unique match. Cleanup failure did not reproduce in that focused check. Three green runs are still a release gate, and no timeout setting was changed. See HANDOFF.md for names and log locations.
