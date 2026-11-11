@@ -12,7 +12,19 @@ Branch: `feat/shortcut-rebind` (from `feat/settings-redesign` at 61327c5). Only 
 ### Status
 - Step 1 done (refactor). Every key comparison is in `eventBinding()` / `matchShortcut()`; tooltips use `data-sc`, palette/Help/Shortcuts tab use `formatKeys()`. Shortcuts tab now also lists "Redo (second key)" Ctrl+Y and "Move between controls" Tab (locked) — both existed already. Small change: matches are exact now, so extra modifiers no longer trigger (e.g. Ctrl+Shift+K used to open the palette; Shift+V used to pick Select). Widget navigation keys (arrows, Home/End, Enter, Esc, Tab) still ignore extra modifiers as before.
 - Step 2 done (record mode, validation, conflicts, reset). Keycap = button (✎ on hover/focus); locked rows show a lock with "This shortcut can't be changed"; edited rows show a blue dot + "Edited" + ↺ ("Reset to {default}", toast "Shortcut reset · Undo" 5 s). Record field "Press new keys…" (2px blue, "Esc to cancel", live preview); recorder listens on window in capture phase and stops every key, so app shortcuts and Settings' Esc are paused. Rejects: modifier alone, bare letter/number (unless the default is a single key), browser combos, Esc/Tab/Enter/Space alone. Conflicts only when contexts overlap (move vs add don't); Cancel / Replace (other → Not set); a conflict with a locked shortcut is rejected. "Reset all shortcuts" asks in an inline alertdialog; Reset preferences clears shortcuts too. Success flashes blue 600 ms and is announced.
-- Next: step 3 (touch/phone read-only, a11y checks).
+- Step 3 done. Touch screens (hover: none) or width < 640px: list is read-only (no ✎, no record, no ↺, no Reset all), callout "Keyboard shortcuts work with a physical keyboard. Change them on a computer."; Edited still shown. Record field is a button with aria-pressed; validation and conflict messages go to an aria-live="assertive" region, success to a polite one; Esc while recording (or on the conflict question / Reset-all confirm) only cancels that, Settings stays open. Closing Settings or switching tab ends recording.
+- Checks: rebinding 92/92, refactor/widget keys 12/12, read-only 36/36, Settings 168/168, Shortcuts search 35/35, mobile 64/92/68/84, main app pixel-identical to `feat/settings-redesign` (desktop 18/18, phone 14/14), Copy prompt text identical. Tests: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
+- grep `event.key|keyCode|.which|event.code|ctrlKey|metaKey|altKey|shiftKey` → only inside the shortcut core (`heldModifiers`, `eventBinding`, `matchShortcut`).
+- Screenshots: `docs/screenshots/shortcut-rebind/`.
+
+### Not done / open
+- Matching is exact now: extra modifiers no longer trigger an app shortcut (Ctrl+Shift+K used to open the palette, Shift+V used to pick Select, Shift+Space used to hold Hand). Widget navigation keys still ignore extra modifiers.
+- Hand (Space, hold) and Axis lock (Shift, hold) are locked like Esc/Tab: they are hold gestures, not presses.
+- Browsers never pass some combos to the page (e.g. Ctrl+W in Chrome), so the browser message shows only where the page can see the key.
+- Not tested in Edge or on a real Mac; the sidebar-toggle click fix (`fix/sidebar-toggle`) is not on this branch.
+
+### Next
+- UI polish (Prompt B)
 
 ## Previous task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
 

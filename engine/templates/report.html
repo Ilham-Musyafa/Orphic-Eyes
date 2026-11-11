@@ -5453,9 +5453,13 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     if (b.key) parts.push(b.key);
     return parts.join('+');
   }
+  /* Which modifiers are held right now (keyboard or pointer event). */
+  function heldModifiers(event) {
+    return { Ctrl: !!(event.ctrlKey || event.metaKey), Alt: !!event.altKey, Shift: !!event.shiftKey, key: null };
+  }
   /* Keyboard event -> normalized binding. Shifted symbols (? , !) keep their own character and drop Shift. */
   function eventBinding(event) {
-    var b = { Ctrl: !!(event.ctrlKey || event.metaKey), Alt: !!event.altKey, Shift: !!event.shiftKey, key: null };
+    var b = heldModifiers(event);
     var key = event.key;
     if (key === undefined || key === null || key === 'Unidentified' || key === 'Dead') return b;
     if (MODIFIER_KEYS[key]) { b[MODIFIER_KEYS[key]] = true; return b; }
@@ -5479,7 +5483,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   function matchShortcut(event, ids, opts) {
     var list = ids ? [].concat(ids) : SHORTCUTS.filter(function (sc) { return whenActive(sc.when); }).map(function (sc) { return sc.id; });
     var keyboard = typeof event.key === 'string';
-    var got = keyboard ? eventBinding(event) : { Ctrl: !!(event.ctrlKey || event.metaKey), Alt: !!event.altKey, Shift: !!event.shiftKey, key: null };
+    var got = keyboard ? eventBinding(event) : heldModifiers(event);
     var gotStr = joinBinding(got);
     for (var i = 0; i < list.length; i++) {
       var want = getBinding(list[i]);
@@ -5712,8 +5716,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   function recKeyup(event) {
     event.preventDefault();
     event.stopImmediatePropagation();
-    var held = event.ctrlKey || event.metaKey || event.altKey || event.shiftKey;
-    if (rec.modOnly && !held) {
+    if (rec.modOnly && !hasModifier(heldModifiers(event))) {
       rec.modOnly = false;
       rec.msg = 'A modifier alone can’t be a shortcut. Add a key.';
       rec.kind = 'error';
@@ -5769,7 +5772,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     toast('All shortcuts reset');
   }
   /* Phones and touch screens can't record keys: the list is read-only there. */
-  function shortcutsReadOnly() { return false; }
+  function shortcutsReadOnly() { return isTouch() || isPhone(); }
   function shortcutKeys(sc, readOnly) {
     var side = el('span', 'st-sc-side');
     var binding = getBinding(sc.id);
@@ -5891,8 +5894,9 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
 
   function shortcutList() {
     var readOnly = shortcutsReadOnly();
+    if (readOnly && (rec.recording || rec.conflict)) { stopRecording(); rec.id = null; rec.msg = ''; rec.conflict = null; }
     var wrap = el('div', 'st-shortcuts');
-    if (isTouch()) wrap.appendChild(stCallout('Keyboard shortcuts work with a physical keyboard.'));
+    if (readOnly) wrap.appendChild(stCallout('Keyboard shortcuts work with a physical keyboard. Change them on a computer.'));
     var search = el('div', 'st-sc-search');
     search.appendChild(icon('search'));
     var label = el('label', 'sr-only', 'Search shortcuts');
