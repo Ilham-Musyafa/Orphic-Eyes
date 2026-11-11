@@ -213,8 +213,6 @@ textarea[aria-disabled="true"],input[aria-disabled="true"],select[aria-disabled=
 .req-foot{display:flex;justify-content:flex-start;padding:var(--s2) 0 0}
 .prompt-text{margin:0;padding:var(--s3) var(--s4);font-family:var(--font-mono);font-size:var(--fs-mono);line-height:var(--lh-body);white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;color:var(--ink);background:var(--soft);flex:1;min-height:0;user-select:text}
 .modal-actions{display:flex;justify-content:flex-end;gap:var(--s2);padding:var(--s3) var(--s4);border-top:1px solid var(--line)}
-.info-card{margin-top:var(--s3);padding:var(--s3);border-radius:var(--r-btn);background:var(--surface);color:var(--muted);font-size:var(--fs-sec);line-height:var(--lh-body)}
-.info-card p{margin:0 0 var(--s2)}
 .menu button[aria-checked="true"]{font-weight:var(--w-strong)}
 .menu .mark-slot{width:16px;flex:none;display:inline-flex;color:var(--blue-ink)}
 .btn.blue{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:var(--w-strong)}
@@ -574,22 +572,10 @@ body.insp-closed .inspector{border-left:0}
 .modal{width:min(640px,100%);max-height:76vh;display:flex;flex-direction:column;border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop);overflow:hidden}
 .modal-head{display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s3) var(--s3) var(--s4);border-bottom:1px solid var(--line)}
 .modal-head h2{margin:0;flex:1;font-size:var(--fs-section);font-weight:var(--w-strong)}
-.modal-foot{display:flex;align-items:center;gap:6px;padding:var(--s2) var(--s4);border-top:1px solid var(--line);color:var(--muted);font-size:var(--fs-sec)}
-.modal-foot .ic{width:14px;height:14px;color:var(--green)}
-.set-row{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);padding:var(--s2) 0;min-height:44px}
-.set-row+.set-row{border-top:1px solid var(--line)}
-.set-row .set-label{display:flex;flex-direction:column;min-width:0}
-.set-row .set-label b{font-weight:var(--w-medium)}
-.set-row .set-label span{font-size:var(--fs-sec);color:var(--muted)}
-.switch{width:36px;height:20px;border-radius:var(--r-pill);background:var(--line2);position:relative;flex:none;transition:background var(--t) var(--ease)}
-.switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform var(--t) var(--ease)}
-.switch[aria-checked="true"]{background:var(--blue)}
-.switch[aria-checked="true"]::after{transform:translateX(16px)}
 .kbd-list{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px var(--s4);font-size:var(--fs-body)}
 .kbd-list kbd{font-family:var(--font-mono);font-size:var(--fs-sec);background:var(--surface);border-radius:5px;padding:1px 7px;justify-self:end;white-space:nowrap}
 .kbd-list .kbd-group{grid-column:1/-1;margin-top:var(--s3)}
 .kbd-list .kbd-group:first-child{margin-top:0}
-.about p{margin:0 0 var(--s3);color:var(--muted)}
 /* settings modal */
 .scrim.st-scrim{background:rgba(0,0,0,.4);align-items:center;padding:var(--s4)}
 .st-modal{--st-surface:var(--panel);--st-side:#F6F6F4;--st-line:#E8E8E4;--st-ink:var(--ink);--st-muted:var(--muted);--st-active:#2F80FF;--st-active-ink:#1D63D3;--st-active-bg:rgba(47,128,255,.10);--st-danger:var(--red);
@@ -613,7 +599,37 @@ body.insp-closed .inspector{border-left:0}
 .st-body{display:flex;flex-direction:column;gap:24px}
 .st-foot{display:flex;align-items:center;gap:6px;padding:10px 28px;border-top:1px solid var(--st-line);font-size:var(--fs-sec);color:var(--st-muted)}
 .st-foot .ic{width:14px;height:14px;color:var(--green)}
-.about p:first-child{color:var(--ink)}
+.st-group{display:flex;flex-direction:column;gap:8px}
+.st-group-title{margin:0;padding:0 4px;font-size:var(--fs-cap);font-weight:var(--w-strong);letter-spacing:.04em;text-transform:uppercase;color:var(--st-muted)}
+.st-card{border:1px solid var(--st-line);border-radius:12px;background:var(--st-surface)}
+.st-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:16px;row-gap:10px;min-height:56px;padding:12px 16px}
+.st-row+.st-row{border-top:1px solid var(--st-line)}
+.st-label{display:flex;flex-direction:column;gap:2px;min-width:0}
+.st-name{font-size:var(--fs-body);font-weight:var(--w-medium);line-height:1.35}
+.st-desc{max-width:420px;font-size:var(--fs-sec);line-height:1.45;color:var(--st-muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.st-switch{position:relative;width:32px;height:18px;flex:none;border-radius:999px;background:var(--line2);transition:background var(--dur-fast) var(--ease-out)}
+.st-switch::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform var(--dur-fast) var(--ease-out)}
+.st-switch[aria-checked="true"]{background:var(--st-active)}
+.st-switch[aria-checked="true"]::after{transform:translateX(14px)}
+.st-seg{display:inline-flex;align-items:center;height:28px;padding:2px;gap:2px;border-radius:8px;background:var(--surface)}
+.st-seg [role="radio"]{height:24px;padding:0 10px;border-radius:6px;color:var(--st-muted);font-size:var(--fs-sec);font-weight:var(--w-medium);white-space:nowrap;transition:background var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out)}
+.st-seg [role="radio"]:hover:not([aria-checked="true"]){color:var(--st-ink);background:var(--hover)}
+.st-seg [role="radio"][aria-checked="true"]{background:var(--pill-on);color:var(--st-ink);box-shadow:0 1px 2px rgba(0,0,0,.1),0 1px 4px rgba(0,0,0,.06)}
+.st-select{height:28px;min-width:150px;padding:0 8px;border:1px solid var(--line2);border-radius:8px;background:var(--input);color:var(--st-ink);font:inherit;font-size:var(--fs-sec)}
+.st-btn{display:inline-flex;align-items:center;justify-content:center;height:28px;padding:0 12px;border:1px solid var(--line2);border-radius:8px;background:var(--st-surface);color:var(--st-ink);font-size:var(--fs-sec);font-weight:var(--w-medium);white-space:nowrap;transition:background var(--dur-fast) var(--ease-out)}
+.st-btn:hover{background:var(--hover)}
+.st-danger .st-group-title{color:var(--st-danger)}
+.st-danger .st-card{border-color:color-mix(in srgb,var(--st-danger) 45%,transparent)}
+.st-btn-danger{color:var(--st-danger);border-color:color-mix(in srgb,var(--st-danger) 45%,transparent)}
+.st-btn-danger.armed{background:var(--red-bg)}
+.st-callout{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1px solid var(--blue-line);border-radius:12px;background:var(--blue-bg);color:var(--st-ink);font-size:var(--fs-sec);line-height:1.5}
+.st-callout>.ic{width:16px;height:16px;flex:none;margin-top:1px;color:var(--st-active)}
+.st-callout p{margin:0}
+.st-callout .link-btn{margin:4px 0 0 -8px}
+.st-about{padding:16px}
+.st-about p{margin:0 0 10px;font-size:var(--fs-body);line-height:1.55;color:var(--st-muted)}
+.st-about p:first-child{color:var(--st-ink)}
+.st-about p:last-child{margin-bottom:0}
 /* command palette */
 .palette{width:min(560px,100%);border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop);overflow:hidden}
 .palette-input{display:flex;align-items:center;gap:var(--s2);padding:0 var(--s4);border-bottom:1px solid var(--line);color:var(--muted)}
@@ -5311,45 +5327,105 @@ body.insp-closed .inspector{border-left:0}
     for (var i = 0; i < SETTINGS_TABS.length; i++) if (SETTINGS_TABS[i].id === id) return SETTINGS_TABS[i];
     return SETTINGS_TABS[0];
   }
-  function segControl(options, value, onPick, label) {
-    var seg = el('div', 'seg');
-    seg.setAttribute('role', 'group');
-    seg.setAttribute('aria-label', label);
-    options.forEach(function (opt) {
-      var b = el('button', String(opt[0]) === String(value) ? 'on' : '', opt[1]);
-      b.type = 'button';
-      b.setAttribute('aria-pressed', String(opt[0]) === String(value) ? 'true' : 'false');
-      b.setAttribute('data-st-key', label + ':' + opt[0]);
-      b.addEventListener('click', function () { onPick(opt[0]); });
-      seg.appendChild(b);
-    });
-    return seg;
-  }
-  function switchControl(on, onFlip, label) {
-    var b = el('button', 'switch');
-    b.type = 'button';
-    b.setAttribute('role', 'switch');
-    b.setAttribute('aria-checked', on ? 'true' : 'false');
-    b.setAttribute('aria-label', label);
-    b.setAttribute('data-st-key', label);
-    b.addEventListener('click', function () { onFlip(!on); });
-    return b;
-  }
-  function setRow(title, note, control) {
-    var row = el('div', 'set-row');
-    var lab = el('div', 'set-label');
-    lab.appendChild(el('b', null, title));
-    if (note) lab.appendChild(el('span', null, note));
+  /* ---- settings rows and controls ---- */
+  function stId(key) { return 'st-' + String(key).replace(/[^a-z0-9]+/gi, '-').toLowerCase(); }
+  function stRow(key, title, note, control, wide) {
+    var row = el('div', 'st-row' + (wide ? ' st-row-wide' : ''));
+    var lab = el('div', 'st-label');
+    var name = el('span', 'st-name', title);
+    name.id = stId(key) + '-name';
+    lab.appendChild(name);
+    if (note) {
+      var desc = el('span', 'st-desc', note);
+      desc.id = stId(key) + '-desc';
+      lab.appendChild(desc);
+      control.setAttribute('aria-describedby', desc.id);
+    }
+    control.setAttribute('aria-labelledby', name.id);
     row.appendChild(lab);
     row.appendChild(control);
     return row;
   }
-  function actionButton(text, key, onClick) {
-    var b = el('button', 'btn', text);
+  function stGroup(title, rows, extraClass) {
+    var group = el('section', 'st-group' + (extraClass ? ' ' + extraClass : ''));
+    var card = el('div', 'st-card');
+    if (title) {
+      var h = el('h4', 'st-group-title', title);
+      h.id = stId('group-' + title);
+      group.appendChild(h);
+      group.setAttribute('aria-labelledby', h.id);
+    }
+    rows.forEach(function (r) { card.appendChild(r); });
+    group.appendChild(card);
+    return group;
+  }
+  function stSwitch(key, on, onFlip) {
+    var b = el('button', 'st-switch');
+    b.type = 'button';
+    b.setAttribute('role', 'switch');
+    b.setAttribute('aria-checked', on ? 'true' : 'false');
+    b.setAttribute('data-st-key', key);
+    b.addEventListener('click', function () { onFlip(!on); });
+    return b;
+  }
+  /* 2–3 options: a radio group drawn as a segmented control. */
+  function stSeg(key, options, value, onPick) {
+    var seg = el('div', 'st-seg');
+    seg.setAttribute('role', 'radiogroup');
+    var buttons = options.map(function (opt) {
+      var on = String(opt[0]) === String(value);
+      var b = el('button', on ? 'on' : '', opt[1]);
+      b.type = 'button';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+      b.setAttribute('data-st-key', key + ':' + opt[0]);
+      b.addEventListener('click', function () { if (!on) onPick(opt[0]); });
+      seg.appendChild(b);
+      return b;
+    });
+    if (!seg.querySelector('[tabindex="0"]') && buttons[0]) buttons[0].tabIndex = 0;
+    seg.addEventListener('keydown', function (event) {
+      var step = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0;
+      if (!step) return;
+      event.preventDefault();
+      var i = buttons.indexOf(document.activeElement);
+      var next = buttons[(i + step + buttons.length) % buttons.length];
+      next.focus();
+      next.click();
+    });
+    return seg;
+  }
+  /* 4+ options: a plain select. */
+  function stSelect(key, options, value, onPick) {
+    var select = el('select', 'st-select');
+    select.setAttribute('data-st-key', key);
+    options.forEach(function (opt) {
+      var o = el('option', null, opt[1]);
+      o.value = String(opt[0]);
+      if (String(opt[0]) === String(value)) o.selected = true;
+      select.appendChild(o);
+    });
+    select.addEventListener('change', function () { onPick(select.value); });
+    return select;
+  }
+  function stButton(key, text, onClick, extraClass) {
+    var b = el('button', 'st-btn' + (extraClass ? ' ' + extraClass : ''), text);
     b.type = 'button';
     b.setAttribute('data-st-key', key);
     b.addEventListener('click', onClick);
     return b;
+  }
+  /* Read-only facts: a light-blue note, never a control. */
+  function stCallout(text, extra) {
+    var box = el('div', 'st-callout');
+    box.setAttribute('role', 'note');
+    box.appendChild(icon('info'));
+    var body = el('div');
+    body.appendChild(el('p', null, text));
+    if (extra) body.appendChild(extra);
+    box.appendChild(body);
+    return box;
   }
   function resetPreferences() {
     try { window.localStorage.removeItem(PREFS_KEY); } catch (err) { /* ignore */ }
@@ -5365,57 +5441,69 @@ body.insp-closed .inspector{border-left:0}
   function settingsContent(tab) {
     var pane = el('div', 'st-body');
     if (tab === 'general') {
-      pane.appendChild(setRow('Quick tour', 'A four-step walk through the app.', actionButton('Start tour', 'tour', function () { closeLayer(true); startTour(); })));
+      pane.appendChild(stGroup(null, [
+        stRow('tour', 'Quick tour', 'A four-step walk through the app.', stButton('tour', 'Start tour', function () { closeLayer(true); startTour(); }))
+      ]));
     } else if (tab === 'appearance') {
-      pane.appendChild(setRow('Theme', null, segControl([['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], prefs.theme, setTheme, 'Theme')));
-      pane.appendChild(setRow('Text size', 'Scales every label in the app.', segControl([['s', 'S'], ['m', 'M'], ['l', 'L']], state.textSize, setTextSize, 'Text size')));
+      pane.appendChild(stGroup(null, [
+        stRow('theme', 'Theme', 'Light, dark, or follow your system.', stSeg('theme', [['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], prefs.theme, setTheme), true),
+        stRow('textsize', 'Text size', 'Scales every label in the app.', stSeg('textsize', [['s', 'S'], ['m', 'M'], ['l', 'L']], state.textSize, setTextSize), true)
+      ]));
     } else if (tab === 'canvas') {
-      pane.appendChild(setRow('Default view', 'Used when a report opens.', segControl([['side', 'Side by side'], ['slider', 'Slider'], ['overlay', 'Overlay'], ['diff', 'Diff']], prefs.defaultView, function (v) {
-        prefs.defaultView = v; state.view = v; savePrefs(); render(); refreshSettings();
-      }, 'Default view')));
-      pane.appendChild(setRow('Show grid', 'Grid lines over the picture in Review, Move and Add.', switchControl(state.grid, function (v) {
-        state.grid = v; savePrefs(); render(); refreshSettings();
-      }, 'Show grid')));
-      pane.appendChild(setRow('Grid size', 'Grid spacing in every mode, and snapping in Move and Add.', segControl([[4, '4 px'], [8, '8 px'], [16, '16 px']], state.gridSize, function (v) {
-        state.gridSize = Number(v); savePrefs(); render(); refreshSettings();
-      }, 'Grid size')));
-      pane.appendChild(setRow('Snap to grid', null, switchControl(state.snap, function (v) {
-        state.snap = v; savePrefs(); render(); refreshSettings();
-      }, 'Snap to grid')));
-      pane.appendChild(setRow('Rulers', 'Pixel rulers around the picture in Move and Add.', switchControl(state.rulers, function (v) {
-        state.rulers = v; document.body.classList.toggle('no-rulers', !v); savePrefs(); render(); refreshSettings();
-      }, 'Rulers')));
-      pane.appendChild(setRow('Default precision', 'Exact = 2 px · Approx = 8 px', segControl([['exact', 'Exact'], ['approximate', 'Approx']], prefs.defaultPrecision, function (v) {
-        if (state.precision !== v) setPrecision(v); else { prefs.defaultPrecision = v; savePrefs(); refreshSettings(); }
-      }, 'Default precision')));
+      pane.appendChild(stGroup('Picture', [
+        stRow('view', 'Default view', 'Used when a report opens.', stSelect('view', [['side', 'Side by side'], ['slider', 'Slider'], ['overlay', 'Overlay'], ['diff', 'Diff']], prefs.defaultView, function (v) {
+          prefs.defaultView = v; state.view = v; savePrefs(); render(); refreshSettings();
+        }), true)
+      ]));
+      pane.appendChild(stGroup('Grid', [
+        stRow('grid', 'Show grid', 'Grid lines over the picture in Review, Move and Add.', stSwitch('grid', state.grid, function (v) {
+          state.grid = v; savePrefs(); render(); refreshSettings();
+        })),
+        stRow('gridsize', 'Grid size', 'Grid spacing in every mode, and snapping in Move and Add.', stSeg('gridsize', [[4, '4 px'], [8, '8 px'], [16, '16 px']], state.gridSize, function (v) {
+          state.gridSize = Number(v); savePrefs(); render(); refreshSettings();
+        }), true),
+        stRow('snap', 'Snap to grid', 'Areas you draw or move line up with the grid.', stSwitch('snap', state.snap, function (v) {
+          state.snap = v; savePrefs(); render(); refreshSettings();
+        }))
+      ]));
+      pane.appendChild(stGroup('Move and Add', [
+        stRow('rulers', 'Rulers', 'Pixel rulers around the picture in Move and Add.', stSwitch('rulers', state.rulers, function (v) {
+          state.rulers = v; document.body.classList.toggle('no-rulers', !v); savePrefs(); render(); refreshSettings();
+        })),
+        stRow('precision', 'Default precision', 'Exact = 2 px · Approx = 8 px', stSeg('precision', [['exact', 'Exact'], ['approximate', 'Approx']], prefs.defaultPrecision, function (v) {
+          if (state.precision !== v) setPrecision(v); else { prefs.defaultPrecision = v; savePrefs(); refreshSettings(); }
+        }), true)
+      ]));
     } else if (tab === 'prompt') {
-      [['promptCoords', 'Include coordinates', 'Adds x, y, width and height for each area.'],
-       ['promptRuleScope', "Add 'change nothing else' rule", 'Change only what is listed above. Keep everything else as it is.'],
-       ['promptRuleAsk', 'Ask before guessing', 'Tells the AI to ask when a request is unclear.'],
-       ['promptPage', 'Include page and viewport size', 'Adds the page name and the screenshot size.']].forEach(function (row) {
-        pane.appendChild(setRow(row[1], row[2], switchControl(prefs[row[0]] !== false, function (v) {
+      pane.appendChild(stGroup('Include in the prompt', [
+        ['promptCoords', 'Include coordinates', 'Adds x, y, width and height for each area.'],
+        ['promptRuleScope', "Add 'change nothing else' rule", 'Change only what is listed above. Keep everything else as it is.'],
+        ['promptRuleAsk', 'Ask before guessing', 'Tells the AI to ask when a request is unclear.'],
+        ['promptPage', 'Include page and viewport size', 'Adds the page name and the screenshot size.']
+      ].map(function (row) {
+        return stRow(row[0], row[1], row[2], stSwitch(row[0], prefs[row[0]] !== false, function (v) {
           prefs[row[0]] = v; savePrefs(); refreshSettings();
-        }, row[1])));
-      });
-      var card = el('div', 'info-card');
-      card.appendChild(el('p', null, 'Up to 8 requests per prompt. Smaller batches give AI assistants clearer instructions and fewer mistakes. Notes can be up to 240 characters.'));
+        }));
+      })));
       var link = el('button', 'link-btn', 'Preview prompt');
       link.type = 'button';
       link.setAttribute('data-preview-prompt', '');
-      card.appendChild(link);
-      pane.appendChild(card);
+      link.setAttribute('data-st-key', 'preview');
+      pane.appendChild(stCallout('Up to 8 requests per prompt. Smaller batches give AI assistants clearer instructions and fewer mistakes. Notes can be up to 240 characters.', link));
     } else if (tab === 'privacy') {
-      var reset = actionButton(resetArmed ? 'Click again to reset' : 'Reset preferences', 'reset', function () {
+      pane.appendChild(stCallout('Images and references stay in this tab and are never uploaded. Only your preferences are saved, in this browser.'));
+      var reset = stButton('reset', resetArmed ? 'Click again to reset' : 'Reset preferences', function () {
         if (!resetArmed) { resetArmed = true; refreshSettings(); return; }
         resetArmed = false;
         resetPreferences();
-      });
-      if (resetArmed) reset.style.color = 'var(--red)';
-      pane.appendChild(setRow('Reset preferences', 'Theme, text size, panels and canvas options go back to their defaults.', reset));
+      }, 'st-btn-danger' + (resetArmed ? ' armed' : ''));
+      pane.appendChild(stGroup('Danger zone', [
+        stRow('reset', 'Reset preferences', 'Theme, text size, panels and canvas options go back to their defaults.', reset)
+      ], 'st-danger'));
     } else if (tab === 'shortcuts') {
       pane.appendChild(shortcutList());
     } else {
-      var about = el('div', 'about');
+      var about = el('div', 'st-card st-about');
       about.appendChild(el('p', null, 'Orphic Eyes compares a Before and After screenshot of a page and turns what you point at into precise requests for Hermes.'));
       about.appendChild(el('p', null, 'It only sees pixels, not page code.'));
       about.appendChild(el('p', null, 'Precision: Exact = 2 px, Approx = 8 px. Works offline from a single file.'));
