@@ -1,6 +1,15 @@
 # HANDOFF
 
-## Current task: Beginner Windows guide and timeout investigation
+## Current task: Submission-night artifacts
+
+Branch: docs/submit-prep from origin/docs/windows-test. README and catalog draft are already present and origin/docs/readme is an ancestor; no merge is necessary.
+
+### Plan
+1. Recheck current public upstream catalog schema/examples/admission CLI and prepare a field comparison. Preserve an obvious zero SHA; keep Windows a commented test-dependent TODO only.
+2. Write docs/SUBMIT.md in submission-night order, with pinned-release validation, anonymous-public checks, owner-only fork/PR/X/form steps, consistent ready-to-paste disclosures and a complete owned/blocking TODO table. Do not perform those publication actions.
+3. Check YAML, links, commands and disclosure consistency; record unavailable native validation/Typeform field access honestly. Commit small docs-only changes and push only docs/submit-prep, confirming origin. No engine, tests, dependencies, README changes unless correcting a code contradiction, or release/hackathon modifications. No secrets/.env access.
+
+## Previous task: Beginner Windows guide and timeout investigation
 
 Branch: docs/windows-test from docs/readme at 9e5bf71bec8514de09c4dd5e937fa86845b1fdc2.
 
