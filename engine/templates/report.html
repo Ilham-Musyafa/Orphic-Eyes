@@ -5143,8 +5143,8 @@ body.insp-closed .inspector{border-left:0}
         if (!menu.isConnected) { document.removeEventListener('pointerdown', off, true); return; }
         if (menu.contains(event.target)) return;
         document.removeEventListener('pointerdown', off, true);
-        /* A tap on the More button itself just closes the menu. */
-        if (anchor.contains(event.target)) event.preventDefault();
+        /* The tap only closes the menu; focus goes back to the More button. */
+        event.preventDefault();
         closeLayer();
         state.moreJustClosed = anchor.contains(event.target);
       }, true);
