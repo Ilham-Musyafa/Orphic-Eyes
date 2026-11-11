@@ -17,7 +17,9 @@ Branch: `release/hackathon` (pulled, at 5c573c2). `docs/windows-test` is not tou
 5. README: the Content check row becomes implemented (pixel-only, looks removed/added/changed, no OCR); font licenses stay.
 
 ### Status
-- Plan written.
+- Plan written (286d2cb).
+- Step 1 done: two merge commits. `829de8f` merges origin/feat/auto-loop and `9e8c70c` merges origin/docs/readme. Each had one conflict, in docs/HANDOFF.md. I kept every section in order (this task, Codex docs/readme, Codex auto-loop, Codex URL capture, older UI sections) and checked that no line from either side was lost. `merge-base --is-ancestor`: feat/auto-loop, feat/url-capture and docs/readme are all ancestors of release/hackathon. engine/templates/report.html is unchanged by the merges. Full suite after each merge: 182 tests, 169 passed, 6 failed, 7 errors. All 13 are system-browser capture tests: the same 5 failures and 7 `tests/test_browser.py` errors as before, plus `test_serve_cli::test_http_report_can_read_adjacent_image_pixels`, where `google-chrome --headless --dump-dom` hangs in this container even on `data:` URLs.
+- Step 2 (URL labels): not built. Proof: I ran the real `engine.url_capture.capture_pair` on two local pages (`http://127.0.0.1:8766/a.html?token=secret123` and `/b.html`), replacing only the per-page `capture` with Playwright screenshots, because the engine's own Chromium launch keeps the browser sandbox and cannot start here. The report was a real one: status check, 3 boxes. report.json keys: boxes, ignore_regions, images, meta, name, schema_version, size, status, summary. metadata.json keys: browser, created_at, os, tolerance, viewport. Neither file, nor report.html, contains the host, the page names or the query. This matches Codex's privacy rule. To show labels, the engine must store the URLs; that is Ilham's decision, not part of this UI task.
 
 ## Previous task: Hackathon README and draft catalog (Codex, docs/readme)
 
