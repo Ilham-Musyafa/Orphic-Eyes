@@ -158,9 +158,23 @@ body.insp-closed{--inspector-cur:0px}
 .header{display:grid;grid-template-columns:minmax(max-content,1fr) auto minmax(max-content,1fr);align-items:center;gap:var(--s3);padding:0 var(--s3) 0 var(--s4);background:var(--panel);border-bottom:1px solid var(--line);min-width:0}
 .hd-left,.hd-right{display:flex;align-items:center;gap:var(--s2);min-width:0}
 .hd-right{justify-content:flex-end}
+.sample-badge{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:var(--r-pill);background:var(--amber-bg);color:var(--amber);font-size:var(--fs-cap);font-weight:var(--w-strong);letter-spacing:.02em;white-space:nowrap;flex:none}
+.sample-badge[hidden]{display:none}
+.m-page .sample-badge{margin-left:6px;height:18px;padding:0 6px}
+.new-review{gap:6px;padding:0 var(--s2)}
+.new-review[hidden]{display:none}
+.new-review .ic{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+@media (max-width:1599px){.new-review .lbl{display:none}.new-review{width:var(--hit);padding:0;justify-content:center}}
+.modal.confirm-modal{display:block;max-height:none;width:min(420px,calc(100vw - 32px));padding:var(--s5);border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop)}
+.cf-title{margin:0 0 var(--s2);font-size:var(--fs-section);font-weight:var(--w-strong);color:var(--ink)}
+.cf-body{margin:0 0 var(--s5);font-size:var(--fs-body);line-height:var(--lh-body);color:var(--muted)}
+.cf-actions{display:flex;justify-content:flex-end;gap:var(--s2)}
+.btn.danger{background:var(--red);border-color:var(--red);color:var(--panel)}
+.btn.danger:hover{filter:brightness(1.06);background:var(--red)}
+@media (max-width:639px){.cf-actions{flex-direction:column-reverse}.cf-actions .btn{min-height:44px}}
 .insp-show[hidden]{display:none}
-.insp-show{gap:6px;padding:0 var(--s2) 0 var(--s2);animation:oe-fade-in var(--dur) var(--ease-out)}
-@media (max-width:1100px){.insp-show .lbl{display:none}}
+.insp-show{color:var(--blue-ink);background:var(--blue-bg);animation:oe-fade-in var(--dur) var(--ease-out)}
+.icon-btn.insp-show:hover:not(:disabled){background:var(--blue-bg);color:var(--blue-ink);filter:brightness(.97)}
 /* Theme toggle: two icons in one spot, swapped with a short rotate + fade. */
 .theme-btn{position:relative}
 .theme-btn .ic{position:absolute;inset:0;margin:auto;transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
@@ -186,7 +200,7 @@ body.touch .tip kbd,body.touch .menu kbd{display:none}
 .stepper-short{display:none;font-size:var(--fs-sec);color:var(--muted);white-space:nowrap}
 @media (max-width:1599px){.step-label{display:none}.step+.step::before{width:8px}}
 @media (max-width:1279px){.capture-chip{display:none}.header{grid-template-columns:auto minmax(0,1fr) auto}.header .hd-center{justify-self:center}}
-@media (min-width:640px) and (max-width:1279px){.brand-name{display:none}}
+@media (min-width:640px) and (max-width:1439px){.brand-name{display:none}}
 @media (min-width:640px) and (max-width:899px){.status-chip,.hd-divider{display:none}}
 @media (min-width:640px) and (max-width:1099px){.stepper{display:none}.stepper-short{display:inline}}
 @media (max-width:639px){.stepper{display:none}.stepper-short{display:inline}}
@@ -830,8 +844,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   body.insp-dock .main{grid-template-columns:var(--sidebar-cur,var(--sidebar-w)) minmax(0,1fr) var(--inspector-cur,var(--inspector-w))}
   body.insp-dock .inspector{position:relative;top:auto;right:auto;bottom:auto;width:auto;z-index:auto;box-shadow:none;border-left:1px solid var(--line);transform:none;transition:none}
   body.insp-dock.insp-closed .inspector{border-left:0}
-  .capture-chip .cap-name{display:none}
 }
+@media (max-width:1439px){.capture-chip .cap-name{display:none}}
 @media (max-width:1100px){
   .tool .lbl{display:none}
   .tool{padding:0 10px}
@@ -1067,8 +1081,9 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
 </g></g></svg></span>
         <span class="brand-name">Orphic Eyes</span>
       </div>
-      <button type="button" class="m-page" id="mPageBtn" aria-label="Pages"><span class="m-page-name" id="mPageName">Orphic Eyes</span><svg class="ic m-page-caret" id="mPageCaret" aria-hidden="true" hidden><use href="#i-chevron"/></svg></button>
+      <button type="button" class="m-page" id="mPageBtn" aria-label="Pages"><span class="m-page-name" id="mPageName">Orphic Eyes</span><span class="sample-badge" id="mSampleBadge" hidden>Sample</span><svg class="ic m-page-caret" id="mPageCaret" aria-hidden="true" hidden><use href="#i-chevron"/></svg></button>
       <nav class="page-tabs" id="pageTabs" aria-label="Pages"></nav>
+      <span class="sample-badge" id="sampleBadge" data-tip="Sample images (Lumen). Use New review to load your own." hidden>Sample</span>
       <ol class="stepper" id="stepper" aria-label="Progress"></ol>
       <span class="stepper-short" id="stepperShort" aria-hidden="true"></span>
     </div>
@@ -1085,9 +1100,10 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       <button type="button" class="icon-btn hide-sm" id="undoBtn" aria-label="Undo" data-tip="Undo" data-sc="edit.undo"><svg class="ic"><use href="#i-undo"/></svg></button>
       <button type="button" class="icon-btn hide-sm" id="redoBtn" aria-label="Redo" data-tip="Redo" data-sc="edit.redo"><svg class="ic"><use href="#i-redo"/></svg></button>
       <span class="capture-chip hide-sm hide-md" id="captureChip" tabindex="0" data-tip="Capture size comes from the report"><span class="cap-name" id="captureName">Desktop</span><span class="num" id="captureSize">&mdash;</span></span>
+      <button type="button" class="btn ghost new-review hide-sm" id="newReview" aria-label="New review" data-tip="New review: load other images" hidden><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg><span class="lbl">New review</span></button>
+      <button type="button" class="icon-btn insp-show" id="inspShow" aria-label="Show panel" data-tip="Show panel" data-sc="panel.inspector" hidden><svg class="ic"><use href="#i-panel-right"/></svg></button>
       <button type="button" class="icon-btn theme-btn" id="themeBtn" aria-label="Dark mode" aria-pressed="false" data-tip="Switch to dark mode" data-sc="theme.toggle"><svg class="ic th-sun" aria-hidden="true"><use href="#i-sun"/></svg><svg class="ic th-moon" aria-hidden="true"><use href="#i-moon"/></svg></button>
       <button type="button" class="btn primary" id="copyMain" aria-label="Copy prompt" data-tip="Copy all requests as one prompt for any AI assistant" data-sc="prompt.copy"><svg class="ic copy-ic" viewBox="0 0 16 16" aria-hidden="true"><g class="ic-copy"><use href="#i-copy"/></g><path class="ic-check" d="m3 8.5 3.2 3L13 4.75" pathLength="1"/></svg><span class="lbl">Copy prompt</span></button>
-      <button type="button" class="btn insp-show" id="inspShow" aria-label="Show panel" data-tip="Show panel" data-sc="panel.inspector"><svg class="ic"><use href="#i-panel-right"/></svg><span class="lbl">Details</span></button>
       <button type="button" class="icon-btn m-more" id="moreBtn" aria-label="More options" aria-haspopup="menu" aria-expanded="false"><svg class="ic"><use href="#i-more"/></svg></button>
     </div>
   </header>
@@ -1429,6 +1445,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
 
   function readReport() {
     if (state.loadedData) return { ok: true, data: state.loadedData };
+    if (state.setAsideEmbedded) return { ok: false, reason: 'No report loaded' };  /* New review: the embedded report stays out of this tab */
     var node = document.getElementById('orphic-report');
     if (!node) return { ok: false, reason: 'No report loaded' };
     var raw = node.textContent || '';
@@ -3059,6 +3076,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   /* ---------- rendering ---------- */
   function render() {
     renderStatus();
+    renderSampleBadge();
     renderPhoneHeader();
     setTimeout(updateSheetFade, 0);
     setTimeout(function () { ['#leftList', '#requestList', '#pageList'].forEach(function (sel) { var n = $(sel); if (n) tipLabels(n); }); }, 0);
@@ -6200,6 +6218,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     theme.appendChild(seg);
     menu.appendChild(theme);
     menu.appendChild(el('div', 'm-sep'));
+    if (state.report) menu.appendChild(item('image', 'New review', newReview));
     menu.appendChild(item('gear', 'Settings', function () { openSettings(); }));
     menu.appendChild(item('help', 'Help & shortcuts', openShortcuts));
     menu.appendChild(item('play', 'Start tour', function () { startTour(); }));
@@ -7386,6 +7405,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     function add(group, label, run, shortcutId) { list.push({ group: group, label: label, run: run, kbd: shortcutId ? formatKeys(shortcutId) : '' }); }
     add('Action', 'Copy prompt', copyPrompt, 'prompt.copy');
     add('Action', 'Preview prompt', openPromptPreview);
+    if (state.report) add('Action', 'New review / Load images', newReview);
     add('Action', document.documentElement.getAttribute('data-theme') === 'dark' ? 'Switch to light mode' : 'Switch to dark mode', toggleTheme, 'theme.toggle');
     if (verifyCount()) add('Action', 'Verify fixes', openVerify, 'verify.open');
     if (state.boxes.length) add('Action', state.content.on ? 'Show all changes' : 'Content check', toggleContentCheck, 'content.check');
@@ -7618,6 +7638,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     });
     $('#inspectorClose').addEventListener('click', toggleInspector);
     $('#inspShow').addEventListener('click', toggleInspector);
+    $('#newReview').addEventListener('click', newReview);
     $('#stageScroller').addEventListener('scroll', queueFitTags, { passive: true });
     $('#themeBtn').addEventListener('click', toggleTheme);
     $('#moreBtn').addEventListener('click', function () {
@@ -8556,7 +8577,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   function trySample() {
     Promise.all([setSlot('before', sampleFile(SAMPLE.before, 'lumen-before.webp')),
                  setSlot('after', sampleFile(SAMPLE.after, 'lumen.webp'))])
-      .then(function () { return afterSlotsChanged(); })
+      .then(function (entries) { entries.forEach(function (e) { if (e) e.sample = true; }); return afterSlotsChanged(); })
       .then(function () { toast('Sample loaded'); })
       .catch(function (err) { loaderFail(err && err.message ? err.message : MSG_READ); });
   }
@@ -8616,6 +8637,98 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     row.appendChild(slotBlock('after', compact));
     return row;
   }
+  /* ---------- New review: back to the loader ---------- */
+  var BLANK_REVIEW = null;   /* request/selection fields as they are before any review (filled at start-up) */
+  function isSampleShown() {
+    return state.source === 'images' && !!(state.slots.before && state.slots.before.sample && state.slots.after && state.slots.after.sample);
+  }
+  /* In-app confirm (no browser dialog): Cancel is the default focus. */
+  function confirmDialog(opts) {
+    var modal = el('div', 'modal confirm-modal');
+    modal.setAttribute('role', 'alertdialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'cfTitle');
+    modal.setAttribute('aria-describedby', 'cfBody');
+    var h = el('h3', 'cf-title', opts.title);
+    h.id = 'cfTitle';
+    modal.appendChild(h);
+    var p = el('p', 'cf-body', opts.body);
+    p.id = 'cfBody';
+    modal.appendChild(p);
+    var row = el('div', 'cf-actions');
+    var cancel = el('button', 'btn', opts.cancel || 'Cancel');
+    cancel.type = 'button';
+    cancel.setAttribute('data-cf', 'cancel');
+    cancel.addEventListener('click', function () { closeLayer(); });
+    var ok = el('button', 'btn danger', opts.confirm);
+    ok.type = 'button';
+    ok.setAttribute('data-cf', 'ok');
+    ok.addEventListener('click', function () { closeLayer(true); opts.onConfirm(); });
+    row.appendChild(cancel);
+    row.appendChild(ok);
+    modal.appendChild(row);
+    openLayer(scrim(modal), { focus: '[data-cf="cancel"]' });
+  }
+  /* Ask only when requests would be lost. */
+  function confirmDiscard(then) {
+    var n = requestCount();
+    if (!n) { then(); return; }
+    confirmDialog({
+      title: 'Start a new review?',
+      body: 'Your ' + n + ' request' + (n === 1 ? '' : 's') + ' for this review will be discarded. Copy the prompt first if you still need ' + (n === 1 ? 'it' : 'them') + '.',
+      confirm: 'Discard and continue',
+      onConfirm: then
+    });
+  }
+  function resetReview() {
+    ['before', 'after'].forEach(function (w) { if (state.slots[w]) { dropUrl(state.slots[w].url); state.slots[w] = null; } });
+    state.genUrls.forEach(dropUrl);
+    state.genUrls = [];
+    state.source = null;
+    state.loadedData = null;
+    state.loaderError = null;
+    state.setAsideEmbedded = true;
+    if (BLANK_REVIEW) restoreState(copy(BLANK_REVIEW));
+    state.history = [];
+    state.future = [];
+    state.selectedBox = null;
+    state.selectedRequest = null;
+    state.drawRect = null;
+    state.drag = null;
+    state.snapSuggest = null;
+    state.zone = null;
+    state.copiedOnce = false;
+    state.content.on = false;
+    state.mode = 'review';
+    state.sidebarTab = 'changes';
+    state.sheet = 'changes';
+    state.zoom = 'fit';
+    Object.keys(REFS).forEach(function (id) {
+      var entry = REFS[id];
+      delete LOCAL_URLS[entry.url];
+      try { URL.revokeObjectURL(entry.url); } catch (err) { /* ignore */ }
+      delete REFS[id];
+    });
+    loadReport();
+    updateHistory();
+    render();
+  }
+  function newReview() {
+    if (!state.report) { toast('Load a Before and After screenshot to start'); return; }
+    confirmDiscard(function () {
+      resetReview();
+      toast('New review \u00b7 load a Before and After');
+      setTimeout(function () { var first = document.querySelector('#stageInner [data-slot="before"]'); if (first) first.focus(); }, 0);
+    });
+  }
+  function renderSampleBadge() {
+    var on = isSampleShown();
+    var a = $('#sampleBadge'), b = $('#mSampleBadge'), n = $('#newReview');
+    if (a) a.hidden = !on;
+    if (b) b.hidden = !on;
+    if (n) n.hidden = !state.report;
+  }
+
   function renderLoader(inner) {
     var box = el('div', 'loader');
     box.appendChild(el('strong', 'loader-title', 'Load a Before and After screenshot to start'));
@@ -8711,7 +8824,12 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         if (types.indexOf('text/uri-list') !== -1 || types.indexOf('text/plain') !== -1) toast(MSG_URL);
         return;
       }
-      if (!canLoad()) { toast('This report already has its images.'); return; }
+      if (isSampleShown() && dt.files.length >= 2) {
+        var dropped = Array.prototype.slice.call(dt.files);
+        confirmDiscard(function () { resetReview(); loadFiles(dropped, null); });
+        return;
+      }
+      if (!canLoad()) { toast('This report already has its images. Use New review to load others.'); return; }
       var zone = event.target.closest && event.target.closest('[data-slot]');
       loadFiles(dt.files, zone && dt.files.length === 1 ? zone.getAttribute('data-slot') : null);
     });
@@ -9115,6 +9233,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   }
 
   loadPrefs();
+  BLANK_REVIEW = copy(snapshotState());
   loadReport();
   initEvents();
   applyTheme(prefs.theme);
