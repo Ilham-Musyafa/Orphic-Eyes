@@ -583,6 +583,10 @@ body.insp-closed .inspector{border-left:0}
 .st-nav [role="tab"]:hover{background:var(--hover);color:var(--st-ink)}
 .st-nav [role="tab"][aria-selected="true"]{background:var(--st-active-bg);color:var(--st-active-ink)}
 .st-nav [role="tab"][aria-selected="true"] .ic{color:var(--st-active)}
+.st-nav [role="tab"][aria-selected="true"]::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;border-radius:2px;background:var(--st-active)}
+.scrim.st-scrim{-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.st-foot.saved{color:var(--st-ink)}
+.st-foot span{transition:color var(--dur-fast) var(--ease-out)}
 .st-version{margin:auto 10px 4px;font-size:var(--fs-cap);color:var(--st-muted)}
 .st-side-close,.st-back,.st-nav .st-chev{display:none}
 .st-side-head{display:flex;align-items:center;justify-content:space-between}
@@ -822,7 +826,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   .st-nav [role="tab"] .ic{width:18px;height:18px;color:var(--st-muted)}
   .st-nav [role="tab"]:hover,.st-nav [role="tab"][aria-selected="true"]{background:none;color:var(--st-ink)}
   .st-nav [role="tab"][aria-selected="true"] .ic{color:var(--st-muted)}
-  .st-nav [role="tab"]::before{display:none}
+  .st-nav [role="tab"][aria-selected="true"]::before{content:none}
   .st-nav .st-chev{display:block;margin-left:auto;width:16px;height:16px;transform:rotate(-90deg);color:var(--st-muted)}
   .st-version{margin:8px 20px 0}
   .st-close{display:none}
@@ -5704,7 +5708,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     } else if (tab === 'privacy') {
       pane.appendChild(stCallout('Images and references stay in this tab and are never uploaded. Only your preferences are saved, in this browser.'));
       var reset = stButton('reset', resetArmed ? 'Click again to reset' : 'Reset preferences', function () {
-        if (!resetArmed) { resetArmed = true; refreshSettings(); return; }
+        if (!resetArmed) { resetArmed = true; refreshSettings(true); return; }
         resetArmed = false;
         resetPreferences();
       }, 'st-btn-danger' + (resetArmed ? ' armed' : ''));
@@ -5833,6 +5837,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     panel.appendChild(head);
     main.appendChild(panel);
     var foot = el('div', 'st-foot');
+    foot.setAttribute('role', 'status');
     foot.appendChild(icon('check'));
     foot.appendChild(el('span', null, 'Changes save automatically'));
     main.appendChild(foot);
@@ -5861,9 +5866,22 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     setTimeout(focusShortcutSearch, 0);
   }
   /* Re-draw the open panel after a change; keep its scroll and the focused control. */
-  function refreshSettings() {
+  var savedTimer = null;
+  function flashSaved(modal) {
+    var foot = modal.querySelector('.st-foot');
+    var text = foot.querySelector('span');
+    foot.classList.add('saved');
+    text.textContent = 'Saved';
+    if (savedTimer) clearTimeout(savedTimer);
+    savedTimer = setTimeout(function () {
+      foot.classList.remove('saved');
+      text.textContent = 'Changes save automatically';
+    }, 1200);
+  }
+  function refreshSettings(noFlash) {
     var modal = document.querySelector('#layer .st-modal');
     if (!modal) return;
+    if (noFlash !== true) flashSaved(modal);
     var panel = modal.querySelector('.st-panel');
     var active = document.activeElement;
     var key = active && panel.contains(active) ? active.getAttribute('data-st-key') : null;
