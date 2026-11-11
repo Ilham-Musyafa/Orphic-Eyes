@@ -10,7 +10,8 @@ Branch: `feat/lumen-sample` (from `feat/verify-loop` at 68d04c5). Files: `engine
 3. Re-run Verify on Lumen (Round 2 with one fixed and one unfixed request), the earlier suites, update tests/helpers that used Tidyday.
 
 ### Status
-- Plan written.
+- Step 1 done: `samples/lumen/` brought in from f2e09b7. Try sample embeds both as lossless WebP (Pillow `lossless=True, method=6`): before 209,403 → 83,212 bytes, after 207,967 → 82,652 bytes. Decoded pixels are identical to the PNGs: Python RGBA bytes equal (sha256 before 7d4a7e4b…, after 5acbc8f3…), and in Chrome canvas RGBA of PNG vs embedded WebP differ in 0 of 5,184,000 bytes for each image. Tidyday data and names removed (0 matches for "tidyday" in report.html); sample files are named lumen-before.webp / lumen.webp, page name "lumen". report.html 527,765 → 724,883 bytes.
+- In-app diff on Lumen: exactly 6 areas — Top left 126×55 (headline word), Top right 50×12 (About → Journal), Middle left 160×44 (CTA teal → terracotta), Middle right 70×24 (badge moved), Bottom center 99×62 (card icon + title, one cluster), Bottom right 60×11 (Contact missing). Status "Check changes".
 
 ## Previous task: Verify loop (Round 2 check)
 
