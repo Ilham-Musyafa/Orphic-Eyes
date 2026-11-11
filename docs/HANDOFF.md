@@ -1,6 +1,22 @@
 # HANDOFF
 
-## Current task: Guide labels always visible + zoom control
+## Current task: Panel reopen, New review, Selection panel polish
+
+Branch: `feat/panel-polish` from origin/release/hackathon at 6f58b85; merges back with a merge commit. fix/test-reliability (Codex) is not touched.
+
+### Investigation
+- A: the header "Details" button from feat/panel-snap is there, but it sits after Copy prompt at the far right. At 1280 px it starts at x 1251 and is 93 px wide, so most of it is off-screen. At 900–1100 it is only an icon at the edge. Users read that as "no way back".
+- B: Try sample fills the Before/After slots (source = 'images'), so drops are not blocked. A drop silently replaces the sample with no confirm, and there is no visible way back to the loader. A report written by the engine (source = null) blocks drops entirely.
+
+### Plan
+A. Move the reopen control next to the theme toggle as an icon button (panel icon, tooltip "Show panel" + formatKeys('panel.inspector')). Hidden while the panel is open; phones keep the Details sheet tab. Selections in Move/Add already reopen it (inspAuto); this is re-checked at 1440/1280/1100/900 and 390.
+B. "New review": header icon button, palette "New review / Load images", phone More menu. If there are requests (Move/Add/Revert), an in-app confirm dialog appears first (no browser confirm). Then the review state is reset (requests, selection, undo history, slots, loaded data) and the loader shows; an engine-embedded report is set aside for this tab. While the sample is shown, dropping two images resets the same way (same confirm) and loads them. "Sample" badge next to the page name (desktop page tab + phone page button) while both slots hold the sample files.
+C. Selection panel (Move), layout only, same fields, ids and behaviour: "Position & size" (X Y W H + dx dy in one compact block), Precision, Label, Note, Quick tags, Before crop, Generated request (one card with Copy in the header and the JSON behind a closed "Show JSON" toggle), Add request. Quick tags become a grid: fixed label column, equal-height chips with a +/✓ icon slot (no width change when selected). A chip shows selected when its phrase is already in the note; clicking it then does not add a duplicate. The group can collapse under a "Quick tags" header (pref `quickTagsOpen`). Numbers in JetBrains Mono, 8 px rhythm, lighter borders, shorter muted helper text; the footer hint shows only without a selection. Copy prompt and request text/JSON stay byte-identical.
+
+### Status
+- Plan written.
+
+## Previous task: Guide labels always visible + zoom control
 
 Branch: `release/hackathon` (pulled, at effa230). Only engine/templates/report.html + this file.
 
