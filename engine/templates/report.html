@@ -573,7 +573,7 @@ body.insp-closed .inspector{border-left:0}
 .modal-head h2{margin:0;flex:1;font-size:var(--fs-section);font-weight:var(--w-strong)}
 /* settings modal */
 .scrim.st-scrim{background:rgba(0,0,0,.4);align-items:center;padding:var(--s4)}
-.st-modal{--st-surface:var(--panel);--st-side:#F6F6F4;--st-line:#E8E8E4;--st-ink:var(--ink);--st-muted:var(--muted);--st-active:#2F80FF;--st-active-ink:#1D63D3;--st-active-bg:rgba(47,128,255,.10);--st-danger:var(--red);
+.st-modal{--st-seg-bg:#F4F4F2;--st-surface:var(--panel);--st-side:#F6F6F4;--st-line:#E8E8E4;--st-ink:var(--ink);--st-muted:var(--muted);--st-active:#2F80FF;--st-active-ink:#1D63D3;--st-active-bg:rgba(47,128,255,.10);--st-danger:var(--red);
   position:relative;display:grid;grid-template-columns:200px minmax(0,1fr);width:min(760px,92vw);height:min(560px,86vh);border-radius:12px;background:var(--st-surface);color:var(--st-ink);box-shadow:0 24px 64px rgba(20,20,25,.22),0 4px 12px rgba(20,20,25,.08);overflow:hidden}
 .st-side{display:flex;flex-direction:column;gap:var(--s3);min-height:0;padding:12px;background:var(--st-side);border-right:1px solid var(--st-line)}
 .st-title{margin:6px 10px 2px;font-size:var(--fs-panel);font-weight:var(--w-strong)}
@@ -584,6 +584,12 @@ body.insp-closed .inspector{border-left:0}
 .st-nav [role="tab"][aria-selected="true"]{background:var(--st-active-bg);color:var(--st-active-ink)}
 .st-nav [role="tab"][aria-selected="true"] .ic{color:var(--st-active)}
 .st-version{margin:auto 10px 4px;font-size:var(--fs-cap);color:var(--st-muted)}
+.st-side-close,.st-back,.st-nav .st-chev{display:none}
+.st-side-head{display:flex;align-items:center;justify-content:space-between}
+.st-modal .st-seg{background:var(--st-seg-bg)}
+:root[data-theme="dark"] .st-modal{--st-surface:#1C1C1F;--st-side:#161618;--st-line:#ffffff14;--st-ink:#ECECEC;--st-muted:#A0A0A0;--st-active:#2F80FF;--st-active-ink:#5C9BFF;--st-active-bg:rgba(47,128,255,.16);--st-danger:#FF6B6B;--st-seg-bg:var(--surface);box-shadow:0 24px 64px rgba(0,0,0,.6),0 0 0 1px #ffffff14}
+:root[data-theme="dark"] .st-modal .st-btn{border-color:#ffffff24}
+:root[data-theme="dark"] .st-modal .st-select,:root[data-theme="dark"] .st-modal .st-sc-search input{border-color:#ffffff24}
 .st-main{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
 .st-close{position:absolute;top:14px;right:14px;z-index:3;width:32px;height:32px}
 .st-panel{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 28px 24px}
@@ -798,6 +804,45 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   body:not(.mode-review) .zoom-pill{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 86px)}
   .toast{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 86px)}
   body:not(.mode-review) .toast{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 142px)}
+}
+/* phone Settings: full screen, two levels (list of sections, then one section) */
+@media (max-width:639px){
+  .scrim.st-scrim{padding:0;align-items:stretch}
+  .st-modal{width:100%;height:100%;border-radius:0;grid-template-columns:minmax(0,1fr);box-shadow:none}
+  :root[data-theme="dark"] .st-modal{box-shadow:none}
+  .st-modal[data-level="1"] .st-main{display:none}
+  .st-modal[data-level="2"] .st-side{display:none}
+  .st-side{gap:0;padding:0 0 calc(16px + env(safe-area-inset-bottom,0px));border-right:0;background:var(--st-surface);overflow:auto}
+  .st-side-head{min-height:56px;padding:env(safe-area-inset-top,0px) 6px 0 16px;border-bottom:1px solid var(--st-line)}
+  .st-title{margin:0;font-size:calc(17px * var(--fs-scale))}
+  .st-side-close{display:inline-flex;width:44px;height:44px}
+  .st-nav{gap:0;padding:8px 16px;overflow:visible}
+  .st-nav [role="tab"]{height:52px;gap:12px;padding:0 4px;border-radius:0;color:var(--st-ink);font-size:var(--fs-panel);border-bottom:1px solid var(--st-line)}
+  .st-nav [role="tab"]:last-child{border-bottom:0}
+  .st-nav [role="tab"] .ic{width:18px;height:18px;color:var(--st-muted)}
+  .st-nav [role="tab"]:hover,.st-nav [role="tab"][aria-selected="true"]{background:none;color:var(--st-ink)}
+  .st-nav [role="tab"][aria-selected="true"] .ic{color:var(--st-muted)}
+  .st-nav [role="tab"]::before{display:none}
+  .st-nav .st-chev{display:block;margin-left:auto;width:16px;height:16px;transform:rotate(-90deg);color:var(--st-muted)}
+  .st-version{margin:8px 20px 0}
+  .st-close{display:none}
+  .st-back{display:inline-flex;align-items:center;gap:2px;align-self:flex-start;min-height:44px;margin:env(safe-area-inset-top,0px) 0 0 4px;padding:0 12px 0 6px;border-radius:8px;color:var(--st-active-ink);font-size:var(--fs-panel);font-weight:var(--w-medium)}
+  .st-back-ic{width:18px;height:18px;transform:rotate(90deg)}
+  .st-panel{padding:0 16px calc(24px + env(safe-area-inset-bottom,0px))}
+  .st-head{margin:0 -16px 8px;padding:4px 16px 12px}
+  .st-head h3{font-size:calc(20px * var(--fs-scale))}
+  .st-row{column-gap:12px}
+  .st-row-wide{grid-template-columns:minmax(0,1fr)}
+  .st-row-wide .st-seg{display:flex;width:100%;height:50px;padding:3px}
+  .st-row-wide .st-seg [role="radio"]{flex:1;height:44px}
+  .st-row-wide .st-select{width:100%;height:44px}
+  .st-switch::before{content:"";position:absolute;inset:-13px -6px}
+  .st-btn{height:44px;padding:0 16px}
+  .st-callout .link-btn{min-height:44px}
+  .st-sc-search input{height:44px}
+  .st-sc-empty .link-btn{min-height:44px}
+  kbd.st-key{font-size:10px}
+  .st-foot{padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
 }
 @media (max-width:639px) and (prefers-reduced-motion:reduce){.sidebar,.inspector{transition:none}}
 </style>
@@ -5712,9 +5757,18 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('aria-labelledby', 'stTitle');
     var side = el('div', 'st-side');
+    var sideHead = el('div', 'st-side-head');
     var title = el('h2', 'st-title', 'Settings');
     title.id = 'stTitle';
-    side.appendChild(title);
+    sideHead.appendChild(title);
+    /* Phones: level 1 has its own close button. */
+    var sideClose = el('button', 'icon-btn st-side-close');
+    sideClose.type = 'button';
+    sideClose.setAttribute('aria-label', 'Close settings');
+    sideClose.appendChild(icon('x'));
+    sideClose.addEventListener('click', function () { closeLayer(); });
+    sideHead.appendChild(sideClose);
+    side.appendChild(sideHead);
     var nav = el('div', 'st-nav');
     nav.setAttribute('role', 'tablist');
     nav.setAttribute('aria-orientation', 'vertical');
@@ -5728,7 +5782,14 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       b.setAttribute('data-settings-tab', t.id);
       b.appendChild(icon(t.icon));
       b.appendChild(el('span', 'st-tab-label', t.label));
-      b.addEventListener('click', function () { selectSettingsTab(t.id, false); focusShortcutSearch(); });
+      var chev = icon('chevron');
+      chev.classList.add('st-chev');
+      b.appendChild(chev);
+      b.addEventListener('click', function () {
+        selectSettingsTab(t.id, false);
+        if (isPhone()) { showSettingsLevel(2); return; }
+        focusShortcutSearch();
+      });
       nav.appendChild(b);
     });
     nav.addEventListener('keydown', function (event) {
@@ -5752,6 +5813,16 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     close.setAttribute('aria-label', 'Close settings');
     close.appendChild(icon('x'));
     close.addEventListener('click', function () { closeLayer(); });
+    /* Phones: level 2 goes back to the list of sections. */
+    var back = el('button', 'st-back');
+    back.type = 'button';
+    var backIcon = icon('chevron');
+    backIcon.classList.add('st-back-ic');
+    back.appendChild(backIcon);
+    back.appendChild(el('span', null, 'Settings'));
+    back.setAttribute('aria-label', 'Back to Settings');
+    back.addEventListener('click', function () { showSettingsLevel(1); });
+    main.appendChild(back);
     var panel = el('div', 'st-panel');
     panel.id = 'stPanel';
     panel.setAttribute('role', 'tabpanel');
@@ -5770,13 +5841,22 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     renderSettingsPanel(modal);
     return modal;
   }
+  function showSettingsLevel(level) {
+    var modal = document.querySelector('#layer .st-modal');
+    settingsLevel = level;
+    if (!modal) return;
+    modal.setAttribute('data-level', String(level));
+    var target = level === 2 ? modal.querySelector('.st-back') : modal.querySelector('#stTab-' + settingsTab);
+    if (level === 2) modal.querySelector('.st-panel').scrollTop = 0;
+    if (target) target.focus();
+  }
   function openSettings(tab) {
     settingsTab = tab || settingsTab || 'general';
     settingsLevel = tab ? 2 : 1;
     resetArmed = false;
     var wrap = scrim(settingsModal());
     wrap.classList.add('st-scrim');
-    openLayer(wrap, { focus: '.st-nav [aria-selected="true"]' });
+    openLayer(wrap, { focus: isPhone() && settingsLevel === 2 ? '.st-back' : '.st-nav [aria-selected="true"]' });
     /* openLayer focuses the tab on the next tick; the search takes over after that. */
     setTimeout(focusShortcutSearch, 0);
   }
