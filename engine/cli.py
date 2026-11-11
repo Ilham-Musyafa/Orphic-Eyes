@@ -6,6 +6,7 @@ import sys
 
 from .compare import compare
 from .store import accept, approve, baseline, ignore_add, ignore_list, ignore_remove
+from .url_capture import capture_pair
 
 
 def _region(text):
@@ -25,6 +26,16 @@ def main(argv=None):
     """Print one JSON result (or one-line error) and return the exit code."""
     parser = _Parser(description="Capture local visual-regression baselines and diffs")
     commands = parser.add_subparsers(dest="command", required=True)
+    pair = commands.add_parser("capture-pair", help="Capture two HTTP/HTTPS URLs and write a pixel report")
+    pair.add_argument("before_url")
+    pair.add_argument("after_url")
+    pair.add_argument("--store", required=True)
+    pair.add_argument("--name", default="urls", help="Fresh, empty target name")
+    pair.add_argument("--width", type=int, default=1440)
+    pair.add_argument("--height", type=int, default=900)
+    pair.add_argument("--wait-ms", type=int, default=250)
+    pair.add_argument("--timeout-ms", type=int, default=30000)
+    pair.add_argument("--allow-local", action="store_true", help="Explicitly permit trusted private/loopback HTTP(S) pages")
     for command in ("baseline", "compare"):
         sub = commands.add_parser(command)
         sub.add_argument("name")
@@ -55,7 +66,11 @@ def main(argv=None):
             selection.add_argument("--all", action="store_true")
     try:
         args = parser.parse_args(argv)
-        if args.command == "baseline":
+        if args.command == "capture-pair":
+            result = capture_pair(args.before_url, args.after_url, args.store, name=args.name,
+                                  width=args.width, height=args.height, wait_ms=args.wait_ms,
+                                  timeout_ms=args.timeout_ms, allow_local=args.allow_local)
+        elif args.command == "baseline":
             result = baseline(args.name, args.url, args.store)
         elif args.command == "compare":
             requests = None
