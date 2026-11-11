@@ -210,6 +210,37 @@ textarea[aria-disabled="true"],input[aria-disabled="true"],select[aria-disabled=
 .req-counter.full{color:var(--red);font-weight:var(--w-strong)}
 .req-limit{margin:0 var(--s2) var(--s2);padding:var(--s2) var(--s3);border-radius:var(--r-btn);background:var(--red-bg);color:var(--red);font-size:var(--fs-sec);font-weight:var(--w-medium)}
 .req-foot{display:flex;justify-content:flex-start;padding:var(--s2) 0 0}
+.req-foot .link-btn+.link-btn{margin-left:var(--s1)}
+/* Verify dialog */
+.vf-modal{width:min(720px,100%);max-height:84vh}
+.vf-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:var(--s4);display:flex;flex-direction:column;gap:var(--s3)}
+.vf-intro{margin:0;color:var(--muted);font-size:var(--fs-body);line-height:var(--lh-body)}
+.vf-drop{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);padding:var(--s3) var(--s4);border:1.5px dashed var(--line2);border-radius:var(--r-panel);background:var(--soft)}
+.vf-drop.has-shot{border-style:solid;border-width:1px}
+.vf-drop.over{border-color:var(--blue);background:var(--blue-bg)}
+.vf-drop p{margin:0;color:var(--muted);font-size:var(--fs-body)}
+.vf-shot{display:flex;flex-direction:column;gap:2px;min-width:0}
+.vf-shot b{font-weight:var(--w-strong);font-size:var(--fs-body)}
+.vf-shot span{color:var(--muted);font-size:var(--fs-sec);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vf-error{margin:0;padding:var(--s3);border-radius:var(--r-btn);background:var(--red-bg);color:var(--red);font-size:var(--fs-body);line-height:var(--lh-body)}
+.vf-busy,.vf-summary{margin:0;color:var(--muted);font-size:var(--fs-body)}
+.vf-summary{color:var(--ink);font-weight:var(--w-medium)}
+.vf-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s2)}
+.vf-item{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:var(--s4);row-gap:var(--s1);padding:var(--s3);border:1px solid var(--line);border-radius:var(--r-panel);background:var(--panel)}
+.vf-head{display:flex;align-items:center;gap:var(--s2);min-width:0}
+.vf-name{font-weight:var(--w-medium);font-size:var(--fs-body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vf-reason{grid-column:1;margin:0;color:var(--muted);font-size:var(--fs-sec);line-height:var(--lh-body)}
+.vf-crops{grid-column:2;grid-row:1 / span 3;display:flex;gap:var(--s2);align-self:start}
+.vf-crop{margin:0;display:flex;flex-direction:column;gap:2px;align-items:center}
+.vf-crop img{display:block;max-width:120px;max-height:84px;border-radius:6px;box-shadow:0 0 0 1px var(--line2);background:var(--canvas)}
+.vf-crop figcaption{font-size:var(--fs-cap);color:var(--muted)}
+.vf-chip{display:inline-flex;align-items:center;flex:none;height:22px;padding:0 8px;border-radius:var(--r-pill);font-size:var(--fs-cap);font-weight:var(--w-strong)}
+.vf-chip.pass{background:var(--green-bg);color:var(--green)}
+.vf-chip.fail{background:var(--red-bg);color:var(--red)}
+.vf-chip.unclear{background:var(--amber-bg);color:var(--amber)}
+.vf-section{margin:var(--s2) 0 0;font-size:var(--fs-cap);font-weight:var(--w-strong);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.vf-note{margin:0;color:var(--muted);font-size:var(--fs-sec)}
+.req-sheet-actions{display:inline-flex;gap:var(--s2)}
 .prompt-text{margin:0;padding:var(--s3) var(--s4);font-family:var(--font-mono);font-size:var(--fs-mono);line-height:var(--lh-body);white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;color:var(--ink);background:var(--soft);flex:1;min-height:0;user-select:text}
 .modal-actions{display:flex;justify-content:flex-end;gap:var(--s2);padding:var(--s3) var(--s4);border-top:1px solid var(--line)}
 .menu button[aria-checked="true"]{font-weight:var(--w-strong)}
@@ -816,6 +847,20 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   .modal-prompt .modal-actions{padding:var(--s3) var(--s4) calc(var(--s3) + env(safe-area-inset-bottom,0px))}
   .modal-prompt .modal-actions .btn:not(.primary){display:none}
   .modal-prompt #previewCopy{flex:1;min-height:44px;justify-content:center}
+  .scrim-full .vf-modal{width:100%;max-height:none;height:100%;border-radius:0;box-shadow:none}
+  .vf-modal .modal-head{padding:calc(var(--s2) + env(safe-area-inset-top,0px)) var(--s3) var(--s2) var(--s2)}
+  .vf-modal .modal-head .m-close{display:inline-flex;min-height:44px;padding:0 var(--s3)}
+  .vf-modal .modal-head .icon-btn{display:none}
+  .vf-body{padding:var(--s3) var(--s4)}
+  .vf-drop{flex-direction:column;align-items:stretch;text-align:center}
+  .vf-drop .btn{min-height:44px}
+  .vf-item{grid-template-columns:minmax(0,1fr)}
+  .vf-crops{grid-column:1;grid-row:auto}
+  .vf-crop{flex:1;min-width:0}
+  .vf-crop img{max-width:100%;max-height:140px}
+  .vf-modal .modal-actions{flex-wrap:wrap;padding:var(--s3) var(--s4) calc(var(--s3) + env(safe-area-inset-bottom,0px))}
+  .vf-modal .modal-actions .btn{flex:1 1 auto;min-height:44px}
+  .req-sheet-foot .req-sheet-actions .btn{min-height:44px;padding:0 var(--s3)}
 }
 /* phone: picture sits at the top; every control is a 44px touch target */
 @media (max-width:639px){
@@ -978,7 +1023,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       </div>
       <div class="req-sheet-foot" id="reqSheetFoot">
         <span class="req-counter num" id="reqSheetCount">0 of 8 requests</span>
-        <button type="button" class="btn" id="reqSheetPreview" data-preview-prompt>Preview prompt</button>
+        <span class="req-sheet-actions"><button type="button" class="btn" id="reqSheetVerify" data-verify>Verify</button><button type="button" class="btn" id="reqSheetPreview" data-preview-prompt>Preview prompt</button></span>
       </div>
       <div class="sb-foot">
         <button type="button" class="btn ghost" id="helpBtn" aria-label="Help" data-tip="Help" data-sc="help.shortcuts"><svg class="ic"><use href="#i-help"/></svg><span class="lbl">Help</span></button>
@@ -2801,6 +2846,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     sheetCount.textContent = counter.textContent;
     sheetCount.classList.toggle('warn', made === MAX_REQUESTS - 1);
     sheetCount.classList.toggle('full', made >= MAX_REQUESTS);
+    explainDisabled($('#reqSheetVerify'), verifyCount() ? '' : 'Add a request first');
     counter.classList.toggle('warn', made === MAX_REQUESTS - 1);
     counter.classList.toggle('full', made >= MAX_REQUESTS);
     $('#reqLimit').hidden = made < MAX_REQUESTS;
@@ -2926,13 +2972,20 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       row.title = (request.id || 'Request') + ' · ' + subText;
       list.appendChild(row);
     });
-    /* Bottom of the Requests panel: a quiet link to see the exact prompt. */
-    if (draftCount || addCount) {
+    /* Bottom of the Requests panel: quiet links to see the exact prompt and to verify a new screenshot. */
+    if (draftCount || addCount || state.requests.length) {
       var foot = el('div', 'req-foot');
-      var pv = el('button', 'link-btn', 'Preview prompt');
-      pv.type = 'button';
-      pv.setAttribute('data-preview-prompt', '');
-      foot.appendChild(pv);
+      if (draftCount || addCount) {
+        var pv = el('button', 'link-btn', 'Preview prompt');
+        pv.type = 'button';
+        pv.setAttribute('data-preview-prompt', '');
+        foot.appendChild(pv);
+      }
+      var vf = el('button', 'link-btn', 'Verify fixes');
+      vf.type = 'button';
+      vf.setAttribute('data-verify', '');
+      vf.setAttribute('data-tip', 'Check a new screenshot against these requests');
+      foot.appendChild(vf);
       list.appendChild(foot);
     }
   }
@@ -6647,6 +6700,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     bindImageLoader();
     bindReferences();
     bindLinkedHover();
+    bindVerify();
   }
 
   /* =================================================================
@@ -6917,6 +6971,439 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       loadReport();
       if (differ) toast(report.note_text);
     });
+  }
+
+  /* =================================================================
+     Verify: check a new screenshot (the next round) against the requests.
+     Pixel-only and honest: when the pixels can't show it, the answer is
+     Unclear or "Needs your eyes", never Pass.
+     ================================================================= */
+  var VERIFY_MATCH = 0.95;      /* share of sampled pixels that must agree for "the element is here" */
+  var VERIFY_PIXEL_TOL = 24;    /* per-channel slack for that test (anti-aliasing, JPEG) */
+  var VERIFY_SEARCH = 48;       /* how far around the target a moved element is looked for */
+  var VERIFY_PLAIN = 3;         /* luminance spread below this: too plain to track */
+  var HIDE_GONE_PERCENT = 30;   /* hide: the area must change at least this much */
+  var VERIFY_TYPE_WORD = { move: 'Move', revert: 'Revert', hide: 'Hide', comment: 'Comment', add: 'Add' };
+  var VERIFY_STATUS = {
+    pass: { label: 'Pass', cls: 'pass' }, fail: { label: 'Fail', cls: 'fail' },
+    unclear: { label: 'Unclear', cls: 'unclear' }, eyes: { label: 'Needs your eyes', cls: 'unclear' }
+  };
+  state.verify = { round: 1, shot: null, results: null, unexpected: [], smallPercent: 0, error: '', busy: false, history: [], urls: [] };
+
+  /* Everything Verify can check: the requests Copy prompt sends (drawn on After)
+     plus requests that came with an engine report (drawn against Before). */
+  function verifyItems() {
+    var items = [];
+    promptRequests().forEach(function (r, i) {
+      items.push({ key: 'p' + i, type: r.type, name: r.name, rect: r.rect, dx: r.dx || 0, dy: r.dy || 0,
+        precision: r.precision, ref: 'after', prompt: r });
+    });
+    state.requests.forEach(function (q, i) {
+      if (!q || !q.type || !VERIFY_TYPE_WORD[q.type]) return;
+      var from = q.from && num(q.from.x) !== null ? { x: q.from.x, y: q.from.y, w: q.from.w, h: q.from.h } : null;
+      var to = q.to && num(q.to.x) !== null ? q.to : null;
+      var item = { key: 'e' + i, type: q.type, name: (q.id || 'Request') + ' ' + VERIFY_TYPE_WORD[q.type].toLowerCase(),
+        rect: from, dx: from && to ? to.x - from.x : 0, dy: from && to ? to.y - from.y : 0,
+        precision: q.precision || 'approximate', ref: 'before', engineId: q.id };
+      item.prompt = { type: q.type, name: item.name, rect: from, dx: item.dx, dy: item.dy, precision: item.precision, note: '' };
+      items.push(item);
+    });
+    return items;
+  }
+  function verifyCount() { return verifyItems().length; }
+
+  /* Image -> pixels. Pages opened from disk may not allow reading their own images. */
+  function verifyPixels(src) {
+    return new Promise(function (resolve, reject) {
+      function read(img) {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var c = canvasOf(w, h);
+        var x = c.getContext('2d', { willReadFrequently: true });
+        x.drawImage(img, 0, 0);
+        try { resolve({ w: w, h: h, data: x.getImageData(0, 0, w, h).data, canvas: c }); }
+        catch (err) { reject(new Error('This page can’t read its own Before and After pixels (opened from disk). Load the Before and After with Load images, then verify again.')); }
+      }
+      if (src && src.tagName === 'IMG') { if (src.complete && src.naturalWidth) { read(src); return; } }
+      var url = typeof src === 'string' ? safePath(src) : null;
+      if (!url && !(src && src.tagName === 'IMG')) { reject(new Error('The Before and After images are missing, so there is nothing to compare with.')); return; }
+      var img = src && src.tagName === 'IMG' ? src : new Image();
+      img.onload = function () { read(img); };
+      img.onerror = function () { reject(new Error('The Before or After image could not be loaded.')); };
+      if (url) img.src = url;
+    });
+  }
+  function clipRect(r, W, H) {
+    var x = Math.max(0, Math.round(r.x)), y = Math.max(0, Math.round(r.y));
+    var x2 = Math.min(W, Math.round(r.x + r.w)), y2 = Math.min(H, Math.round(r.y + r.h));
+    return x2 > x && y2 > y ? { x: x, y: y, w: x2 - x, h: y2 - y } : null;
+  }
+  /* Share of sampled pixels in src@(sx,sy) that match dst@(tx,ty), within VERIFY_PIXEL_TOL. */
+  function matchRatio(src, sx, sy, dst, tx, ty, w, h, W) {
+    var step = Math.max(1, Math.round(Math.sqrt(w * h / 1600)));
+    var hit = 0, n = 0;
+    for (var y = 0; y < h; y += step) {
+      var a = ((sy + y) * W + sx) * 4, b = ((ty + y) * W + tx) * 4;
+      for (var x = 0; x < w; x += step) {
+        var p = a + x * 4, q = b + x * 4;
+        n++;
+        if (Math.abs(src[p] - dst[q]) <= VERIFY_PIXEL_TOL && Math.abs(src[p + 1] - dst[q + 1]) <= VERIFY_PIXEL_TOL &&
+            Math.abs(src[p + 2] - dst[q + 2]) <= VERIFY_PIXEL_TOL) hit++;
+      }
+    }
+    return n ? hit / n : 0;
+  }
+  /* Best match of the element around (cx,cy), within +-radius. */
+  function bestMatch(src, r, dst, cx, cy, radius, W, H) {
+    var best = { ratio: -1, x: cx, y: cy };
+    function tryAt(x, y) {
+      if (x < 0 || y < 0 || x + r.w > W || y + r.h > H) return;
+      var v = matchRatio(src, r.x, r.y, dst, x, y, r.w, r.h, W);
+      if (v > best.ratio || (v === best.ratio && Math.abs(x - cx) + Math.abs(y - cy) < Math.abs(best.x - cx) + Math.abs(best.y - cy))) best = { ratio: v, x: x, y: y };
+    }
+    var coarse = radius > 6 ? 2 : 1;
+    for (var dy = -radius; dy <= radius; dy += coarse) for (var dx = -radius; dx <= radius; dx += coarse) tryAt(cx + dx, cy + dy);
+    if (coarse > 1) {
+      var bx = best.x, by = best.y;
+      for (var fy = -1; fy <= 1; fy++) for (var fx = -1; fx <= 1; fx++) tryAt(bx + fx, by + fy);
+    }
+    return best;
+  }
+  function lumaSpread(src, r, W) {
+    var sum = 0, sq = 0, n = 0, step = Math.max(1, Math.round(Math.sqrt(r.w * r.h / 1600)));
+    for (var y = r.y; y < r.y + r.h; y += step) for (var x = r.x; x < r.x + r.w; x += step) {
+      var p = (y * W + x) * 4, l = 0.299 * src[p] + 0.587 * src[p + 1] + 0.114 * src[p + 2];
+      sum += l; sq += l * l; n++;
+    }
+    var mean = sum / n;
+    return Math.sqrt(Math.max(0, sq / n - mean * mean));
+  }
+  /* The existing diff rule: any channel different = changed (tolerance 0). Percent of the area. */
+  function changedPercent(a, b, r, W) {
+    var changed = 0;
+    for (var y = r.y; y < r.y + r.h; y++) {
+      var row = y * W;
+      for (var x = r.x; x < r.x + r.w; x++) {
+        var p = (row + x) * 4;
+        if (a[p] !== b[p] || a[p + 1] !== b[p + 1] || a[p + 2] !== b[p + 2] || a[p + 3] !== b[p + 3]) changed++;
+      }
+    }
+    return Math.round(changed / (r.w * r.h) * 1000) / 10;
+  }
+  function signed(n) { return (n > 0 ? '+' : '') + n; }
+  function pctText(n) { return (Math.round(n * 10) / 10) + '%'; }
+  function verifyMove(item, px) {
+    var W = px.w, H = px.h, R = px.round.data;
+    var src = item.ref === 'before' ? px.before.data : px.after.data;
+    var refName = item.ref === 'before' ? 'Before' : 'After';
+    var r = clipRect(item.rect, W, H);
+    if (!r || r.w !== Math.round(item.rect.w) || r.h !== Math.round(item.rect.h)) return { status: 'unclear', reason: 'The area is outside the screenshot.' };
+    var tx = r.x + Math.round(item.dx), ty = r.y + Math.round(item.dy);
+    if (tx < 0 || ty < 0 || tx + r.w > W || ty + r.h > H) return { status: 'unclear', reason: 'The target is outside the screenshot, so it can’t be checked.' };
+    if (lumaSpread(src, r, W) < VERIFY_PLAIN) return { status: 'unclear', reason: 'This area is too plain to track from pixels.' };
+    var tol = item.precision === 'approximate' ? 8 : 2;
+    var near = bestMatch(src, r, R, tx, ty, tol, W, H);
+    var atOld = matchRatio(src, r.x, r.y, R, r.x, r.y, r.w, r.h, W);
+    var oldFar = Math.abs(item.dx) > tol || Math.abs(item.dy) > tol;
+    if (near.ratio >= VERIFY_MATCH && !(oldFar && atOld >= VERIFY_MATCH)) {
+      var ox = near.x - tx, oy = near.y - ty;
+      return { status: 'pass', reason: 'Found at the target ' + (ox || oy ? '(' + signed(ox) + ', ' + signed(oy) + ' px off, limit ' + tol + ' px).' : '(exact).'),
+        found: { x: near.x, y: near.y } };
+    }
+    if (near.ratio >= VERIFY_MATCH) return { status: 'unclear', reason: 'The element matches both its old place and the target, so the move can’t be confirmed.' };
+    if (oldFar && atOld >= VERIFY_MATCH) return { status: 'fail', reason: 'Still at its old place: it didn’t move.', found: { x: r.x, y: r.y } };
+    var wide = bestMatch(src, r, R, tx, ty, VERIFY_SEARCH, W, H);
+    if (wide.ratio >= VERIFY_MATCH) {
+      var mx = wide.x - r.x, my = wide.y - r.y;
+      return { status: 'fail', reason: 'Moved ' + signed(mx) + ', ' + signed(my) + ' px, but ' + signed(Math.round(item.dx)) + ', ' + signed(Math.round(item.dy)) +
+        ' was asked (' + Math.max(Math.abs(wide.x - tx), Math.abs(wide.y - ty)) + ' px off, limit ' + tol + ' px).', found: { x: wide.x, y: wide.y } };
+    }
+    return { status: 'unclear', reason: 'The element from ' + refName + ' wasn’t found near its target (best match ' + Math.round(Math.max(0, wide.ratio) * 100) + '%).' };
+  }
+  function verifyRevert(item, px) {
+    var r = clipRect(item.rect, px.w, px.h);
+    if (!r) return { status: 'unclear', reason: 'The area is outside the screenshot.' };
+    var p = changedPercent(px.round.data, px.before.data, r, px.w);
+    if (p < DIFF_FAIL_PERCENT) return { status: 'pass', reason: 'Area matches Before (' + pctText(p) + ' different).' };
+    return { status: 'fail', reason: 'Area still differs from Before (' + pctText(p) + ' different, limit ' + DIFF_FAIL_PERCENT + '%).' };
+  }
+  function verifyHide(item, px) {
+    var r = clipRect(item.rect, px.w, px.h);
+    if (!r) return { status: 'unclear', reason: 'The area is outside the screenshot.' };
+    var src = item.ref === 'before' ? px.before.data : px.after.data;
+    var refName = item.ref === 'before' ? 'Before' : 'After';
+    var p = changedPercent(px.round.data, src, r, px.w);
+    if (p < DIFF_FAIL_PERCENT) return { status: 'fail', reason: 'Area still looks like ' + refName + ' (' + pctText(p) + ' different): the element is still there.' };
+    var plain = lumaSpread(src, r, px.w) < VERIFY_PLAIN;
+    var near = plain ? { ratio: 0 } : bestMatch(src, r, px.round.data, r.x, r.y, 16, px.w, px.h);
+    if (p >= HIDE_GONE_PERCENT && near.ratio < VERIFY_MATCH && !plain) {
+      return { status: 'pass', reason: 'Area changed (' + pctText(p) + ' different from ' + refName + ') and the element isn’t found nearby.' };
+    }
+    if (near.ratio >= VERIFY_MATCH) return { status: 'unclear', reason: 'The element is still found close by (' + pctText(p) + ' of the area changed).' };
+    return { status: 'unclear', reason: 'Only ' + pctText(p) + ' of the area changed, too little to say the element is gone.' };
+  }
+  function verifyByEye(item, px) {
+    var r = item.rect ? clipRect(item.rect, px.w, px.h) : null;
+    var what = item.type === 'add' ? 'a new element' : 'a comment';
+    if (!r) return { status: 'eyes', reason: 'Pixels can’t confirm ' + what + '. Check the new screenshot yourself.' };
+    var p = changedPercent(px.round.data, px.after.data, r, px.w);
+    return { status: 'eyes', reason: 'Pixels can’t confirm ' + what + ' (' + pctText(p) + ' of the area changed). Compare the crops.' };
+  }
+  function verifyOne(item, px) {
+    if (item.type === 'move') return item.rect ? verifyMove(item, px) : { status: 'unclear', reason: 'This request has no area.' };
+    if (item.type === 'revert') return verifyRevert(item, px);
+    if (item.type === 'hide') return verifyHide(item, px);
+    return verifyByEye(item, px);
+  }
+  function verifyBlobUrl(canvas) {
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) {
+        if (!blob) { resolve(null); return; }
+        var url = localUrl(blob);
+        state.verify.urls.push(url);
+        resolve(url);
+      }, 'image/png');
+    });
+  }
+  /* After vs Round 2 crop of one area (both images share the same size). */
+  function verifyCrop(px, rect) {
+    var r = clipRect({ x: rect.x - CROP_PAD, y: rect.y - CROP_PAD, w: rect.w + CROP_PAD * 2, h: rect.h + CROP_PAD * 2 }, px.w, px.h);
+    if (!r) return Promise.resolve(null);
+    return Promise.all([px.after.canvas, px.round.canvas].map(function (src) {
+      var c = canvasOf(r.w, r.h);
+      c.getContext('2d').drawImage(src, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+      return verifyBlobUrl(c);
+    })).then(function (urls) { return { after: urls[0], round: urls[1], w: r.w, h: r.h }; });
+  }
+  function unionRect(a, b) {
+    var x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
+    return { x: x, y: y, w: Math.max(a.x + a.w, b.x + b.w) - x, h: Math.max(a.y + a.h, b.y + b.h) - y };
+  }
+  function itemArea(item) {
+    if (!item.rect) return null;
+    var r = { x: item.rect.x, y: item.rect.y, w: item.rect.w, h: item.rect.h };
+    return item.type === 'move' ? unionRect(r, { x: r.x + item.dx, y: r.y + item.dy, w: r.w, h: r.h }) : r;
+  }
+  function dropVerifyUrls() {
+    state.verify.urls.forEach(dropUrl);
+    state.verify.urls = [];
+  }
+
+  /* Unexpected changes: filled in by findUnexpected() below. */
+  function findUnexpected(px, items) { return Promise.resolve({ zones: [], smallPercent: 0 }); }
+
+  function runVerify() {
+    var v = state.verify;
+    var items = verifyItems();
+    var shot = v.shot;
+    v.busy = true;
+    v.error = '';
+    v.results = null;
+    v.unexpected = [];
+    v.smallPercent = 0;
+    dropVerifyUrls();
+    renderVerify();
+    var images = (state.report && state.report.images) || {};
+    var roundName = 'Round ' + (v.round + 1);
+    return verifyPixels(shot.img).then(function (round) {
+      return Promise.all([verifyPixels(images.before), verifyPixels(images.after)]).then(function (ps) {
+        var before = ps[0], after = ps[1];
+        if (round.w !== after.w || round.h !== after.h) {
+          throw new Error(roundName + ' is ' + round.w + '×' + round.h + ' px, but the After image is ' + after.w + '×' + after.h +
+            ' px. Use a screenshot with the same size: Orphic doesn’t guess how to line them up.');
+        }
+        if (before.w !== after.w || before.h !== after.h) throw new Error('Before and After have different sizes, so areas can’t be compared.');
+        var px = { w: after.w, h: after.h, before: before, after: after, round: round };
+        var results = items.map(function (item) {
+          var r = verifyOne(item, px);
+          return { item: item, status: r.status, reason: r.reason };
+        });
+        return Promise.all(results.map(function (res) {
+          var area = itemArea(res.item);
+          return area ? verifyCrop(px, area).then(function (crop) { res.crop = crop; return res; }) : res;
+        })).then(function (done) {
+          v.results = done;
+          return findUnexpected(px, items);
+        }).then(function (u) {
+          v.unexpected = u.zones;
+          v.smallPercent = u.smallPercent;
+        });
+      });
+    }).catch(function (err) {
+      v.results = null;
+      v.unexpected = [];
+      v.error = err && err.message ? err.message : MSG_READ;
+    }).then(function () {
+      v.busy = false;
+      renderVerify();
+      var live = $('#liveRegion');
+      if (live) { live.textContent = ''; setTimeout(function () { live.textContent = v.error ? v.error : verifySummaryText(); }, 30); }
+    });
+  }
+  function verifyTally() {
+    var t = { pass: 0, fail: 0, unclear: 0, eyes: 0 };
+    (state.verify.results || []).forEach(function (r) { t[r.status] += 1; });
+    return t;
+  }
+  function verifySummaryText() {
+    var t = verifyTally();
+    var parts = [];
+    if (t.pass) parts.push(t.pass + ' pass');
+    if (t.fail) parts.push(t.fail + ' fail');
+    if (t.unclear) parts.push(t.unclear + ' unclear');
+    if (t.eyes) parts.push(t.eyes + (t.eyes === 1 ? ' needs' : ' need') + ' your eyes');
+    var u = state.verify.unexpected.length;
+    if (u) parts.push(u + ' unexpected change' + (u === 1 ? '' : 's'));
+    return parts.join(' · ') || 'Nothing to check';
+  }
+  function loadRoundFile(file) {
+    if (!file) return;
+    readImageFile(file).then(function (entry) {
+      if (state.verify.shot) dropUrl(state.verify.shot.url);
+      state.verify.shot = entry;
+      runVerify();
+    }).catch(function (err) {
+      state.verify.error = err && err.message ? err.message : MSG_READ;
+      renderVerify();
+    });
+  }
+  function verifyChip(status) {
+    var s = VERIFY_STATUS[status];
+    return el('span', 'vf-chip ' + s.cls, s.label);
+  }
+  function verifyCropFigure(crop) {
+    var fig = el('div', 'vf-crops');
+    [['After', crop.after], ['Round ' + (state.verify.round + 1), crop.round]].forEach(function (pair) {
+      var f = el('figure', 'vf-crop');
+      var img = el('img');
+      img.src = pair[1];
+      img.alt = pair[0] + ' crop';
+      f.appendChild(img);
+      f.appendChild(el('figcaption', null, pair[0]));
+      fig.appendChild(f);
+    });
+    return fig;
+  }
+  function renderVerify() {
+    var body = document.querySelector('#layer #vfBody');
+    if (!body) return;
+    var v = state.verify;
+    var roundName = 'Round ' + (v.round + 1);
+    $('#vfTitle').textContent = 'Verify · ' + roundName;
+    body.innerHTML = '';
+    body.appendChild(el('p', 'vf-intro', 'Load a screenshot taken after the AI applied your requests. Each request is checked against it, from pixels only.'));
+    /* the new screenshot: drop, choose or paste, same rules as Load images */
+    var drop = el('div', 'vf-drop' + (v.shot ? ' has-shot' : ''));
+    var input = el('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/webp';
+    input.hidden = true;
+    input.addEventListener('change', function () { loadRoundFile(input.files && input.files[0]); input.value = ''; });
+    drop.appendChild(input);
+    if (v.shot) {
+      var info = el('div', 'vf-shot');
+      info.appendChild(el('b', null, roundName));
+      info.appendChild(el('span', 'num', v.shot.name + ' · ' + v.shot.w + '×' + v.shot.h));
+      drop.appendChild(info);
+    } else {
+      drop.appendChild(el('p', null, isTouch() ? 'Tap to choose the ' + roundName + ' screenshot.' : 'Drop the ' + roundName + ' screenshot here, choose it, or paste it.'));
+    }
+    var pick = el('button', 'btn' + (v.shot ? '' : ' primary'), v.shot ? 'Replace' : 'Choose screenshot');
+    pick.type = 'button';
+    pick.id = 'vfPick';
+    pick.addEventListener('click', function () { input.click(); });
+    drop.appendChild(pick);
+    drop.addEventListener('dragover', function (event) { event.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+    drop.addEventListener('drop', function (event) {
+      event.preventDefault();
+      drop.classList.remove('over');
+      var files = event.dataTransfer && event.dataTransfer.files;
+      loadRoundFile(files && files[0]);
+    });
+    body.appendChild(drop);
+    if (v.error) {
+      var err = el('p', 'vf-error', v.error);
+      err.setAttribute('role', 'alert');
+      body.appendChild(err);
+    }
+    if (v.busy) body.appendChild(el('p', 'vf-busy', 'Checking…'));
+    if (v.results) {
+      var sum = el('p', 'vf-summary', verifySummaryText());
+      body.appendChild(sum);
+      var list = el('ul', 'vf-list');
+      list.setAttribute('aria-label', 'Request checks');
+      v.results.forEach(function (res) {
+        var li = el('li', 'vf-item');
+        var head = el('div', 'vf-head');
+        head.appendChild(verifyChip(res.status));
+        head.appendChild(el('span', 'vf-name', '[' + VERIFY_TYPE_WORD[res.item.type] + '] ' + res.item.name));
+        li.appendChild(head);
+        li.appendChild(el('p', 'vf-reason', res.reason));
+        if (res.crop) li.appendChild(verifyCropFigure(res.crop));
+        list.appendChild(li);
+      });
+      body.appendChild(list);
+      renderUnexpected(body);
+    }
+    renderVerifyHistory(body);
+    renderVerifyActions();
+  }
+  function renderUnexpected(body) { /* filled in with unexpected changes */ }
+  function renderVerifyHistory(body) { /* filled in with rounds */ }
+  function renderVerifyActions() {
+    var bar = document.querySelector('#layer #vfActions');
+    if (!bar) return;
+    bar.innerHTML = '';
+    var close = el('button', 'btn', 'Close');
+    close.type = 'button';
+    close.addEventListener('click', function () { closeLayer(); });
+    bar.appendChild(close);
+  }
+  function openVerify() {
+    if (!verifyCount()) { toast('Add a request first'); return; }
+    var modal = el('div', 'modal vf-modal');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'vfTitle');
+    var head = el('div', 'modal-head');
+    var mClose = el('button', 'btn ghost m-close', 'Close');
+    mClose.type = 'button';
+    mClose.addEventListener('click', function () { closeLayer(); });
+    head.appendChild(mClose);
+    var title = el('h2', null, 'Verify');
+    title.id = 'vfTitle';
+    head.appendChild(title);
+    var x = el('button', 'icon-btn');
+    x.type = 'button';
+    x.setAttribute('aria-label', 'Close');
+    x.appendChild(icon('x'));
+    x.addEventListener('click', function () { closeLayer(); });
+    head.appendChild(x);
+    modal.appendChild(head);
+    var body = el('div', 'vf-body');
+    body.id = 'vfBody';
+    modal.appendChild(body);
+    var actions = el('div', 'modal-actions');
+    actions.id = 'vfActions';
+    modal.appendChild(actions);
+    var wrap = scrim(modal);
+    wrap.classList.add('scrim-full');
+    openLayer(wrap, { focus: '#vfPick' });
+    renderVerify();
+  }
+  function bindVerify() {
+    document.addEventListener('click', function (event) {
+      var b = event.target.closest('[data-verify]');
+      if (!b || b.getAttribute('aria-disabled') === 'true') return;
+      event.preventDefault();
+      openVerify();
+    });
+    /* A pasted image goes to Verify while its dialog is open. */
+    claimPaste(function (file) {
+      if (!document.querySelector('#layer .vf-modal')) return false;
+      loadRoundFile(file);
+      return true;
+    }, true);
   }
 
   /* Sample pair: a small synthetic mockup made for Orphic Eyes, embedded so it works offline. */
