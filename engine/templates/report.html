@@ -158,6 +158,9 @@ body.insp-closed{--inspector-cur:0px}
 .header{display:grid;grid-template-columns:minmax(max-content,1fr) auto minmax(max-content,1fr);align-items:center;gap:var(--s3);padding:0 var(--s3) 0 var(--s4);background:var(--panel);border-bottom:1px solid var(--line);min-width:0}
 .hd-left,.hd-right{display:flex;align-items:center;gap:var(--s2);min-width:0}
 .hd-right{justify-content:flex-end}
+.insp-show[hidden]{display:none}
+.insp-show{gap:6px;padding:0 var(--s2) 0 var(--s2);animation:oe-fade-in var(--dur) var(--ease-out)}
+@media (max-width:1100px){.insp-show .lbl{display:none}}
 /* Theme toggle: two icons in one spot, swapped with a short rotate + fade. */
 .theme-btn{position:relative}
 .theme-btn .ic{position:absolute;inset:0;margin:auto;transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
@@ -797,6 +800,11 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   .main{grid-template-columns:var(--sidebar-cur,var(--sidebar-w)) minmax(0,1fr)}
   .inspector{position:absolute;top:0;right:0;bottom:0;width:var(--inspector-w);z-index:30;box-shadow:var(--shadow-pop);border-left:0;transform:translateX(0);transition:transform var(--dur-panel) var(--ease-out)}
   body.insp-closed .inspector{transform:translateX(calc(100% + 24px));box-shadow:none}
+  /* Docked at mid widths when the canvas keeps >= 480 px (see inspectorDocked). */
+  body.insp-dock{--inspector-w:272px}
+  body.insp-dock .main{grid-template-columns:var(--sidebar-cur,var(--sidebar-w)) minmax(0,1fr) var(--inspector-cur,var(--inspector-w))}
+  body.insp-dock .inspector{position:relative;top:auto;right:auto;bottom:auto;width:auto;z-index:auto;box-shadow:none;border-left:1px solid var(--line);transform:none;transition:none}
+  body.insp-dock.insp-closed .inspector{border-left:0}
   .capture-chip .cap-name{display:none}
 }
 @media (max-width:1100px){
@@ -1054,6 +1062,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       <span class="capture-chip hide-sm hide-md" id="captureChip" tabindex="0" data-tip="Capture size comes from the report"><span class="cap-name" id="captureName">Desktop</span><span class="num" id="captureSize">&mdash;</span></span>
       <button type="button" class="icon-btn theme-btn" id="themeBtn" aria-label="Dark mode" aria-pressed="false" data-tip="Switch to dark mode" data-sc="theme.toggle"><svg class="ic th-sun" aria-hidden="true"><use href="#i-sun"/></svg><svg class="ic th-moon" aria-hidden="true"><use href="#i-moon"/></svg></button>
       <button type="button" class="btn primary" id="copyMain" aria-label="Copy prompt" data-tip="Copy all requests as one prompt for any AI assistant" data-sc="prompt.copy"><svg class="ic copy-ic" viewBox="0 0 16 16" aria-hidden="true"><g class="ic-copy"><use href="#i-copy"/></g><path class="ic-check" d="m3 8.5 3.2 3L13 4.75" pathLength="1"/></svg><span class="lbl">Copy prompt</span></button>
+      <button type="button" class="btn insp-show" id="inspShow" aria-label="Show panel" data-tip="Show panel" data-sc="panel.inspector"><svg class="ic"><use href="#i-panel-right"/></svg><span class="lbl">Details</span></button>
       <button type="button" class="icon-btn m-more" id="moreBtn" aria-label="More options" aria-haspopup="menu" aria-expanded="false"><svg class="ic"><use href="#i-more"/></svg></button>
     </div>
   </header>
@@ -1359,6 +1368,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     rulers: true,
     sidebarTab: 'changes',
     drawerOpen: false,
+    inspAuto: false,        /* opened by Move/Add or a new selection: temporary, not saved */
     sheet: 'changes'
   };
 
@@ -1468,6 +1478,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       state.selectedRequest = null;
       state.sidebarTab = 'requests';
       state.sheet = 'requests';
+      state.inspAuto = true;
     }
   }
 
@@ -4693,6 +4704,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     /* Drafts and selections survive mode switches on purpose. */
     state.sidebarTab = state.mode === 'review' ? 'changes' : 'requests';
     state.sheet = state.sidebarTab;
+    if (state.mode !== 'review') { state.inspAuto = true; state.drawerOpen = true; }
     render();
   }
 
@@ -5376,13 +5388,21 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     body.classList.toggle('sb-collapsed', sidebarCollapsed());
     var key = selectionKey();
     if (key !== state.lastSelKey) {
-      /* A new selection opens the drawer (mid widths) or the Details sheet stays as chosen (mobile). */
-      if (key) state.drawerOpen = true;
+      /* A new selection opens the panel for this session (not saved), or the Details sheet stays as chosen (mobile). */
+      if (key) { state.drawerOpen = true; state.inspAuto = true; }
       if (key && kind === 'mobile' && state.sheetH > 0) state.sheet = 'inspector';
       state.lastSelKey = key;
     }
-    var closed = kind === 'desktop' ? prefs.inspectorOpen === false : kind === 'mid' ? !state.drawerOpen : false;
-    if (state.panelsInit && state.inspClosed && !closed && kind === 'desktop') replay($('#inspector'), 'panel-in');
+    var docked = inspectorDocked();
+    var closed = kind === 'mobile' ? false
+      : docked ? !(prefs.inspectorOpen !== false || state.inspAuto)
+      : !(state.drawerOpen || state.inspAuto);
+    var layoutKey = (docked ? 'dock' : 'float') + (closed ? '-closed' : '-open');
+    var layoutChanged = state.panelsInit && state.inspLayout && state.inspLayout !== layoutKey && docked;
+    state.inspLayout = layoutKey;
+    body.classList.toggle('insp-dock', docked && kind === 'mid');
+    if (layoutChanged) setTimeout(function () { renderStage(); renderChrome(); }, 190);
+    if (state.panelsInit && state.inspClosed && !closed && docked) replay($('#inspector'), 'panel-in');
     var collapsedNow = sidebarCollapsed();
     if (state.panelsInit && state.sbCollapsed && !collapsedNow && kind !== 'mobile') replay(document.querySelector('.sb-body'), 'panel-in');
     state.inspClosed = closed;
@@ -5390,6 +5410,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     state.panelsInit = true;
     body.classList.toggle('insp-closed', closed);
     renderSidebarToggle();
+    renderInspShow();
     if (kind === 'mobile' && isPhone()) {
       if (!state.sheetPos) state.sheetPos = 'peek';
       state.sheetH = Math.max(0, phoneSheetTotal(state.sheetPos) - sheetBarH());
@@ -5433,12 +5454,31 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     applyPanels();
     setTimeout(function () { renderStage(); renderChrome(); }, 190);
   }
+  /* Mid widths dock a narrower panel when the canvas keeps a usable width; otherwise it overlays. */
+  var INSP_MID_W = 272, CANVAS_MIN_W = 480;
+  function inspectorDocked() {
+    var kind = viewportKind();
+    if (kind === 'desktop') return true;
+    if (kind !== 'mid') return false;
+    var side = sidebarCollapsed() ? 56 : 260;
+    return window.innerWidth - side - INSP_MID_W >= CANVAS_MIN_W;
+  }
+  function renderInspShow() {
+    var b = document.getElementById('inspShow');
+    if (!b) return;
+    b.hidden = viewportKind() === 'mobile' || inspectorShown();
+  }
+  function inspectorShown() { return !document.body.classList.contains('insp-closed'); }
+  /* X, Show panel, Ctrl+I and the palette: an explicit choice, remembered (docked) or for this session (overlay). */
   function toggleInspector() {
     var kind = viewportKind();
     if (kind === 'mobile') { setSheet('inspector'); return; }
-    if (kind === 'mid') state.drawerOpen = !state.drawerOpen;
-    else { prefs.inspectorOpen = prefs.inspectorOpen === false; savePrefs(); }
+    var open = !inspectorShown();
+    state.inspAuto = false;
+    if (inspectorDocked()) { prefs.inspectorOpen = open; savePrefs(); }
+    else state.drawerOpen = open;
     applyPanels();
+    renderInspShow();
     setTimeout(function () { renderStage(); renderChrome(); }, 190);
   }
   function setSidebarTab(tab) {
@@ -7162,6 +7202,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       setContentMode(!state.content.on);
     });
     $('#inspectorClose').addEventListener('click', toggleInspector);
+    $('#inspShow').addEventListener('click', toggleInspector);
     $('#themeBtn').addEventListener('click', toggleTheme);
     $('#moreBtn').addEventListener('click', function () {
       if (state.moreJustClosed) { state.moreJustClosed = false; return; }

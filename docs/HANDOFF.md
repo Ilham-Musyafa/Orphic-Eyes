@@ -20,7 +20,8 @@ B. Snap to element (Move and Add)
 Thresholds were tuned on Lumen with a Python prototype first. Shadows differ by 5–12 levels and white cards by 19–21, hence 16.
 
 ### Status
-- Plan written.
+- Plan written (6b74759).
+- Part A done. `inspectorDocked()`: desktop always docks. Mid widths dock at 272 px when `innerWidth − sidebar − 272 ≥ 480`, i.e. ≥ 808 px with the rail sidebar. Narrower mid windows keep the overlay drawer. `prefs.inspectorOpen` (default true) is the remembered choice for docked panels. `state.inspAuto` (Move/Add entered, report opened in Move/Add, new selection) opens it for the session without saving. X / Show panel / Ctrl+I / palette is an explicit toggle and clears inspAuto. `#inspShow` ("Details" + panel icon, tooltip "Show panel Ctrl+I" via data-sc) shows in the header only while the panel is closed, never on phones. When the docked layout changes, the stage re-renders after the 190 ms slide. Reset → open. Panel test 132/132: cleared storage at 1440/1280/1100/900 shows the panel docked; closing, remembering, Show panel, Ctrl+I, palette, auto-open on Move/Add/selection with the pref left untouched, stage fits after auto-open, Reset; 800 px overlay; phone has no Show panel; light + dark, 0 JS errors.
 
 ## Previous task: Merge auto-loop + readme, header theme toggle, small UI fixes
 
