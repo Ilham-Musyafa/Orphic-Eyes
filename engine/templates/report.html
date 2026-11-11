@@ -303,6 +303,8 @@ textarea[aria-disabled="true"],input[aria-disabled="true"],select[aria-disabled=
 .sb-tab .badge{min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-pill);background:var(--surface);color:var(--muted);font-size:var(--fs-cap);display:inline-flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;font-weight:var(--w-strong)}
 .sb-tab.on .badge{background:var(--panel)}
 .sb-toggle{flex:none}
+/* Same spot open or collapsed: the collapsed rail centres it at 11.5 px, so the open bar matches. */
+body:not(.sb-collapsed) .sb-toggle{margin-left:3.5px}
 .sb-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 var(--s2) var(--s2)}
 .sb-pane{display:flex;flex-direction:column;gap:var(--s1)}
 .group-label{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);padding:var(--s3) var(--s2) var(--s1);font-size:var(--fs-cap);font-weight:var(--w-strong);letter-spacing:.04em;text-transform:uppercase;color:var(--faint)}
