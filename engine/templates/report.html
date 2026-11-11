@@ -692,10 +692,37 @@ body.insp-closed .inspector{border-left:0}
 .st-callout>.ic{width:16px;height:16px;flex:none;margin-top:1px;color:var(--st-active)}
 .st-callout p{margin:0}
 .st-callout .link-btn{margin:4px 0 0 -8px}
-.st-about{padding:16px}
-.st-about p{margin:0 0 10px;font-size:var(--fs-body);line-height:1.55;color:var(--st-muted)}
-.st-about p:first-child{color:var(--st-ink)}
-.st-about p:last-child{margin-bottom:0}
+.st-about{display:flex;flex-direction:column;gap:20px}
+.ab-hero{position:relative;display:flex;align-items:center;gap:14px;padding:20px;border:1px solid var(--st-line);border-radius:12px;overflow:hidden;
+  background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--bronze) 18%,transparent),transparent 60%),linear-gradient(135deg,color-mix(in srgb,var(--st-active) 8%,var(--st-surface)),var(--st-surface));
+  animation:oe-panel-up var(--dur-slow) var(--ease-out)}
+.ab-logo{width:52px;height:52px;flex:none;display:flex;padding:6px;border-radius:12px;background:var(--logo-box);box-shadow:0 1px 2px rgba(0,0,0,.12),0 6px 16px color-mix(in srgb,var(--bronze) 25%,transparent)}
+.ab-logo svg{width:100%;height:100%}
+.ab-title{min-width:0;flex:1}
+.ab-name{margin:0;font-size:calc(20px * var(--fs-scale));font-weight:var(--w-strong);letter-spacing:-.01em;line-height:1.2;color:var(--st-ink)}
+.ab-tagline{margin:4px 0 0;font-size:var(--fs-body);line-height:1.45;color:var(--st-muted)}
+.ab-version{align-self:flex-start;flex:none;padding:2px 8px;border-radius:var(--r-pill);border:1px solid var(--st-line);background:var(--st-surface);font-family:var(--font-mono);font-size:var(--fs-cap);color:var(--st-muted)}
+.ab-section{display:flex;flex-direction:column;gap:8px}
+.ab-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.ab-step{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--st-line);border-radius:12px;background:var(--st-surface);animation:oe-row-in var(--dur) var(--ease-out) both;animation-delay:calc(var(--i,0) * 40ms)}
+.ab-step-ic{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--st-active-bg);color:var(--st-active-ink)}
+.ab-step-ic .ic{width:16px;height:16px}
+.ab-step-text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ab-step-text b{font-size:var(--fs-body);font-weight:var(--w-strong);color:var(--st-ink)}
+.ab-step-text span{font-size:var(--fs-sec);line-height:1.4;color:var(--st-muted)}
+.ab-facts{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+.ab-fact{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:var(--r-pill);background:var(--st-seg-bg);border:1px solid var(--st-line);font-size:var(--fs-sec);font-weight:var(--w-medium);color:var(--st-ink)}
+.ab-links{display:flex;flex-wrap:wrap;gap:4px;margin:-6px 0 0 -8px}
+.ab-links a{text-decoration:none}
+.ab-links a:hover{text-decoration:underline;text-underline-offset:3px}
+.ab-ext{font-size:.9em;opacity:.8}
+.ab-credits{padding-top:12px;border-top:1px solid var(--st-line)}
+.ab-credits p{margin:0;font-size:var(--fs-sec);line-height:1.6;color:var(--st-muted)}
+@media (max-width:639px){
+  .ab-hero{padding:16px;flex-wrap:wrap}
+  .ab-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ab-links .link-btn{min-height:44px}
+}
 .st-shortcuts{display:flex;flex-direction:column;gap:20px}
 .st-sc-search{position:relative;display:flex;align-items:center}
 .st-sc-search>.ic{position:absolute;left:10px;width:14px;height:14px;color:var(--st-muted);pointer-events:none}
@@ -6609,13 +6636,91 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     } else if (tab === 'shortcuts') {
       pane.appendChild(shortcutList());
     } else {
-      var about = el('div', 'st-card st-about');
-      about.appendChild(el('p', null, 'Orphic Eyes compares a Before and After screenshot of a page and turns what you point at into precise requests for Hermes.'));
-      about.appendChild(el('p', null, 'It only sees pixels, not page code.'));
-      about.appendChild(el('p', null, 'Precision: Exact = 2 px, Approx = 8 px. Works offline from a single file.'));
-      pane.appendChild(about);
+      pane.appendChild(aboutCard());
     }
     return pane;
+  }
+  /* About: what the app is and does, from facts already true in this file. No fetches. */
+  var REPO_URL = 'https://github.com/Ilham-Musyafa/orphic-eyes';
+  function aboutCard() {
+    var wrap = el('div', 'st-about');
+    var hero = el('div', 'ab-hero');
+    var mark = el('span', 'ab-logo');
+    mark.setAttribute('aria-hidden', 'true');
+    var logo = document.querySelector('.brand .logo-wrap svg');
+    if (logo) {
+      var svg = logo.cloneNode(true);
+      svg.removeAttribute('width'); svg.removeAttribute('height');
+      svg.querySelectorAll('[id]').forEach(function (n) { n.removeAttribute('id'); });  /* ids stay unique in the page */
+      mark.appendChild(svg);
+    }
+    hero.appendChild(mark);
+    var text = el('div', 'ab-title');
+    text.appendChild(el('h4', 'ab-name', 'Orphic Eyes'));
+    text.appendChild(el('p', 'ab-tagline', 'Gives Hermes eyes for visual review.'));
+    hero.appendChild(text);
+    hero.appendChild(el('span', 'ab-version', 'Version ' + SETTINGS_VERSION));
+    wrap.appendChild(hero);
+
+    var how = el('section', 'ab-section');
+    var howTitle = el('h4', 'st-group-title', 'How it works');
+    howTitle.id = 'abHowTitle';
+    how.setAttribute('aria-labelledby', howTitle.id);
+    how.appendChild(howTitle);
+    var steps = el('ol', 'ab-steps');
+    [['changes', 'Compare', 'Before and After, pixel by pixel.'],
+     ['select', 'Point', 'Mark what to move, add or bring back.'],
+     ['requests', 'Request', 'Copy one clear prompt for Hermes.'],
+     ['check', 'Verify', 'Check the next screenshot against it.']].forEach(function (step, i) {
+      var li = el('li', 'ab-step');
+      li.style.setProperty('--i', String(i));
+      var ic = el('span', 'ab-step-ic');
+      ic.appendChild(icon(step[0]));
+      li.appendChild(ic);
+      var body = el('div', 'ab-step-text');
+      body.appendChild(el('b', null, step[1]));
+      body.appendChild(el('span', null, step[2]));
+      li.appendChild(body);
+      steps.appendChild(li);
+    });
+    how.appendChild(steps);
+    wrap.appendChild(how);
+
+    var facts = el('ul', 'ab-facts');
+    facts.setAttribute('aria-label', 'Facts');
+    ['Pixels only, never page code', 'Works offline', 'Exact 2 px / Approx 8 px', 'Up to ' + MAX_REQUESTS + ' requests'].forEach(function (f) {
+      facts.appendChild(el('li', 'ab-fact', f));
+    });
+    wrap.appendChild(facts);
+
+    var links = el('div', 'ab-links');
+    var repo = el('a', 'link-btn', 'GitHub repository');
+    var ext = el('span', 'ab-ext', '\u2197');
+    ext.setAttribute('aria-hidden', 'true');
+    repo.appendChild(ext);
+    repo.setAttribute('aria-label', 'GitHub repository (opens in a new tab)');
+    repo.href = REPO_URL;
+    repo.target = '_blank';
+    repo.rel = 'noopener noreferrer';
+    repo.setAttribute('data-st-key', 'about-repo');
+    links.appendChild(repo);
+    var keys = el('button', 'link-btn', 'Keyboard shortcuts');
+    keys.type = 'button';
+    keys.setAttribute('data-st-key', 'about-keys');
+    keys.addEventListener('click', function () { selectSettingsTab('shortcuts', true); });
+    links.appendChild(keys);
+    var tour = el('button', 'link-btn', 'Quick tour');
+    tour.type = 'button';
+    tour.setAttribute('data-st-key', 'about-tour');
+    tour.addEventListener('click', function () { closeLayer(true); startTour(); });
+    links.appendChild(tour);
+    wrap.appendChild(links);
+
+    var credits = el('div', 'ab-credits');
+    credits.appendChild(el('p', null, 'Built by Ilham Musyafa for the Hermes Agent Plugin Hackathon.'));
+    credits.appendChild(el('p', null, 'Fonts: Montserrat, JetBrains Mono (OFL).'));
+    wrap.appendChild(credits);
+    return wrap;
   }
   function renderSettingsPanel(modal) {
     var info = settingsTabInfo(settingsTab);
