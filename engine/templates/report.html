@@ -401,6 +401,8 @@ body.no-report .stage-scroller,body.no-report.mode-review .stage-scroller{--stag
 .tool:hover{background:var(--hover);color:var(--ink)}
 .tool.on{background:var(--blue-bg);color:var(--blue-ink)}
 .zoom-pill{right:var(--float-gap);bottom:var(--float-gap)}
+/* Move/Add show the tool dock at the bottom centre: the zoom pill sits one row higher so they never collide. */
+@media (min-width:640px){body:not(.mode-review) .zoom-pill{bottom:calc(var(--float-gap) + 56px)}}
 .zoom-pill .opt{padding:0 10px}
 .zoom-pill .zoom-now{min-width:52px;justify-content:center;color:var(--ink);font-variant-numeric:tabular-nums;padding:0 var(--s2)}
 .zoom-pill .zoom-now[aria-expanded="true"]{background:var(--blue-bg);color:var(--blue-ink)}
