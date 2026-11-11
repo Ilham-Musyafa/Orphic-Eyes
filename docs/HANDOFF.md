@@ -2,7 +2,7 @@
 
 ## Current task: Test reliability and submit audit (Codex)
 
-Branch: `fix/test-reliability`, from `origin/docs/submit-prep` 1048073; merged `origin/release/hackathon` 283e7cd. One HANDOFF conflict resolved by retaining both sides. Imported report.html is byte-identical to the release ref; no template edits.
+Branch: `fix/test-reliability`, from `origin/docs/submit-prep` 1048073; merged `origin/release/hackathon` 283e7cd, then refreshed to effa230 (panel/snap UI) before final verification. Both merges conflicted only in HANDOFF; both sides were retained. Imported report.html is byte-identical to the release ref; no template edits.
 
 ### Plan
 1. Reproduce browser startup/CLI shutdown and inspect retained failure logs; fix bounded process/profile cleanup without changing capture or matcher limits.
@@ -107,7 +107,33 @@ Branch: docs/windows-test from docs/readme at 9e5bf71bec8514de09c4dd5e937fa86845
 - Final scope is docs/WINDOWS-TEST.md and this handoff only. README, engine (including report.html), test settings, dependencies and release/hackathon are untouched. Push only docs/windows-test; no protected-branch push, PR, merge or deployment. Final pushed SHA is reported by git ls-remote in the chat.
 
 ## Previous task: Hackathon README and draft catalog
-## Current task: Merge auto-loop + readme, header theme toggle, small UI fixes
+## Current task: Details panel always reachable + snap to element
+
+Branch: `feat/panel-snap` from origin/release/hackathon at 283e7cd. It merges back into release/hackathon with a merge commit. Codex branches and docs/submit-prep are not touched.
+
+### Plan
+A. Details panel
+1. One remembered open state, `prefs.inspectorOpen` (default true), for every non-phone width. Desktop (≥1280) docks as today. Mid widths (768–1279) dock a narrower panel (272 px) when the canvas keeps at least 480 px. With the default rail sidebar that means a window of 808 px or wider, so 900/1100 dock. Below that, the panel stays the existing overlay drawer, because docking would squeeze the canvas to an unusable strip. Phones keep the sheet.
+2. X closes and remembers it (`inspectorOpen=false`).
+3. When closed, a visible "Show panel" button (panel icon + "Details") shows in the header next to Copy prompt, with a tooltip that includes formatKeys('panel.inspector'). Ctrl+I and the palette keep working.
+4. Auto-open rule: entering Move/Add, opening a report in Move/Add, or making a new selection opens the panel for this session (`state.inspAuto`). The remembered pref only changes when the user clicks X / Show panel / Ctrl+I. So auto-open is temporary, and closing is what gets remembered.
+5. Reset preferences: the pref goes back to open.
+B. Snap to element (Move and Add)
+1. After a selection is drawn, read the After image pixels (same `verifyPixels` canvas as Content check, cached per image). Search window = selection + 48 px, clamped to the image.
+2. Background = per-channel median of the window's 2 px border ring (the Content check ring idea). A pixel is "element" when a channel differs by more than 16. The mask is dilated by 1 px, then 4-connected regions. Each region's bbox uses undilated pixels.
+3. A region is a candidate when it is ≥ MIN_SELECT on both sides, lies fully inside the window (touching the window edge means it continues outside, e.g. a background band), and is ≤ 90% of the window. Its overlap with the user's box must be ≥ 60% of the smaller of the two. When it lies fully inside the box it must be ≥ 30% of the box (no snapping a rough card box down to one glyph). The biggest overlap wins. No suggestion when nothing qualifies or when the box is already within 2 px.
+4. Suggestion only: a dashed outline plus a chip "Snap to element" with Accept (Enter) / Keep mine (Esc). Accept replaces the selection as one undo step. Alt while drawing, or Settings → Canvas → "Snap to elements" off, skips it. Unreadable pixels (file:// tainted canvas) mean a silent skip.
+5. New shortcut `snap.accept` (Enter, Move/Add, rebindable). Esc stays the fixed close key. A snapped box makes the same request format, so unsnapped Copy prompt output is unchanged.
+Thresholds were tuned on Lumen with a Python prototype first. Shadows differ by 5–12 levels and white cards by 19–21, hence 16.
+
+### Status
+- Plan written (6b74759).
+- Part A done. `inspectorDocked()`: desktop always docks. Mid widths dock at 272 px when `innerWidth − sidebar − 272 ≥ 480`, i.e. ≥ 808 px with the rail sidebar. Narrower mid windows keep the overlay drawer. `prefs.inspectorOpen` (default true) is the remembered choice for docked panels. `state.inspAuto` (Move/Add entered, report opened in Move/Add, new selection) opens it for the session without saving. X / Show panel / Ctrl+I / palette is an explicit toggle and clears inspAuto. `#inspShow` ("Details" + panel icon, tooltip "Show panel Ctrl+I" via data-sc) shows in the header only while the panel is closed, never on phones. When the docked layout changes, the stage re-renders after the 190 ms slide. Reset → open. Panel test 132/132: cleared storage at 1440/1280/1100/900 shows the panel docked; closing, remembering, Show panel, Ctrl+I, palette, auto-open on Move/Add/selection with the pref left untouched, stage fits after auto-open, Reset; 800 px overlay; phone has no Show panel; light + dark, 0 JS errors.
+- Part B done. `findSnap(px, sel)` (pure, synchronous) runs on the cached After pixels from `snapPixels()`, which wraps `verifyPixels` once per image. Thresholds are in named constants: SNAP_PAD 48, SNAP_DIFF 16, SNAP_OVERLAP 0.6, SNAP_FILL 0.3, SNAP_MAX_WIN 0.9, SNAP_SAME 2, SNAP_MAX_PX 1.5 M. `offerSnap` runs after a Move/Add box is committed, unless Alt was held or `prefs.snapElements` (default true, Settings → Canvas → Move and Add → "Snap to elements") is off. The suggestion is a green dashed box plus a chip ("Snap to element", Accept ⏎, Keep mine Esc). It is only valid while that same box is current and unmoved. Accept = one undo step and a toast; Esc / Keep mine keeps the user's box. New shortcut `snap.accept` = Enter (Canvas group, Move/Add, rebindable). It is skipped while typing and when a button has focus, and does nothing without a live suggestion. Unreadable pixels (file:// engine report) → silent skip. Snap test 64/64. Lumen per area is in the report table. The JS results equal the Python prototype (±1 px) for all 23 boxes. Max compute 10.8 ms at 1440×900. Plain background: no suggestion. Alt, Settings off (saved), Esc, Keep mine, Undo, Enter in the note field, move-drops-suggestion, rebind to Shift+Enter, Add mode, phone tap, tainted canvas; 0 JS errors.
+- Checks on feat/panel-snap: Copy prompt byte-identical; panel 132/132, snap 64/64, theme 86/86, General 24/24, About 63/63, Content check 85/85, shortcuts 35/35 (24 rows), Settings 168/168 (allows `snapElements`), rebinding 92/92, refactor 12/12, read-only 36/36, Verify 86/86, typing 48/48, engine requests 8/8, phone regression 14/14 pixel-identical, sidebar toggle 20/21 (known 3.5 px offset). pytest: 182 tests, 169 passed, 6 failed and 7 errors, all system-browser capture tests, same as before.
+- Merged: `317893a` Merge feat/panel-snap into release/hackathon (merge commit, no conflicts; the merged tree equals feat/panel-snap).
+
+## Previous task: Merge auto-loop + readme, header theme toggle, small UI fixes
 
 Branch: `release/hackathon` (pulled, at 5c573c2). `docs/windows-test` is not touched.
 
