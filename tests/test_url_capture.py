@@ -76,6 +76,16 @@ class URLValidationTests(unittest.TestCase):
 
 
 class CaptureFailureTests(unittest.TestCase):
+    def test_browser_closes_gracefully_before_profile_cleanup(self):
+        from unittest.mock import Mock
+        browser, client = Mock(), Mock()
+        browser.wait.return_value = 0
+        url_capture._stop(browser, client)
+        client.call.assert_called_once_with("Browser.close")
+        client.close.assert_called_once()
+        browser.wait.assert_called_once_with(timeout=0.5)
+        browser.terminate.assert_not_called()
+
     def test_browser_endpoint_waits_for_complete_port_file_and_page_target(self):
         from unittest.mock import Mock
         with tempfile.TemporaryDirectory() as temporary, \

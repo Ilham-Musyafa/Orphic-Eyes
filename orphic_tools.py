@@ -79,7 +79,7 @@ def _failure(exc, *, url_pair=False):
     message = " ".join(str(exc).split())[:600] or type(exc).__name__
     lower = message.lower()
     if url_pair:
-        if any(word in lower for word in ("permission", "denied", "read-only")):
+        if any(word in lower for word in ("permission denied", "data directory", "read-only")):
             fix = "Make HERMES_HOME/orphic-eyes writable and remove redirected or linked data paths."
         elif "browser" in lower:
             fix = "Install Edge, Chrome or Chromium or set ORPHIC_BROWSER to its executable; check launch permissions."

@@ -76,11 +76,23 @@ def _remaining(deadline):
     return remaining
 
 
-def _stop(browser):
+def _stop(browser, client=None):
+    if client is not None:
+        try:
+            client.call("Browser.close")
+        except (RuntimeError, OSError):
+            pass  # The browser may close its debugging socket before replying.
+        finally:
+            client.close()
+        try:
+            browser.wait(timeout=0.5)
+            return
+        except subprocess.TimeoutExpired:
+            pass
     if browser.poll() is None:
         browser.terminate()
         try:
-            browser.wait(timeout=1)
+            browser.wait(timeout=0.5 if client is not None else 1)
         except subprocess.TimeoutExpired:
             browser.kill()
             browser.wait(timeout=1)
@@ -146,6 +158,7 @@ def capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250,
     """
     _options(width, height, full_page, wait_ms, timeout_ms, allow_local)
     deadline = time.monotonic() + timeout_ms / 1000
+    phase = "startup"
     try:
         destination(url, allow_local, min(5, _remaining(deadline)))
         executable = detect_browser(browser or os.environ.get("ORPHIC_BROWSER"))
@@ -177,9 +190,10 @@ def capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250,
                 process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=environment)
             except OSError:
                 raise BrowserNotFound("Browser could not be launched; check executable and permissions") from None
-            cleanup.callback(_stop, process)
+            clients = []
+            cleanup.callback(lambda: _stop(process, clients[0] if clients else None))
             client = DevTools(_endpoint(profile, process, deadline), deadline)
-            cleanup.callback(client.close)
+            clients.append(client)
             client.call("Page.enable")
             client.call("Network.enable")
             client.call("Network.setCacheDisabled", {"cacheDisabled": True})
@@ -194,6 +208,7 @@ def capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250,
             client.call("Animation.setPlaybackRate", {"playbackRate": 0})
             client.call("Page.addScriptToEvaluateOnNewDocument", {"source": _DISABLE_MOTION})
             client.call("Browser.setDownloadBehavior", {"behavior": "deny"})
+            phase = "navigation"
             navigation = client.call("Page.navigate", {"url": url})
             if navigation.get("errorText"):
                 raise CaptureError(proxy.violation or "URL navigation failed; check destination access and TLS trust")
@@ -220,6 +235,7 @@ def capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250,
                 import math
                 content = client.call("Page.getLayoutMetrics")["cssContentSize"]
                 size = {key: max(size[key], math.ceil(content[key])) for key in size}
+            phase = "screenshot"
             png = client.call("Page.captureScreenshot", {"format": "png", "fromSurface": True,
                               "captureBeyondViewport": full_page,
                               "clip": {"x": 0, "y": 0, **size, "scale": 1}})
@@ -234,6 +250,7 @@ def capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250,
                     raise CaptureError("Browser returned an invalid PNG or unexpected screenshot dimensions")
                 image.verify()
             os.replace(candidate, output)
+            phase = "browser cleanup"
         return output
     except CaptureError:
         raise
@@ -243,7 +260,7 @@ def capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250,
         raise CaptureError(str(exc)) from None
     except Exception:
         # OS/browser errors can include source URLs, query tokens or paths.
-        raise CaptureError("URL capture failed; check browser launch permissions, output access and destination availability") from None
+        raise CaptureError("URL capture failed during " + phase + "; check browser launch permissions, output access and destination availability") from None
 
 
 def capture_pair(before_url, after_url, store_dir, *, name="urls", width=1440, height=900,
