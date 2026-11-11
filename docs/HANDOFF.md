@@ -11,7 +11,8 @@ Branch: `feat/shortcut-rebind` (from `feat/settings-redesign` at 61327c5). Only 
 
 ### Status
 - Step 1 done (refactor). Every key comparison is in `eventBinding()` / `matchShortcut()`; tooltips use `data-sc`, palette/Help/Shortcuts tab use `formatKeys()`. Shortcuts tab now also lists "Redo (second key)" Ctrl+Y and "Move between controls" Tab (locked) — both existed already. Small change: matches are exact now, so extra modifiers no longer trigger (e.g. Ctrl+Shift+K used to open the palette; Shift+V used to pick Select). Widget navigation keys (arrows, Home/End, Enter, Esc, Tab) still ignore extra modifiers as before.
-- Next: step 2 (record mode, validation, conflicts, reset UI).
+- Step 2 done (record mode, validation, conflicts, reset). Keycap = button (✎ on hover/focus); locked rows show a lock with "This shortcut can't be changed"; edited rows show a blue dot + "Edited" + ↺ ("Reset to {default}", toast "Shortcut reset · Undo" 5 s). Record field "Press new keys…" (2px blue, "Esc to cancel", live preview); recorder listens on window in capture phase and stops every key, so app shortcuts and Settings' Esc are paused. Rejects: modifier alone, bare letter/number (unless the default is a single key), browser combos, Esc/Tab/Enter/Space alone. Conflicts only when contexts overlap (move vs add don't); Cancel / Replace (other → Not set); a conflict with a locked shortcut is rejected. "Reset all shortcuts" asks in an inline alertdialog; Reset preferences clears shortcuts too. Success flashes blue 600 ms and is announced.
+- Next: step 3 (touch/phone read-only, a11y checks).
 
 ## Previous task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
 

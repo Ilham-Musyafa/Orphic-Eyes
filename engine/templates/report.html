@@ -651,6 +651,34 @@ kbd.st-key{display:inline-flex;align-items:center;justify-content:center;box-siz
 mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
 .st-sc-empty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:28px 16px;text-align:center;color:var(--st-muted);font-size:var(--fs-body)}
 .st-sc-empty p{margin:0}
+.st-sc-row.has-msg{grid-template-rows:auto auto;row-gap:6px;padding-bottom:10px}
+.st-sc-side{display:inline-flex;align-items:center;gap:8px;flex:none}
+.st-kbtn{display:inline-flex;align-items:center;gap:6px;min-height:30px;padding:3px 6px;border:1px solid transparent;border-radius:8px;color:var(--st-ink)}
+.st-kbtn:hover,.st-kbtn:focus-visible{border-color:var(--st-line);background:var(--hover)}
+.st-kbtn .st-pen{width:14px;height:14px;color:var(--st-muted);opacity:0;transition:opacity var(--dur-fast) var(--ease-out)}
+.st-kbtn:hover .st-pen,.st-kbtn:focus-visible .st-pen{opacity:1}
+.st-kbtn.recording{min-width:150px;justify-content:center;padding:3px 10px;border:2px solid var(--st-active);background:var(--st-surface);font-size:var(--fs-sec);font-weight:var(--w-medium)}
+.st-kbtn.recording:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(47,128,255,.25)}
+.st-rec-hint{font-size:var(--fs-cap);color:var(--st-muted);white-space:nowrap}
+.st-notset{font-size:var(--fs-sec);color:var(--st-muted)}
+.st-edited{display:inline-flex;align-items:center;gap:5px;font-size:var(--fs-cap);color:var(--st-muted);white-space:nowrap}
+.st-edited::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--st-active)}
+.st-sc-reset{width:28px;height:28px}
+.st-sc-reset .ic{width:14px;height:14px}
+.st-lock{display:inline-flex;color:var(--st-muted)}
+.st-lock .ic{width:14px;height:14px}
+.st-sc-msg{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:var(--fs-sec);line-height:1.4}
+.st-sc-msg>span{flex:1 1 220px}
+.st-sc-msg.error{color:var(--st-danger)}
+.st-sc-msg.warn{color:var(--amber)}
+.st-btn-primary{background:var(--st-active);border-color:var(--st-active);color:#fff}
+.st-btn-primary:hover{background:var(--blue-ink)}
+@keyframes oe-st-flash{from{background:rgba(47,128,255,.20)}to{background:transparent}}
+.st-sc-row.st-flash{animation:oe-st-flash 600ms var(--ease-out)}
+.st-sc-resetall{display:flex;justify-content:flex-start}
+.st-confirm{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;width:100%;padding:12px 14px;border:1px solid color-mix(in srgb,var(--st-danger) 45%,transparent);border-radius:12px}
+.st-confirm p{flex:1 1 220px;margin:0;font-size:var(--fs-body);font-weight:var(--w-medium)}
+.st-confirm-actions{display:flex;gap:8px}
 .st-sc-tip{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0;font-size:var(--fs-sec);color:var(--st-muted)}
 /* command palette */
 .palette{width:min(560px,100%);border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop);overflow:hidden}
@@ -872,6 +900,9 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   <symbol id="i-check" viewBox="0 0 16 16"><path d="m3 8.5 3.2 3L13 4.75"/></symbol>
   <symbol id="i-image" viewBox="0 0 16 16"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><circle cx="5.75" cy="6.25" r="1.25"/><path d="m2 11.5 3.5-3 2.5 2 2.25-2 3.75 3"/></symbol>
   <symbol id="i-keyboard" viewBox="0 0 16 16"><rect x="1.75" y="3.75" width="12.5" height="8.5" rx="1.5"/><path d="M4.5 6.5h.01M7 6.5h.01M9.5 6.5h.01M12 6.5h.01M5 9.5h6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 16 16"><rect x="3.25" y="7" width="9.5" height="6.75" rx="1.5"/><path d="M5.25 7V5a2.75 2.75 0 0 1 5.5 0v2"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 16 16"><path d="M10.5 2.75 13.25 5.5 6 12.75H3.25V10z"/><path d="m9 4.25 2.75 2.75"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 16 16"><path d="M3 4.5v3h3"/><path d="M3.4 7.25A5 5 0 1 1 4.6 11.5"/></symbol>
   <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.75 2.75 3.75v4c0 3.1 2.2 5.4 5.25 6.5 3.05-1.1 5.25-3.4 5.25-6.5v-4z"/></symbol>
   <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25"/><path d="M8 7.25v3.75M8 5v.05"/></symbol>
   <symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5z"/></symbol>
@@ -4571,7 +4602,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     document.addEventListener('keydown', function (event) {
       var writing = event.target && event.target.matches &&
         event.target.matches('input,textarea,select,[contenteditable]');
-      if (overlayOpen()) return; /* palette, settings and menus handle their own keys */
+      if (state.recordingShortcut || overlayOpen()) return; /* palette, settings and menus handle their own keys */
       if (matchShortcut(event, 'general.escape', { anyModifiers: true })) {
         /* Esc drops the transient selection; the drafts themselves stay. */
         if (state.mode === 'add' && (state.addSelection || state.drawRect)) {
@@ -5557,7 +5588,309 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     });
     if (pos < text.length) node.appendChild(document.createTextNode(text.slice(pos)));
   }
+  /* ---- rebinding: record mode, validation, conflicts, reset ---- */
+  var BROWSER_KEYS = ['Ctrl+W', 'Ctrl+T', 'Ctrl+N', 'Ctrl+L', 'Ctrl+R', 'Ctrl+Q', 'Ctrl+Tab', 'Ctrl+Shift+T', 'Ctrl+Shift+N',
+    'Ctrl+Shift+W', 'F5', 'F11', 'F12', 'Ctrl+Shift+I', 'Ctrl+Shift+J', 'Alt+F4'];
+  var RESERVED_KEYS = ['Esc', 'Tab', 'Enter', 'Space'];
+  var rec = { id: null, recording: false, msg: '', kind: '', conflict: null, flash: null, confirmAll: false, modOnly: false };
+  function isEdited(id) { return Object.prototype.hasOwnProperty.call(prefs.shortcuts || {}, id); }
+  function setShortcut(id, str) {
+    var sc = SHORTCUT_BY_ID[id];
+    prefs.shortcuts = prefs.shortcuts || {};
+    if (str === sc.keys) delete prefs.shortcuts[id]; else prefs.shortcuts[id] = str;
+  }
+  function whenOverlap(a, b) {
+    if (a === 'global' || b === 'global' || a === b) return true;
+    if (a === 'moveadd') return b === 'move' || b === 'add';
+    if (b === 'moveadd') return a === 'move' || a === 'add';
+    return false;
+  }
+  function hasModifier(b) { return b.Ctrl || b.Alt || b.Shift; }
+  /* Decide what a recorded combination means for this shortcut. */
+  function checkBinding(id, b) {
+    var sc = SHORTCUT_BY_ID[id];
+    if (!b.key) return { error: 'A modifier alone can’t be a shortcut. Add a key.' };
+    var str = joinBinding(b);
+    var shown = formatBinding(str);
+    if (!hasModifier(b) && RESERVED_KEYS.indexOf(b.key) !== -1) return { error: shown + ' is reserved.' };
+    if (BROWSER_KEYS.indexOf(str) !== -1) return { error: shown + ' is used by your browser. Try another combination.' };
+    if (!hasModifier(b) && /^[A-Z0-9]$/.test(b.key) && hasModifier(parseBinding(sc.keys))) {
+      return { error: 'Add Ctrl, Alt or Shift so it doesn’t fire while typing.' };
+    }
+    if (str === getBinding(id)) return { same: true };
+    for (var i = 0; i < SHORTCUTS.length; i++) {
+      var other = SHORTCUTS[i];
+      if (other.id === id || getBinding(other.id) !== str || !whenOverlap(sc.when, other.when)) continue;
+      if (!other.editable) return { error: shown + ' is used by “' + other.action + '”, which can’t be changed.' };
+      return { conflict: other.id, str: str };
+    }
+    return { ok: true, str: str };
+  }
+  function announce(text, assertive) {
+    var node = document.querySelector(assertive ? '#layer #stAlert' : '#layer #stLive');
+    if (!node) return;
+    node.textContent = '';
+    setTimeout(function () { node.textContent = text; }, 30);
+  }
+  function redrawShortcuts(focusKey) {
+    refreshSettings(true);
+    if (focusKey) {
+      var node = document.querySelector('#layer [data-st-key="' + focusKey + '"]');
+      if (node) node.focus();
+    }
+  }
+  function startRecording(id) {
+    if (rec.recording) stopRecording();
+    rec.id = id;
+    rec.recording = true;
+    rec.msg = '';
+    rec.kind = '';
+    rec.conflict = null;
+    rec.modOnly = false;
+    state.recordingShortcut = true;
+    window.addEventListener('keydown', recKeydown, true);
+    window.addEventListener('keyup', recKeyup, true);
+    document.addEventListener('pointerdown', recOutside, true);
+    redrawShortcuts('sc:' + id);
+    announce('Recording a new shortcut for ' + SHORTCUT_BY_ID[id].action + '. Press the keys, or Esc to cancel.');
+  }
+  function stopRecording() {
+    rec.recording = false;
+    state.recordingShortcut = false;
+    window.removeEventListener('keydown', recKeydown, true);
+    window.removeEventListener('keyup', recKeyup, true);
+    document.removeEventListener('pointerdown', recOutside, true);
+  }
+  function cancelRecording(quiet) {
+    var id = rec.id;
+    stopRecording();
+    rec.id = null;
+    rec.msg = '';
+    rec.conflict = null;
+    if (!document.querySelector('#layer .st-modal')) return;
+    redrawShortcuts(id ? 'sc:' + id : null);
+    if (!quiet) announce('Recording cancelled.');
+  }
+  function recPreview(text) {
+    var node = document.querySelector('#layer .st-kbtn.recording .st-rec-preview');
+    if (node) node.textContent = text;
+  }
+  function recKeydown(event) {
+    /* While recording, keys belong to the recorder only: no app shortcut, no Settings close. */
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (matchShortcut(event, 'general.escape', { anyModifiers: true })) { cancelRecording(); return; }
+    var b = eventBinding(event);
+    if (!b.key) {
+      rec.modOnly = true;
+      recPreview(formatBinding(joinBinding(b)) + (IS_MAC ? '' : '+') + '…');
+      return;
+    }
+    rec.modOnly = false;
+    var result = checkBinding(rec.id, b);
+    if (result.error) {
+      rec.msg = result.error;
+      rec.kind = 'error';
+      redrawShortcuts('sc:' + rec.id);
+      recPreview(formatBinding(joinBinding(b)));
+      announce(result.error, true);
+      return;
+    }
+    if (result.same) { cancelRecording(true); return; }
+    if (result.conflict) {
+      stopRecording();
+      var other = SHORTCUT_BY_ID[result.conflict];
+      rec.conflict = { other: other.id, str: result.str };
+      rec.msg = formatBinding(result.str) + ' is already used by “' + other.action + '”.';
+      rec.kind = 'warn';
+      redrawShortcuts('screplace');
+      announce(rec.msg + ' Replace it, or cancel.', true);
+      return;
+    }
+    applyShortcut(rec.id, result.str, null);
+  }
+  function recKeyup(event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    var held = event.ctrlKey || event.metaKey || event.altKey || event.shiftKey;
+    if (rec.modOnly && !held) {
+      rec.modOnly = false;
+      rec.msg = 'A modifier alone can’t be a shortcut. Add a key.';
+      rec.kind = 'error';
+      redrawShortcuts('sc:' + rec.id);
+      announce(rec.msg, true);
+    }
+  }
+  function recOutside(event) {
+    if (event.target.closest && event.target.closest('.st-kbtn.recording')) return;
+    cancelRecording();
+  }
+  function applyShortcut(id, str, clearId) {
+    stopRecording();
+    setShortcut(id, str);
+    if (clearId) { prefs.shortcuts = prefs.shortcuts || {}; prefs.shortcuts[clearId] = null; }
+    savePrefs();
+    rec.id = null;
+    rec.msg = '';
+    rec.conflict = null;
+    rec.flash = id;
+    refreshSettings();
+    var btn = document.querySelector('#layer [data-st-key="sc:' + id + '"]');
+    if (btn) btn.focus();
+    setTimeout(function () {
+      if (rec.flash !== id) return;
+      rec.flash = null;
+      var row = document.querySelector('#layer .st-sc-row.st-flash');
+      if (row) row.classList.remove('st-flash');
+    }, 600);
+    var sc = SHORTCUT_BY_ID[id];
+    announce(sc.action + ' is now ' + sayKeys(id) + '.' + (clearId ? ' ' + SHORTCUT_BY_ID[clearId].action + ' is now not set.' : ''));
+  }
+  function resetShortcut(id) {
+    var before = prefs.shortcuts[id];
+    delete prefs.shortcuts[id];
+    savePrefs();
+    refreshSettings();
+    var btn = document.querySelector('#layer [data-st-key="sc:' + id + '"]');
+    if (btn) btn.focus();
+    toast('Shortcut reset', {
+      action: 'Undo', duration: 5000,
+      run: function () { prefs.shortcuts[id] = before; savePrefs(); refreshSettings(); }
+    });
+  }
+  function resetAllShortcuts() {
+    prefs.shortcuts = {};
+    rec.confirmAll = false;
+    savePrefs();
+    refreshSettings();
+    var btn = document.querySelector('#layer [data-st-key="scresetall"]');
+    if (btn) btn.focus();
+    announce('All shortcuts are back to their defaults.');
+    toast('All shortcuts reset');
+  }
+  /* Phones and touch screens can't record keys: the list is read-only there. */
+  function shortcutsReadOnly() { return false; }
+  function shortcutKeys(sc, readOnly) {
+    var side = el('span', 'st-sc-side');
+    var binding = getBinding(sc.id);
+    if (!sc.editable) {
+      var capsLocked = keycaps(bindingTokens(binding));
+      capsLocked.setAttribute('aria-hidden', 'true');
+      side.appendChild(capsLocked);
+      var lock = el('span', 'st-lock');
+      lock.setAttribute('role', 'img');
+      lock.setAttribute('aria-label', 'This shortcut can’t be changed');
+      lock.setAttribute('data-tip', 'This shortcut can’t be changed');
+      lock.appendChild(icon('lock'));
+      side.appendChild(lock);
+      return side;
+    }
+    if (isEdited(sc.id)) {
+      side.appendChild(el('span', 'st-edited', 'Edited'));
+      if (!readOnly) {
+        var reset = el('button', 'icon-btn st-sc-reset');
+        reset.type = 'button';
+        var resetText = 'Reset to ' + formatBinding(sc.keys);
+        reset.setAttribute('aria-label', resetText + ' (' + sc.action + ')');
+        reset.setAttribute('data-tip', resetText);
+        reset.setAttribute('data-st-key', 'screset:' + sc.id);
+        reset.appendChild(icon('reset'));
+        reset.addEventListener('click', function () { resetShortcut(sc.id); });
+        side.appendChild(reset);
+      }
+    }
+    if (readOnly) {
+      side.appendChild(binding ? keycaps(bindingTokens(binding)) : el('span', 'st-notset', 'Not set'));
+      return side;
+    }
+    var recording = rec.recording && rec.id === sc.id;
+    var btn = el('button', 'st-kbtn' + (recording ? ' recording' : ''));
+    btn.type = 'button';
+    btn.setAttribute('data-st-key', 'sc:' + sc.id);
+    btn.setAttribute('aria-pressed', recording ? 'true' : 'false');
+    if (recording) {
+      btn.setAttribute('aria-label', 'Recording a new shortcut for ' + sc.action + '. Press the keys, or Esc to cancel.');
+      btn.appendChild(el('span', 'st-rec-preview', 'Press new keys…'));
+    } else {
+      btn.setAttribute('aria-label', 'Change shortcut for ' + sc.action + '. Current: ' + sayKeys(sc.id) + '.');
+      btn.appendChild(binding ? keycaps(bindingTokens(binding)) : el('span', 'st-notset', 'Not set'));
+      var pen = icon('pencil');
+      pen.classList.add('st-pen');
+      btn.appendChild(pen);
+    }
+    btn.addEventListener('click', function () {
+      if (rec.recording && rec.id === sc.id) { cancelRecording(); return; }
+      startRecording(sc.id);
+    });
+    side.appendChild(btn);
+    if (recording) side.appendChild(el('span', 'st-rec-hint', 'Esc to cancel'));
+    return side;
+  }
+  function shortcutMessage(sc) {
+    if (rec.id !== sc.id || !rec.msg) return null;
+    var msg = el('div', 'st-sc-msg ' + rec.kind);
+    msg.appendChild(el('span', null, rec.msg));
+    if (rec.conflict) {
+      var cancel = el('button', 'st-btn', 'Cancel');
+      cancel.type = 'button';
+      cancel.setAttribute('data-st-key', 'sccancel');
+      cancel.addEventListener('click', function () { cancelRecording(); });
+      var replace = el('button', 'st-btn st-btn-primary', 'Replace');
+      replace.type = 'button';
+      replace.setAttribute('data-st-key', 'screplace');
+      replace.addEventListener('click', function () { applyShortcut(sc.id, rec.conflict.str, rec.conflict.other); });
+      msg.appendChild(cancel);
+      msg.appendChild(replace);
+      /* Esc here only drops the question; Settings stays open. */
+      msg.addEventListener('keydown', function (event) {
+        if (matchShortcut(event, 'general.escape', { anyModifiers: true })) { event.preventDefault(); event.stopPropagation(); cancelRecording(); }
+      });
+    }
+    return msg;
+  }
+  function resetAllBlock() {
+    var box = el('div', 'st-sc-resetall');
+    var edited = Object.keys(prefs.shortcuts || {}).length;
+    if (rec.confirmAll) {
+      var dlg = el('div', 'st-confirm');
+      dlg.setAttribute('role', 'alertdialog');
+      dlg.setAttribute('aria-labelledby', 'stConfirmTitle');
+      var title = el('p', null, 'Reset all shortcuts to their defaults?');
+      title.id = 'stConfirmTitle';
+      dlg.appendChild(title);
+      var row = el('div', 'st-confirm-actions');
+      var no = el('button', 'st-btn', 'Cancel');
+      no.type = 'button';
+      no.setAttribute('data-st-key', 'scresetall-cancel');
+      no.addEventListener('click', function () { rec.confirmAll = false; redrawShortcuts('scresetall'); });
+      var yes = el('button', 'st-btn st-btn-danger', 'Reset all');
+      yes.type = 'button';
+      yes.setAttribute('data-st-key', 'scresetall-yes');
+      yes.addEventListener('click', resetAllShortcuts);
+      row.appendChild(no);
+      row.appendChild(yes);
+      dlg.appendChild(row);
+      dlg.addEventListener('keydown', function (event) {
+        if (matchShortcut(event, 'general.escape', { anyModifiers: true })) { event.preventDefault(); event.stopPropagation(); rec.confirmAll = false; redrawShortcuts('scresetall'); }
+      });
+      box.appendChild(dlg);
+      return box;
+    }
+    var btn = el('button', 'st-btn', 'Reset all shortcuts');
+    btn.type = 'button';
+    btn.setAttribute('data-st-key', 'scresetall');
+    if (!edited) explainDisabled(btn, 'All shortcuts already use their defaults');
+    btn.addEventListener('click', function () {
+      if (btn.getAttribute('aria-disabled') === 'true') return;
+      rec.confirmAll = true;
+      redrawShortcuts('scresetall-cancel');
+    });
+    box.appendChild(btn);
+    return box;
+  }
+
   function shortcutList() {
+    var readOnly = shortcutsReadOnly();
     var wrap = el('div', 'st-shortcuts');
     if (isTouch()) wrap.appendChild(stCallout('Keyboard shortcuts work with a physical keyboard.'));
     var search = el('div', 'st-sc-search');
@@ -5583,19 +5916,20 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       var items = SHORTCUTS.filter(function (sc) { return sc.group === g; });
       if (!items.length) return;
       var rows = items.map(function (sc) {
-        var row = el('div', 'st-sc-row');
+        var row = el('div', 'st-sc-row' + (rec.flash === sc.id ? ' st-flash' : '') + (rec.id === sc.id && rec.msg ? ' has-msg' : ''));
         row.setAttribute('role', 'listitem');
         var whenText = WHEN_LABEL[sc.when] || '';
-        row.setAttribute('aria-label', sc.action + ', ' + sayKeys(sc.id) + (whenText ? ' (' + whenText.toLowerCase() + ')' : ''));
+        row.setAttribute('aria-label', sc.action + ', ' + sayKeys(sc.id) + (whenText ? ' (' + whenText.toLowerCase() + ')' : '') + (sc.editable ? '' : ', can\u2019t be changed'));
         var text = el('span', 'st-sc-text');
         text.setAttribute('aria-hidden', 'true');
         var action = el('span', 'st-sc-action', sc.action);
         text.appendChild(action);
         if (whenText) text.appendChild(el('span', 'st-sc-when', whenText));
         row.appendChild(text);
-        var caps = keycaps(bindingTokens(getBinding(sc.id)));
-        caps.setAttribute('aria-hidden', 'true');
-        row.appendChild(caps);
+        if (isEdited(sc.id)) text.appendChild(el('span', 'sr-only', ' (edited)'));
+        row.appendChild(shortcutKeys(sc, readOnly));
+        var msg = shortcutMessage(sc);
+        if (msg) row.appendChild(msg);
         return { sc: sc, row: row, action: action };
       });
       var group = stGroup(g, rows.map(function (r) { return r.row; }));
@@ -5613,6 +5947,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     clear.addEventListener('click', function () { input.value = ''; filter(); input.focus(); });
     empty.appendChild(clear);
     wrap.appendChild(empty);
+    if (!readOnly) wrap.appendChild(resetAllBlock());
     /* The tip names the command palette's own binding, and only while it has one. */
     if (getBinding('palette.open')) {
       var tip = el('p', 'st-sc-tip');
@@ -5781,6 +6116,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     return box;
   }
   function resetPreferences() {
+    rec.id = null; rec.msg = ''; rec.conflict = null; rec.confirmAll = false;
     try { window.localStorage.removeItem(PREFS_KEY); } catch (err) { /* ignore */ }
     loadPrefs();
     prefs.tourDone = true;
@@ -5882,6 +6218,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     modal.setAttribute('data-level', String(settingsLevel));
   }
   function selectSettingsTab(id, focusTab) {
+    if (rec.recording || rec.conflict) { stopRecording(); rec.id = null; rec.msg = ''; rec.conflict = null; }
+    rec.confirmAll = false;
     var modal = document.querySelector('#layer .st-modal');
     settingsTab = id;
     resetArmed = false;
@@ -5975,6 +6313,14 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     head.appendChild(el('p'));
     panel.appendChild(head);
     main.appendChild(panel);
+    var live = el('div', 'sr-only');
+    live.id = 'stLive';
+    live.setAttribute('aria-live', 'polite');
+    main.appendChild(live);
+    var alert = el('div', 'sr-only');
+    alert.id = 'stAlert';
+    alert.setAttribute('aria-live', 'assertive');
+    main.appendChild(alert);
     var foot = el('div', 'st-foot');
     foot.setAttribute('role', 'status');
     foot.appendChild(icon('check'));
@@ -6000,7 +6346,10 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     resetArmed = false;
     var wrap = scrim(settingsModal());
     wrap.classList.add('st-scrim');
-    openLayer(wrap, { focus: isPhone() && settingsLevel === 2 ? '.st-back' : '.st-nav [aria-selected="true"]' });
+    openLayer(wrap, {
+      focus: isPhone() && settingsLevel === 2 ? '.st-back' : '.st-nav [aria-selected="true"]',
+      onClose: function () { stopRecording(); rec.id = null; rec.msg = ''; rec.conflict = null; rec.confirmAll = false; }
+    });
     /* openLayer focuses the tab on the next tick; the search takes over after that. */
     setTimeout(focusShortcutSearch, 0);
   }
