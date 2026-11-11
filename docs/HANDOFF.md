@@ -1,6 +1,31 @@
 # HANDOFF
 
-## Current task: Flow clarity (Prompt A)
+## Current task: Visual fixes (desktop)
+
+Branch: `feat/visual-fixes` (from `feat/flow-clarity` at 3b4b36e). One commit per item.
+
+### Done
+1. 80d5080 Status bar file name: `afterFileName()` uses `after_name`, else a real path's base name, else `current.png`; data:/blob: contents are never printed.
+2. ac79081 Header chip follows the review state: "Ready" (pass), "Check changes" (check), "Big change" (fail); same colors; tooltip has the inspector wording + changed areas (+ pending requests). Hidden when nothing is loaded.
+3. 48a5904 Empty state: only the canvas 3-step card onboards; sidebar lists, Pages and inspector say "Load images to start"; capture chip and the "only sees pixels" footer are hidden until something is loaded.
+4. dd196b9 Disabled Copy prompt: muted surface background, faint text, no hover change (aria-disabled + tooltip kept).
+5. ec4cedc Area map: solid 3×3 lines (light and dark variants), map slightly wider, thumbnail on its own layer with a little more contrast; dark theme dims it to ~60% brightness with a dark frame.
+6. 91c98e6 Inspector titles "Add request · ADD-1", "Move request · PT-4", "{Type} request · PT-1"; row labels, sub-lines and page names carry their full text as a tooltip (tooltips now wrap).
+7. 43f4d62 US spelling: helper chips "Color / wrong color / match the Before color", "colored box"; no "colour" left in the file.
+8. 0e9199b Tour step 3 points at the floating view bar, so the card sits below it instead of covering "Side by side".
+- 849160f (found while checking 2): the longer chip pushed Copy prompt past the edge at 1440 px and the header already overflowed below 1280 px. Stepper labels from 1600 px, capture chip + brand name hidden below 1280 px, "Step n of 4" below 1100 px, status chip hidden below 900 px. Measured 768–1920 px: no overlap, Copy prompt inside the window.
+- Checked in Chrome at 1440 light/dark with the embedded engine report, a data-URI preview, Try sample (fail) and two identical images (pass). Copy prompt text unchanged (engine, references). Flow clarity checks still pass.
+- Diff: no URLs/fetch/XHR/eval. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
+- Screenshots: `docs/screenshots/visual-fixes/` (`*-before.png` / `*-after.png` per item).
+
+### Not done
+- Edge not available in the cloud runner.
+
+### Next
+- Mobile fixes (branch from `feat/visual-fixes`)
+- then Settings step 3: tab restructure
+
+## Previous task: Flow clarity (Prompt A)
 
 Branch: `feat/flow-clarity` (from `feat/add-reference` at a9ac1c4). One commit per item.
 
