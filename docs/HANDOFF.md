@@ -10,6 +10,12 @@ Branch: docs/windows-test from docs/readme at 9e5bf71bec8514de09c4dd5e937fa86845
 3. Investigate the previous 30-second browser capture and 5-second child-process timeouts. Run three sequential full suites without competing demo work. Change test-only timeout settings only with clear evidence of harmless environment slowness; never relax capture/matcher checks or alter feature code.
 4. Record evidence, commit small documentation steps and push only docs/windows-test. No README/template/engine edits, protected-branch pushes, PRs or merges. Never read .env.
 
+### Guide progress
+- Added docs/WINDOWS-TEST.md with native PowerShell commands, fresh checkout/venv without activation-policy changes, logs/expected results, public capture, HTTP serving and UI availability gates, exact local fixture files and two-round loop, official native Hermes installation/local file-Git installation/validation, cleanup and results checklist.
+- Official Hermes main README currently provides `iex (irm https://hermes-agent.nousresearch.com/install.ps1)` for native Windows. Source: https://github.com/NousResearch/hermes-agent#quick-install and official installation docs. Local file:// Git source and --ref verified in upstream hermes_cli/plugins_cmd.py and plugins_cmd_install.py; directory argument plus --install-deps verified in hermes_cli/subcommands/plugins.py. No invented native installer or unsupported raw directory install syntax.
+- The guide explicitly blocks Verify/Content check acceptance when those controls are absent on this engine-based branch, and requests a final approved combined commit without switching/editing release/hackathon. PowerShell is not available in this Linux environment, so syntax is reviewed, not claimed executed on Windows.
+- Both previous timeout paths and isolated successes are documented as evidence of sensitivity, not a proven slowness root cause. No test timeout settings or real checks changed. Three sequential full suites are running under /tmp/orphic-windows-validation/.
+
 ## Previous task: Hackathon README and draft catalog
 
 Branch: docs/readme from feat/auto-loop at ab5f9e3e836e6a49786e2920fea30ce14edfb36e.
