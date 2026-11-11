@@ -5,6 +5,8 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+
+from tests.browser_support import require_browser
 from unittest.mock import patch
 
 import orphic_tools as tools
@@ -35,12 +37,24 @@ class HermesURLTests(unittest.TestCase):
         self.assertEqual(result.failures, [])
         self.assertEqual(len(result.skipped), 1)
 
+    def test_installed_but_unusable_browser_class_is_skipped(self):
+        from tests.test_browser import BrowserTests
+        with patch("tests.test_browser.detect_browser", return_value="installed-browser"), \
+                patch("tests.browser_support.probe_browser", return_value="No usable system browser: launch permissions"):
+            result = unittest.TestResult()
+            unittest.defaultTestLoader.loadTestsFromTestCase(BrowserTests).run(result)
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.failures, [])
+        self.assertEqual(len(result.skipped), 1)
+        self.assertIn("launch permissions", result.skipped[0][1])
+
 
 class URLPluginBrowserTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         if url_capture.detect_browser(os.environ.get("ORPHIC_BROWSER")) is None:
             raise unittest.SkipTest("Hermes URL E2E requires installed Edge, Chrome or Chromium")
+        require_browser()
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="oe_url_plugin_")

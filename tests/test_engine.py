@@ -158,12 +158,13 @@ class InputTests(unittest.TestCase):
 
 
 class CaptureProcessTests(unittest.TestCase):
-    def test_reference_flags_timeout_and_store_local_profile(self):
+    def test_reference_flags_timeout_rejected_and_profile_removed(self):
         module = importlib.import_module("engine.capture")
         with tempfile.TemporaryDirectory(dir=ROOT, prefix="test_capture_") as folder:
             output = Path(folder) / "current.png"
             with patch.object(module, "detect_browser", return_value="browser.exe"), \
-                    patch.object(module.subprocess, "Popen") as popen:
+                    patch.object(module.subprocess, "Popen") as popen, \
+                    patch("engine._browser_process._signal_tree") as signal_tree:
                 process = popen.return_value
                 process.wait.side_effect = [subprocess.TimeoutExpired("browser", 45), 0]
                 process.poll.return_value = 0
@@ -173,8 +174,8 @@ class CaptureProcessTests(unittest.TestCase):
                     return process
 
                 popen.side_effect = launched
-                self.assertTrue(capture("http://localhost:8000", output))
-                process.kill.assert_called_once()
+                self.assertFalse(capture("http://localhost:8000", output))
+                self.assertEqual(signal_tree.call_count, 2)
                 self.assertEqual(process.wait.call_args_list[0].kwargs, {"timeout": 45})
                 command = popen.call_args.args[0]
                 self.assertEqual(command[1:9], [
@@ -183,7 +184,7 @@ class CaptureProcessTests(unittest.TestCase):
                     "--run-all-compositor-stages-before-draw", "--virtual-time-budget=2000",
                     "--window-size=1280,800"])
                 profile = Path(command[9].split("=", 1)[1])
-                self.assertEqual(profile.parent, output.parent)
+                self.assertEqual(profile.parent, Path(tempfile.gettempdir()))
                 self.assertFalse(profile.exists())
                 self.assertEqual(command[10:], ["--screenshot=" + str(output), "http://localhost:8000"])
                 self.assertEqual(popen.call_args.kwargs["env"]["TEMP"], str(profile))

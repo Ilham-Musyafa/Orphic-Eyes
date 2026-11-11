@@ -21,6 +21,7 @@ from PIL import Image
 from ._devtools import DevTools
 from ._url_network import GuardedProxy, URLPolicyError, URLResolutionError, destination
 from .capture import detect_browser
+from ._browser_process import launch_options, remove_profile, stop_browser
 
 
 class CaptureError(RuntimeError):
@@ -77,25 +78,7 @@ def _remaining(deadline):
 
 
 def _stop(browser, client=None):
-    if client is not None:
-        try:
-            client.call("Browser.close")
-        except (RuntimeError, OSError):
-            pass  # The browser may close its debugging socket before replying.
-        finally:
-            client.close()
-        try:
-            browser.wait(timeout=0.5)
-            return
-        except subprocess.TimeoutExpired:
-            pass
-    if browser.poll() is None:
-        browser.terminate()
-        try:
-            browser.wait(timeout=0.5 if client is not None else 1)
-        except subprocess.TimeoutExpired:
-            browser.kill()
-            browser.wait(timeout=1)
+    stop_browser(browser, client)
 
 
 def _endpoint(profile, browser, deadline):
@@ -170,7 +153,8 @@ def capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250,
         output.parent.mkdir(parents=True, exist_ok=True)
         with ExitStack() as cleanup:
             # A short system-temp profile avoids the Linux Unix-socket limit.
-            profile = Path(cleanup.enter_context(tempfile.TemporaryDirectory(prefix="oe_")))
+            profile = Path(tempfile.mkdtemp(prefix="oe_"))
+            cleanup.callback(remove_profile, profile)
             proxy = GuardedProxy(allow_local, deadline)
             cleanup.callback(proxy.close)
             environment = os.environ.copy()
@@ -187,7 +171,8 @@ def capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250,
                        "--remote-debugging-address=127.0.0.1",
                        f"--user-data-dir={profile}", f"--window-size={width},{height}", "about:blank"]
             try:
-                process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, env=environment)
+                process = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                           env=environment, **launch_options())
             except OSError:
                 raise BrowserNotFound("Browser could not be launched; check executable and permissions") from None
             clients = []

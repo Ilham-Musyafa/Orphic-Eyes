@@ -14,6 +14,8 @@ import tempfile
 import threading
 import time
 import unittest
+
+from tests.browser_support import require_browser
 from unittest.mock import patch
 
 from PIL import Image, ImageChops
@@ -80,7 +82,8 @@ class CaptureFailureTests(unittest.TestCase):
         from unittest.mock import Mock
         browser, client = Mock(), Mock()
         browser.wait.return_value = 0
-        url_capture._stop(browser, client)
+        with patch("engine._browser_process._signal_tree"):
+            url_capture._stop(browser, client)
         client.call.assert_called_once_with("Browser.close")
         client.close.assert_called_once()
         browser.wait.assert_called_once_with(timeout=0.5)
@@ -125,12 +128,13 @@ class CaptureFailureTests(unittest.TestCase):
             output.write_bytes(b"original")
             with patch.object(url_capture, "detect_browser", return_value="browser"), \
                     patch.object(url_capture.subprocess, "Popen") as launched, \
+                    patch("engine._browser_process._signal_tree") as signal_tree, \
                     patch.object(url_capture, "_endpoint", side_effect=TimeoutError):
                 process = launched.return_value
                 process.poll.return_value = None
                 with self.assertRaisesRegex(CaptureTimeout, "timed out"):
                     capture_url("http://127.0.0.1/", output, allow_local=True)
-                process.terminate.assert_called_once()
+                self.assertEqual(signal_tree.call_count, 2)
             self.assertEqual(output.read_bytes(), b"original")
 
     def test_output_links_rejected(self):
@@ -307,6 +311,7 @@ class URLBrowserTests(unittest.TestCase):
         cls.browser = url_capture.detect_browser(os.environ.get("ORPHIC_BROWSER"))
         if cls.browser is None:
             raise unittest.SkipTest("URL capture requires installed Edge, Chrome or Chromium")
+        require_browser()
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="oe_url_test_")

@@ -9,6 +9,8 @@ from urllib.parse import unquote, urlsplit
 
 from PIL import Image
 
+from ._browser_process import launch_options, remove_profile, stop_browser
+
 
 def validate_url(url):
     """Return None for an allowed local URL; otherwise return an error string."""
@@ -39,6 +41,7 @@ def validate_url(url):
 def detect_browser(browser=None):
     """Return a browser path or None, using the reference detection order."""
     try:
+        browser = browser or os.environ.get("ORPHIC_BROWSER")
         if browser:
             return os.fspath(browser) if Path(browser).is_file() else None
         candidates = [
@@ -68,7 +71,8 @@ def capture(url, out_png, browser=None, width=1280, height=800):
     """Capture a local URL, returning False for any bad input or capture failure.
 
     out_png's parent is the caller-supplied store for this low-level API.
-    Browser profiles and child-process temporary files stay in that directory.
+    Profiles use short system-temp paths: Chromium's Unix sockets have a path
+    limit independent of the filesystem's filename/path limits.
     """
     profile = None
     proc = None
@@ -88,7 +92,7 @@ def capture(url, out_png, browser=None, width=1280, height=800):
         output.parent.mkdir(parents=True, exist_ok=True)
         if output.exists():
             output.unlink()
-        profile = tempfile.mkdtemp(prefix="orphic_profile_", dir=output.parent)
+        profile = tempfile.mkdtemp(prefix="oe_")
         cmd = [
             executable,
             "--headless=new",
@@ -106,12 +110,13 @@ def capture(url, out_png, browser=None, width=1280, height=800):
         environment = os.environ.copy()
         environment.update(TMP=profile, TEMP=profile, TMPDIR=profile)
         proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL, env=environment)
+                                stderr=subprocess.DEVNULL, env=environment, **launch_options())
         try:
             proc.wait(timeout=45)
         except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
+            return False  # A partial PNG is not a completed capture.
+        if proc.returncode != 0:
+            return False
         if not output.is_file() or output.stat().st_size == 0:
             return False
         with Image.open(output) as screenshot:
@@ -122,11 +127,14 @@ def capture(url, out_png, browser=None, width=1280, height=800):
     except Exception:
         return False
     finally:
-        if proc is not None and proc.poll() is None:
-            try:
-                proc.kill()
-                proc.wait()
-            except OSError:
-                pass
-        if profile is not None:
-            shutil.rmtree(profile, ignore_errors=True)
+        try:
+            if proc is not None:
+                stop_browser(proc)
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+        finally:
+            if profile is not None:
+                try:
+                    remove_profile(profile)
+                except OSError:
+                    return False
