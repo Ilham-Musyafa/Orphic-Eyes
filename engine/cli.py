@@ -6,6 +6,9 @@ import sys
 
 from .compare import compare
 from .store import accept, approve, baseline, ignore_add, ignore_list, ignore_remove
+from .url_capture import capture_pair
+from .serve import ReportServer, default_store
+from .loop import loop_step
 
 
 def _region(text):
@@ -25,6 +28,30 @@ def main(argv=None):
     """Print one JSON result (or one-line error) and return the exit code."""
     parser = _Parser(description="Capture local visual-regression baselines and diffs")
     commands = parser.add_subparsers(dest="command", required=True)
+    serve = commands.add_parser("serve", help="Serve reports read-only on 127.0.0.1")
+    serve.add_argument("--store", default=None, help="Defaults to the Hermes Orphic Eyes store")
+    serve.add_argument("--port", type=int, default=0, help="0 chooses a random free port")
+    serve.add_argument("--name", help="Target whose latest report should be opened")
+    serve.add_argument("--timeout", type=float, help="Stop after this many seconds; otherwise Ctrl+C")
+    loop = commands.add_parser("loop-step", help="Capture and review one bounded loop round")
+    loop.add_argument("name")
+    loop.add_argument("after_url")
+    loop.add_argument("--store", default=None)
+    loop.add_argument("--requests", help="JSON list of fixed baseline-relative Point & Tell requests")
+    loop.add_argument("--max-rounds", type=int, default=None)
+    loop.add_argument("--allow-local", action="store_true")
+    loop.add_argument("--wait-ms", type=int, default=250)
+    loop.add_argument("--timeout-ms", type=int, default=30000)
+    pair = commands.add_parser("capture-pair", help="Capture two HTTP/HTTPS URLs and write a pixel report")
+    pair.add_argument("before_url")
+    pair.add_argument("after_url")
+    pair.add_argument("--store", required=True)
+    pair.add_argument("--name", default="urls", help="Fresh, empty target name")
+    pair.add_argument("--width", type=int, default=1440)
+    pair.add_argument("--height", type=int, default=900)
+    pair.add_argument("--wait-ms", type=int, default=250)
+    pair.add_argument("--timeout-ms", type=int, default=30000)
+    pair.add_argument("--allow-local", action="store_true", help="Explicitly permit trusted private/loopback HTTP(S) pages")
     for command in ("baseline", "compare"):
         sub = commands.add_parser(command)
         sub.add_argument("name")
@@ -55,7 +82,32 @@ def main(argv=None):
             selection.add_argument("--all", action="store_true")
     try:
         args = parser.parse_args(argv)
-        if args.command == "baseline":
+        if args.command == "serve":
+            with ReportServer(args.store or default_store(), port=args.port, timeout=args.timeout) as server:
+                print(server.url(args.name), flush=True)
+                try:
+                    server.wait()
+                except KeyboardInterrupt:
+                    pass
+            return 0
+        if args.command == "loop-step":
+            requests = None
+            if args.requests is not None:
+                from pathlib import Path
+                if Path(args.requests).name == ".env" or Path(args.requests).name.startswith(".env."):
+                    raise ValueError("Environment files are not request files")
+                with open(args.requests, encoding="utf-8") as stream:
+                    requests = json.load(stream)
+            result = loop_step(args.name, args.after_url, args.store, requests=requests,
+                               max_rounds=args.max_rounds, allow_local=args.allow_local,
+                               wait_ms=args.wait_ms, timeout_ms=args.timeout_ms)
+            print(json.dumps(result, ensure_ascii=True))
+            return 3 if result.get("status") == "error" else 0
+        if args.command == "capture-pair":
+            result = capture_pair(args.before_url, args.after_url, args.store, name=args.name,
+                                  width=args.width, height=args.height, wait_ms=args.wait_ms,
+                                  timeout_ms=args.timeout_ms, allow_local=args.allow_local)
+        elif args.command == "baseline":
             result = baseline(args.name, args.url, args.store)
         elif args.command == "compare":
             requests = None

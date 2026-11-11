@@ -75,10 +75,19 @@ def _url(value):
     return value
 
 
-def _failure(exc):
+def _failure(exc, *, url_pair=False):
     message = " ".join(str(exc).split())[:600] or type(exc).__name__
     lower = message.lower()
-    if "viewport" in lower and "width/height" in lower:
+    if url_pair:
+        if any(word in lower for word in ("permission denied", "data directory", "read-only")):
+            fix = "Make HERMES_HOME/orphic-eyes writable and remove redirected or linked data paths."
+        elif "browser" in lower:
+            fix = "Install Edge, Chrome or Chromium or set ORPHIC_BROWSER to its executable; check launch permissions."
+        elif "timed out" in lower:
+            fix = "Check destination access; increase timeout_ms if appropriate and keep wait_ms below it."
+        else:
+            fix = "Supply public http/https before_url and after_url; use allow_local=true only for trusted local test pages. Use a fresh target name."
+    elif "viewport" in lower and "width/height" in lower:
         fix = "Pass either viewport (desktop/mobile/tablet) or width/height, never both."
     elif "capture size mismatch" in lower:
         fix = "Use a supported browser or viewport; do not resize the PNG to fake the requested viewport."
@@ -123,6 +132,9 @@ def _result(raw, name, root, action):
                 "ignore": "Ignore regions updated"}
     message = messages.get(action, {"pass": "No unexpected changes", "check": "Check these changes",
                                     "fail": "Review these visual regressions"}[raw["status"]])
+    if raw.get("paths", {}).get("report"):
+        count = raw["summary"]["box_count"]
+        message = str(count) + " changed zone" + ("" if count == 1 else "s") + " | " + message
     message = _module("report_json").result_message(raw, message)
     hints = {"baseline": "After editing UI files, call orphic_compare with this target name.",
              "accept": "Call orphic_compare after the next UI edit to check the new baseline.",
@@ -134,8 +146,12 @@ def _result(raw, name, root, action):
                          for key, filename in (("baseline", "baseline.png"), ("after", "current.png"),
                                                ("diff", "diff.png"), ("report", "report.json"))},
                   hint=hints.get(action, "Review the boxes; call orphic_approve if intended, otherwise fix the code and call orphic_compare again."))
+    if raw.get("paths", {}).get("report"):
+        result["hint"] = "Review paths.report or paths.html; supply a new before_url/after_url pair and fresh name to recapture."
     if raw.get("paths", {}).get("html"):
         result["paths"]["html"] = raw["paths"]["html"]
+    if action == "compare":
+        result.update(_module("serve").report_link(root, case / ("report.html" if (case / "report.html").is_file() else "report.json")))
     if "request_results" in result:
         failing = [row["id"] for row in result["request_results"] if row["status"] in ("not_done", "unknown")]
         if failing:
@@ -175,7 +191,8 @@ def _run(args, allowed, action, operation):
         return _result(raw, name, root, action)
     except Exception as exc:
         logger.debug("Orphic Eyes %s failed", action, exc_info=True)
-        return _failure(exc)
+        pair = action == "compare" and isinstance(args, dict) and bool(set(args) & set(URL_PAIR))
+        return _failure(exc, url_pair=pair)
 
 
 def _baseline(args, name, root):
@@ -219,6 +236,16 @@ def _check_capture_size(path, width, height):
 
 
 def _compare(args, name, root):
+    pair_fields = {"before_url", "after_url", "width", "height", "wait_ms", "timeout_ms", "allow_local"}
+    if set(args) & pair_fields:
+        if not {"before_url", "after_url"} <= set(args):
+            raise ValueError("URL capture requires both before_url and after_url")
+        if set(args) & {"url", "expect", "requests"}:
+            raise ValueError("URL capture cannot combine before_url/after_url with url, expect or requests")
+        result = _module("url_capture").capture_pair(
+            args["before_url"], args["after_url"], root, name=name,
+            **{key: args[key] for key in pair_fields - {"before_url", "after_url"} if key in args})
+        return result
     intents = None
     if "requests" in args:
         intents = _module("requests").validate_requests(args["requests"])
@@ -245,7 +272,48 @@ def _compare(args, name, root):
 
 
 def handle_compare(args: dict, **_kw) -> str:
-    return _run(args, ("name", "url", "expect", "requests"), "compare", _compare)
+    return _run(args, ("name", "url", "expect", "requests", "before_url", "after_url",
+                       "width", "height", "wait_ms", "timeout_ms", "allow_local"), "compare", _compare)
+
+
+def handle_loop_step(args: dict, **_kw) -> str:
+    try:
+        allowed = {"name", "after_url", "requests", "max_rounds", "allow_local", "wait_ms", "timeout_ms"}
+        if not isinstance(args, dict) or set(args) - allowed:
+            raise ValueError("Loop arguments must be an object containing only schema fields")
+        if not {"name", "after_url"} <= set(args):
+            raise ValueError("Loop requires name and after_url")
+        name = _target(args)
+        root = resolve_data_dir()
+        _case(root, name)
+        result = _module("loop").loop_step(name, args["after_url"], root,
+                    **{key: value for key, value in args.items() if key not in ("name", "after_url")})
+        if result.get("status") == "error":
+            raise ValueError(result["error"])
+        # Full round data and prompt remain on disk; keep the tool response
+        # within the established Hermes byte budget, with truthful counts.
+        result = {**result, "per_zone": [dict(zone) for zone in result["per_zone"]],
+                  "unexpected_zones": list(result["unexpected_zones"]), "round_changes": list(result["round_changes"])}
+        while True:
+            encoded = json.dumps(result, ensure_ascii=True, separators=(",", ":"))
+            if len(encoded.encode()) < MAX_RESULT_BYTES:
+                return encoded
+            if result["round_changes"]:
+                result["round_changes"].pop()
+                result["round_changes_omitted"] = result.get("round_changes_omitted", 0) + 1
+            elif len(result["follow_up_prompt"]) > 600:
+                result["follow_up_prompt"] = result["follow_up_prompt"][:500] + "\nRead the complete prompt at paths.prompt before making edits."
+                result["prompt_truncated"] = True
+            elif result["unexpected_zones"]:
+                result["unexpected_zones"].pop()
+                result["unexpected_zones_omitted"] = result.get("unexpected_zones_omitted", 0) + 1
+            elif result["per_zone"]:
+                result["per_zone"].pop()
+                result["per_zone_omitted"] = result.get("per_zone_omitted", 0) + 1
+            else:
+                raise ValueError("Loop metadata exceeds 4 KB; shorten HERMES_HOME path")
+    except Exception as exc:
+        return _failure(exc, url_pair=True)
 
 
 def _approve(args, name, root):
@@ -321,6 +389,16 @@ REQUEST = {"type": "object", "additionalProperties": False,
                           "precision": {"type": "string", "enum": ["exact", "approximate"], "default": "approximate"}},
            "required": ["id", "type"]}
 
+URL_PAIR = {
+    "before_url": {"type": "string", "description": "Public HTTP/HTTPS reference URL; supply after_url too. Never send credentials in URLs."},
+    "after_url": {"type": "string", "description": "Public HTTP/HTTPS preview URL. Starts a fresh capture pair; use a new target name."},
+    "width": {"type": "integer", "minimum": 1, "default": 1440, "description": "Paired capture viewport width; DPR=1."},
+    "height": {"type": "integer", "minimum": 1, "default": 900, "description": "Paired capture viewport height; DPR=1."},
+    "wait_ms": {"type": "integer", "minimum": 0, "default": 250, "description": "Extra wait after network idle; motion is disabled."},
+    "timeout_ms": {"type": "integer", "minimum": 1, "default": 30000, "description": "Deadline per capture, including navigation and network idle; greater than wait_ms."},
+    "allow_local": {"type": "boolean", "default": False, "description": "Explicitly permit private/loopback HTTP(S) destinations, including resources and redirects, for trusted local pages. Never permits file/data/javascript URLs."},
+}
+
 
 def _schema(name, description, properties, required=()):
     return {"name": name, "description": description,
@@ -339,11 +417,20 @@ TOOL_DEFINITIONS = (
          "height": {"type": "integer", "minimum": 1, "default": 720,
                     "description": "Viewport height in pixels, e.g. 720."}}, ("url",)), handle_baseline),
     ("orphic_compare", _schema("orphic_compare",
-        "Call after editing UI files of a local web app. Compares before/after screenshots by pixels (image-only, no DOM/CSS). Captures using the baseline viewport/browser; returns status pass / check / fail, percentages, numbered boxes, optional shift hints and image paths. Can produce a self-contained HTML report when the template exists; paths.html is returned only when a report page was generated. Optional requests verify up to 8 Point & Tell intents (Exact = 2 px, Approx = 8 px): read request_results and requests_ok separately from visual status; expected areas never prove completion. Omitted url reuses the baseline URL; expect classifies regions without approving them. crops_dir contains box-<id>-before/after.png (first 8 boxes) and req-PT-<n>-before/after.png (non-comment requests); full coordinates/scales and verdicts are in report.json next to the screenshots." + LIMITS,
-        {"url": URL, "requests": {"type": "array", "maxItems": 8, "items": REQUEST,
+        "Compare screenshots by pixels. Returns report_url when a local report server is running, otherwise serve_hint with the start command; open HTML over HTTP for Verify. URL pair mode: supply before_url and after_url (public HTTP/HTTPS) plus a fresh name; no baseline needed. Optional width/height default to 1440x900, DPR=1. Blocks private networks unless allow_local=true. Returns paths.report, optional paths.html, summary.box_count (changed zones), status and numbered boxes. Never combines pair mode with url/expect/requests. Otherwise, call after editing a local web app: captures using the baseline viewport/browser; omitted url reuses its local URL (http://localhost, http://127.0.0.1 or local file://). Optional requests verify up to 8 Point & Tell intents (Exact=2px, Approx=8px); read requests_ok separately from visual status. expect classifies without approving. Both modes use the existing pixel thresholds and offline report template; no page source, DOM contents or computed styles are inspected.",
+        {**URL_PAIR, "url": URL, "requests": {"type": "array", "maxItems": 8, "items": REQUEST,
                                    "description": "Point & Tell intents; from is in BASELINE pixels, to in AFTER pixels; same size; exact=2px, approximate=8px."},
          "expect": {"type": "array", "items": REGION,
                                  "description": "Expected changed areas, e.g. [{x:8,y:8,w:100,h:40}]."}}), handle_compare),
+    ("orphic_loop_step", _schema("orphic_loop_step",
+        "Run one pixel-only review round on an existing baseline/capture-pair target. Captures after_url and reports changes from the previous image, per_zone goal verdicts, persistent unexpected_zones and follow_up_prompt. Completion uses fixed baseline-relative Point & Tell requests, or restores initial changed areas to the original reference when requests are omitted. Returns stop_condition continue/done/max_rounds/needs_human and should_stop; never edits code or sends the prompt. Goals/max_rounds are fixed on first call (default 3 rounds). Stop on should_stop. report_url is usable while the local report server runs; otherwise follow serve_hint. Source URLs are not persisted. HTTP/HTTPS only; private destinations require explicit allow_local=true. No page code or text is read.",
+        {"after_url": {"type": "string", "description": "HTTP/HTTPS page to capture this round; reuse the same existing target name. Never include credentials in URLs."},
+         "requests": {"type": "array", "maxItems": 8, "items": REQUEST,
+                      "description": "Optional fixed intents with from/to in the ORIGINAL baseline pixels; omit on later calls to reuse. Comment/unknown verdicts require a human."},
+         "max_rounds": {"type": "integer", "minimum": 1, "default": 3,
+                        "description": "Set on the first call; fixed for the session. Stop when should_stop=true."},
+         "allow_local": URL_PAIR["allow_local"], "wait_ms": URL_PAIR["wait_ms"],
+         "timeout_ms": URL_PAIR["timeout_ms"]}, ("name", "after_url")), handle_loop_step),
     ("orphic_approve", _schema("orphic_approve",
         "After reviewing the latest comparison, approve intended unexpected box IDs or all boxes. Returns updated metrics and classifications; approvals match image content and do not replace the baseline." + LIMITS,
         {"boxes": {"type": "array", "items": {"type": "integer", "minimum": 1},

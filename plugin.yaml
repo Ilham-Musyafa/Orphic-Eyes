@@ -9,6 +9,7 @@ python_dependencies:
 provides_tools:
   - orphic_baseline
   - orphic_compare
+  - orphic_loop_step
   - orphic_approve
   - orphic_accept
   - orphic_ignore

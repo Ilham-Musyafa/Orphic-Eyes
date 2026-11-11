@@ -195,6 +195,18 @@ class RequestTests(unittest.TestCase):
         self.assertNotIn("base64", text.lower())
         self.assertTrue(all("found" in r for r in raw["request_results"]))
 
+    def test_repeated_intents_reuse_completed_search_only_within_one_call(self):
+        from engine.locate import find_crop
+        intents = [self.request(id="PT-1"), self.request(id="PT-2")]
+        with patch("engine.requests.find_crop", wraps=find_crop) as search:
+            first = self.compare(intents)
+            self.assertEqual([row["status"] for row in first["request_results"]], ["not_done", "not_done"])
+            self.assertEqual(search.call_count, 1)
+            self.moved()
+            second = self.compare(intents)
+            self.assertEqual([row["status"] for row in second["request_results"]], ["done", "done"])
+            self.assertEqual(search.call_count, 2)  # New image/round must search afresh.
+
     def test_focus_crops_coordinates_and_stale_removal(self):
         self.moved()
         result = self.compare([self.request(), self.request("comment", id="PT-2")])

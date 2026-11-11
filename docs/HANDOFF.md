@@ -19,6 +19,175 @@ Branch: `release/hackathon` (pulled, at 5c573c2). `docs/windows-test` is not tou
 ### Status
 - Plan written.
 
+## Previous task: Local report server and Hermes-driven auto loop (Codex, feat/auto-loop)
+
+Branch: `feat/auto-loop`, from pushed `feat/url-capture` at `d92bbaa83782cbbc8300ee54bde7dbe427c38e93`.
+
+### Plan
+1. Push only feat/url-capture and confirm with ls-remote. Done: `d92bbaa83782cbbc8300ee54bde7dbe427c38e93 refs/heads/feat/url-capture`.
+2. Implement a loopback-only, read-only report server with random default port, confined file access, clean shutdown/timeout, CLI latest/named selection, and cross-process server discovery. Return report_url (or startup instructions) from captures/compares without changing report schema/templates.
+3. Implement immutable loop session anchors and per-round captures/reports. Compare each new image with the prior round, while checking fixed goals: existing Point & Tell requests anchored to the original baseline, or exact restoration of initial changed areas to the original baseline when requests are absent. Recompute persistent unexpected zones against that fixed anchor. Do not confuse no new changes with goal completion. Return continue/done/max_rounds/needs_human and a neutral, pixel-only follow-up prompt. Reuse existing diff/matching thresholds and limits.
+4. Register orphic_loop_step using the existing Hermes adapter pattern (requires the minimal plugin.yaml tool declaration as well as Python registration). Test serving confinement and actual HTTP image access, two-round correction, unchanged failure, unexpected changes, max-round and unclear paths, missing-browser skips, and full regression suite. Document examples/limits in docs/AUTO-LOOP.md and update this handoff after every step.
+5. Commit in small steps, push only feat/auto-loop, confirm both feature refs with ls-remote. No PRs, merges or deployments.
+
+### Progress
+- Report-serving core implemented in engine/serve.py: loopback/random port, read-only artifact allowlist, no directory listings, traversal/symlink/hard-link refusal, Host/Origin defenses, private registry discovery and bounded shutdown. Nine server tests passed, including cross-process discovery, timeout cleanup and capture-pair report_url behavior. Output metadata stays outside persisted report.json.
+- Eleven loop unit tests passed: unchanged-but-wrong stays unresolved, round 2 can finish, immutable anchors survive original target changes, persistent unexpected zones remain visible, explicit move requests reuse existing matching, max_rounds/needs_human stop paths, link/lock protection and failed-round cleanup. Integration and regression verification are complete; final evidence is below.
+
+- Engine loop implemented in engine/loop.py with fixed baseline/initial snapshots, immutable session goals, consecutive per-round folders, an exclusive session lock, transactional round publication and persisted stop results. The session never saves after_url or executes/sends prompt text. Existing compare_images, 32px clustering, 3x3 zone names, 5% threshold and bounded request matcher are reused unchanged.
+- Eleven loop unit tests pass after reducing one explicit-move test fixture's dimensions to fit comfortably within the existing matcher budget on shared CI. The combined browser integration run passed HTTP same-origin canvas access and the real two-round Hermes path; final verification is recorded below.
+- Added a bounded browser-startup readiness fix after an intermittent capture error: DevToolsActivePort can be partial and /json/list can initially contain no page. Discovery now waits under the existing timeout rather than raising from incomplete state; a regression test covers both conditions. No timeout/matching budgets or screenshot thresholds changed.
+- CLI integration implemented: `serve --store/--name/--port/--timeout` and `loop-step NAME AFTER_URL --store/--requests/--max-rounds/--allow-local`. Server URLs point to the latest/named report. Ctrl+C and timeout paths close the server and remove its discovery registry.
+- Hermes integration implemented: orphic_loop_step is registered in Python and declared in plugin.yaml (the minimal manifest change required for the requested new tool). orphic_compare returns report_url/serve_hint. Loop responses preserve full counts and explicitly flag omitted entries/truncated prompts under the existing 4KB response budget; full results/prompt remain in round.json/prompt.txt.
+- docs/AUTO-LOOP.md now describes choosing goals, initialization, serving, schemas, tool/CLI examples, stop semantics, evidence, URL restrictions and pixel-only/Windows limits. Targeted startup/adapter/CLI unit checks passed; final full-suite and recorded example evidence is below.
+- Shared-runner regression checks exposed pre-existing timing sensitivity in crop matching. Kept every matcher threshold, search limit and deadline unchanged; optimized the identical grayscale MAE/block-bound arithmetic and reused completed identical region searches only within one verify_requests call. Reference-statistics and cache-isolation tests were added. All 29 locate/request checks now pass with the original assertions, including all-eight-intent output and shift hints.
+- Browser lifecycle now requests graceful DevTools Browser.close before bounded terminate/kill fallback and profile cleanup. The existing overall capture deadline and two-second cleanup wait bound are retained. Safe generic capture failures identify their phase without exposing URLs/logs; adapter guidance distinguishes launch issues from storage permission denial. Twelve targeted startup/capture/CLI/Hermes checks passed.
+- Recorded cross-process example: initial CLI capture-pair, CLI report server, failing CLI round 1, fixture fix, Hermes adapter round 2 done. Both served HTML/PNG returned HTTP 200; SIGINT (Ctrl+C) exited the server with code 0 and removed its registry. Artifacts are under /workspace/.orphic-eyes/auto-loop-example; the completed regression/browserless results are below.
+### Final verification and handoff
+- Full regression suite: **182 passed, 0 skipped, 0 failures/errors**, 167.661 seconds. Command from repository root: `/workspace/.orphic-eyes/run /workspace/.venvs/orphic-eyes/bin/python -B -m unittest discover -v`. Log: `/workspace/.orphic-eyes/auto-loop-example/full-tests-final.log`.
+- Final root-URL correction: redirect `/` to the selected report's actual path so nested PNG references stay correct, including when serving starts before capture. All **11 server/CLI/browser tests passed** afterward, including real canvas pixel reads through that redirect. Log: `server-final-tests.log` in the same artifact directory.
+- Browserless simulation on the final source: **161 passed**, 9 skip records (6 class-setup skips and 3 test-method skips), 0 failures/errors; unittest reports 164 methods run. Patched browser discovery in engine.capture, engine.url_capture and engine.store to return None before discovery; did not disable assertions or alter runtime code. Log: `browserless-tests.log`.
+- `hermes` is not installed, so native `hermes plugins validate` was unavailable. Repository manifest/registration, isolated package import, schemas/response budget, legacy tools and real Hermes-adapter HTTP round-trip checks passed.
+- No dependency added. Linux/Python 3.12.14/Pillow 13/Chrome 157 were used; Windows/Edge and a live Hermes host remain untested. Public-site DNS/proxy restrictions and pixel-only limits are documented in docs/AUTO-LOOP.md. No changes to diff thresholds, limits, matching budgets or report schema.
+
+Verified example driver (run from the repository root, uses generated pages outside the checkout):
+
+```sh
+PYTHONPATH=/workspace/Orphic-Eyes /workspace/.orphic-eyes/run /workspace/.venvs/orphic-eyes/bin/python -B /workspace/.orphic-eyes/auto-loop-example/run_example.py
+```
+
+The example is already retained; preserve its existing target before rerunning with a fresh output folder/name. Actual commands, call schemas, responses and evidence are in `/workspace/.orphic-eyes/auto-loop-example/`: `commands.json`, `tool-call.json`, `tool-schemas.json`, `initial.json`, `round1.json`, `round2.json`, `serve.json`, `example.log`.
+
+Command sequence used (runtime launcher inherited by the child commands):
+
+```sh
+python -B -m engine.cli capture-pair http://127.0.0.1:43903/reference.html http://127.0.0.1:43903/current.html --store /workspace/.orphic-eyes/auto-loop-example/hermes/orphic-eyes --name review --width 400 --height 300 --allow-local
+python -B -m engine.cli serve --store /workspace/.orphic-eyes/auto-loop-example/hermes/orphic-eyes --name review --timeout 180
+python -B -m engine.cli loop-step review http://127.0.0.1:43903/current.html --store /workspace/.orphic-eyes/auto-loop-example/hermes/orphic-eyes --allow-local --max-rounds 3
+# Generated fixture is corrected from blue to red, then round 2 is called through the Hermes adapter:
+```
+
+```json
+{"name":"orphic_loop_step","arguments":{"name":"review","after_url":"http://127.0.0.1:43903/current.html","allow_local":true}}
+```
+
+Observed response excerpts:
+
+```json
+{"round":1,"stop_condition":"continue","failing_count":1,"unexpected_count":0,"per_zone":[{"id":"Z1","status":"not_done","still_changed":true}],"follow_up_prompt":"Fix only the unresolved items below... Z1 (x=40,y=70,w=48,h=32): restore reference pixels."}
+{"round":2,"stop_condition":"done","should_stop":true,"failing_count":0,"unexpected_count":0}
+```
+
+The full first prompt is plain text in round1.json and `hermes/orphic-eyes/review/loop/round-001/prompt.txt`. Original files and both round reports remain available under that example store.
+
+Serve example printed `http://127.0.0.1:36527/review/report.html`; the final URL was `/review/loop/round-002/report.html` on that origin. Both HTML and adjacent PNG returned HTTP 200. Ctrl+C/SIGINT exited the CLI server with code 0 and removed its registry. Temporary page/report servers were stopped; restart `engine.cli serve` to obtain a live URL (the recorded ports are historical).
+
+### Publication and protected files
+- `feat/url-capture` was pushed first and confirmed by `git ls-remote`: `d92bbaa83782cbbc8300ee54bde7dbe427c38e93 refs/heads/feat/url-capture`.
+- The only additional publication target is `feat/auto-loop`. Its final commit and both feature refs are confirmed by the final push/ls-remote step and retained in `/workspace/.orphic-eyes/auto-loop-example/remote-after.txt`; use `git log --oneline feat/url-capture..feat/auto-loop` for the implementation commits. No force push is needed.
+- `stage-5e` was observed at `6bde560c28f05d7d50d66e69fb1a47849be4612a` before publication and is not a push target. No PRs, merges, deployments or pushes to main/stage-5e/release branches.
+- `engine/templates/report.html` and README.md remain byte-for-byte unchanged from the start; their hashes below still match. Generated test/example HTML lives only in temporary/output stores, not UI source files. HANDOFF.md and docs/AUTO-LOOP.md are updated.
+
+### Constraints and starting state
+- Never edit/stage engine/templates/report.html, README.md or any UI file; Claude owns report.html on release/hackathon.
+- Source template starting SHA-256: e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2. README starting SHA-256: c1cb30ccf91990d01faea7ac4ed989d2154150ef3f4a809329ee04036d9ae0ae.
+- Keep diff thresholds, matching budgets/limits and report schema unchanged. No new dependency planned. Never read .env or log source URL values.
+- Repository was clean at the start. No pushes to main/stage-5e/release branches.
+- Current runtime: Python `/workspace/.venvs/orphic-eyes/bin/python`, browser-enabled command prefix `/workspace/.orphic-eyes/run`. Normal browser-launch permissions are required; keep browser sandbox and TLS validation enabled.
+
+## Previous task: URL capture engine
+
+Branch: `feat/url-capture`, from `origin/stage-5e` at `6bde560c28f05d7d50d66e69fb1a47849be4612a`.
+
+### Plan
+1. Add a strict HTTP/HTTPS capture API in `engine/url_capture.py`, retaining the existing local-file capture API for compatibility. Use installed Edge/Chrome/Chromium via DevTools with the Python standard library: no new dependency. Fix viewport/DPR, disable motion, wait for network idle with bounded timeouts, and support full-page PNGs. Guard all outbound requests against private destinations unless explicitly allowed; never include source URLs in errors/logs.
+2. Add `capture_pair` using the existing pixel diff and JSON/HTML report builders without threshold, schema, or template changes. Extend the existing `orphic_compare` schema/adapter for before_url/after_url, preserving the five registered tools and the manifest. This requires the existing Python Hermes adapter `orphic_tools.py`; no UI or manifest edits.
+3. Add unit/security tests and local HTTP browser integration tests; skip when no browser exists. Update the old browser class to skip on absence. Run the complete suite, plugin contract validation, and a real paired-URL example. Record evidence and limitations here.
+
+### Status
+- Inspected capture, baseline store, compare_images, build_report/write_report, Hermes handlers/schema/registration, and existing browser tests.
+- Existing browser launcher: `/workspace/.orphic-eyes/run`; Python: `/workspace/.venvs/orphic-eyes/bin/python`. It maps a working official Chrome build without changing repository files and keeps temporary socket paths short. Browser sandbox remains enabled.
+- `engine/templates/report.html` is owned by another agent: do not edit or stage it. Initial SHA-256: e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2.
+- Step 1 complete: bounded standard-library DevTools WebSocket transport plus an HTTP CONNECT guard. Every browser destination is resolved and checked; direct and upstream public connections pin a validated numeric address to prevent DNS rebinding. Inherited proxies and TLS validation remain enabled. Policy failures/errors omit URLs and browser logs.
+- Final full suite: 153 passed, 0 skipped, 0 failures/errors (44.609s). Browserless simulation: unittest ran 137 test methods and reported 7 skips (four class-setup skips and three test-method skips), zero failures/errors. Both new and existing browser paths skip on absence.
+- Step 2 complete: `engine.url_capture.capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250, *, timeout_ms=30000, allow_local=False, browser=None)` raises safe `CaptureError`/`CaptureTimeout`/`BrowserNotFound` errors and atomically publishes a verified PNG. `engine.capture_url` exports this API; legacy `engine.capture` stays unchanged for local-file callers.
+- `engine.capture_pair(before_url, after_url, store_dir, *, name="urls", width=1440, height=900, wait_ms=250, timeout_ms=30000, allow_local=False, browser=None)` captures identical viewports, calls unchanged `compare_images`, `build_report`, `write_report`, and returns the existing schema plus output paths. Each capture has its own deadline (pair preflight DNS is also bounded). URLs/queries are never saved. A nonempty target is rejected; use a fresh name. Staging prevents partial pairs on capture failure.
+- CLI: `python -B -m engine.cli capture-pair BEFORE_URL AFTER_URL --store STORE --name FRESH_NAME [--width 1440 --height 900 --wait-ms 250 --timeout-ms 30000 --allow-local]`. Exit codes retain pass=0/check=1/fail=2/error=3.
+- Rendering is DPR 1, fixed light/reduced-motion media, disabled animations/transitions/carets and hidden scrollbars, fresh profiles/cache and network-idle plus wait_ms. Only browser layout metrics are used for full-page dimensions; page source, DOM contents and computed styles are never read. Full-page capture is available on the single-capture API; pairs use equal viewport-only images.
+- Engine validation: 24 URL engine tests passed, including repeated identical 1440x900 PNGs, full-page capture, a real paired-URL report and CLI exit/path checks, timeout cleanup, private redirect/subresource denial, upstream numeric pinning, and output-link protection.
+- Step 3 complete: extended the existing registered `orphic_compare` tool (manifest/tool count unchanged) with before_url/after_url, width/height, wait_ms/timeout_ms and allow_local. Pair mode needs both URLs and a fresh name, rejects mixing with legacy url/expect/requests, returns paths.report, optional paths.html and summary.box_count with a short changed-zone message. Source URLs are not saved to plugin state; rerun with an explicit pair/new name. Legacy baseline/compare behavior remains available.
+- Updated the old `tests/test_browser.py` class to raise SkipTest when no browser is installed. Added Hermes schema/error/real-HTTP round-trip coverage and an explicit missing-browser skip regression test.
+- Plugin validation available here: no `hermes` executable is installed, so `hermes plugins validate` is unavailable. The repository's manifest/registration, isolated package import, schema/adapter, local browser workflows and report freshness suites ran: 31 tests passed, zero skips/failures.
+- Scope remains Python engine, minimal existing Python Hermes adapter, tests and this handoff. No UI, dependency manifest, thresholds or report schema changes. No push, merge or deployment.
+
+### Verification and continuation
+
+No new Python dependency: the implementation uses Python's standard library and the existing Pillow dependency. Verified here with Python 3.12.14, Pillow 13.0.0 and official Google Chrome 157.0.8103.50 on Linux. Installed Edge/Chrome/Chromium are discovered using the existing paths; the new API also accepts `browser=` or `ORPHIC_BROWSER`. Windows/Edge launch compatibility follows the existing executable discovery and standard socket/subprocess APIs but has not been run on Windows in this session.
+
+Run the full suite from `/workspace/Orphic-Eyes`:
+
+```sh
+/workspace/.orphic-eyes/run /workspace/.venvs/orphic-eyes/bin/python -B -m unittest discover -v
+```
+
+The runtime's nested command sandbox prevents browser sandbox startup. Use approved normal launch permissions (`require_escalated`) for the launcher; browser sandboxing and TLS verification remain enabled. The retained test logs are `/workspace/.orphic-eyes/url-example/full-tests.log` and `browserless-tests.log`. Browserless simulation patched browser discovery to return None in engine.capture, engine.url_capture and engine.store before test discovery; this did not disable assertions or alter production code.
+
+Exact registered schema can be printed from the repository:
+
+```sh
+python -B -c 'import json, orphic_tools; print(json.dumps(next(schema for name, schema, handler in orphic_tools.TOOL_DEFINITIONS if name == "orphic_compare"), indent=2))'
+```
+
+New `orphic_compare` pair-mode schema fields (the existing `name`, `url`, `requests` and `expect` fields remain):
+
+| Field | Type | Default / requirement |
+| --- | --- | --- |
+| before_url | string | Required together with after_url in pair mode; public http/https |
+| after_url | string | Required together with before_url in pair mode; public http/https |
+| width | integer >= 1 | 1440 |
+| height | integer >= 1 | 900 |
+| wait_ms | integer >= 0 | 250, after network idle |
+| timeout_ms | integer >= 1 | 30000 per capture; greater than wait_ms |
+| allow_local | boolean | false; explicit opt-in for trusted private HTTP(S) pages/resources/redirects |
+
+The schema retains optional legacy mode; the handler enforces the pair-field requirements and rejects mixing modes. Pair mode needs a fresh, empty target name. It never saves the source URL or implicit recapture state. To capture again, supply another pair with a fresh name. Approve/accept can still review the generated files through their existing pipeline; implicit legacy recapture needs a legacy baseline.
+
+Example Hermes adapter call (verified against a temporary local HTTP server):
+
+```json
+{"name":"orphic_compare","arguments":{"name":"hermes-url-example","before_url":"http://127.0.0.1:8765/page_a.html","after_url":"http://127.0.0.1:8765/page_b.html","width":1440,"height":900,"allow_local":true}}
+```
+
+Response excerpt:
+
+```json
+{"success":true,"status":"check","message":"1 changed zone | Check these changes","summary":{"changed_px":2041,"changed_percent":0.157,"box_count":1,"unexpected_count":1},"paths":{"report":"/workspace/.orphic-eyes/url-example/hermes/orphic-eyes/hermes-url-example/report.json","html":"/workspace/.orphic-eyes/url-example/hermes/orphic-eyes/hermes-url-example/report.html"}}
+```
+
+Exact schema/call/response are retained outside the checkout as `tool-schema.json`, `example-call.json`, and `example-response.json` in `/workspace/.orphic-eyes/url-example/`.
+
+Reproduce the CLI example in two terminals (choose a fresh target name if rerunning). The temporary server used for verification was stopped afterward:
+
+```sh
+# Terminal 1, from the repository root:
+python -B -m http.server 8765 --bind 127.0.0.1 --directory tests/fixtures
+
+# Terminal 2, from the repository root:
+/workspace/.orphic-eyes/run /workspace/.venvs/orphic-eyes/bin/python -B -m engine.cli capture-pair http://127.0.0.1:8765/page_a.html http://127.0.0.1:8765/page_b.html --allow-local --store /workspace/.orphic-eyes/url-example --name comparison
+```
+
+Verified CLI result: exit 1 (`check`, a successful comparison requiring review), 1440x900, one changed zone, 2,041 changed pixels (0.157%). Changed box: x=48, y=232, w=186, h=49. Outputs under `/workspace/.orphic-eyes/url-example/comparison/`: `baseline.png`, `current.png`, `diff.png`, `metadata.json`, `report.json`, `report.html`. Repeated-capture tests separately verified identical pixels, disabled CSS motion, and full-page dimensions. Report HTML embeds exactly the same JSON as report.json.
+
+### Limits and safety notes
+
+- Strict URL capture is `engine.url_capture.capture` / `engine.capture_url`; the existing `engine.capture` remains a local-file compatibility API. The new API always rejects file/javascript/data input URLs, including with allow_local enabled. Invalid URL, blocked private destination, unavailable browser, navigation/HTTP error and timeout errors are clear and omit the source URL. No .env files are read or printed.
+- Public DNS must resolve to exclusively public addresses. DNS failure is fail-closed. Public-site capture was not verified in this Cloud instance because public DNS was unavailable/restricted; the real integration tests and example use local HTTP with explicit allow_local. Required preview/live domains and their resources must also be permitted by the environment's outbound policy.
+- The inherited proxy is honored. In public-only mode its CONNECT destination is a validated numeric IP to prevent DNS rebinding at the proxy; hostname-only proxy allowlists or credential routes may reject this. The proxy must support HTTP CONNECT for HTTP and HTTPS, and browser/system CA trust must be configured. No TLS/checksum verification or browser sandbox was disabled. This policy is intentionally not bypassed.
+- Fresh browser profiles have no saved login/cookies. Login walls, cookie banners, sites that block headless browsers, CSP that prevents a rendering override, or dynamic video/canvas/timers can affect screenshots. Cross-browser/OS/font rendering can differ. Full-page capture is only on the single-capture API; pair reports deliberately use equal viewports.
+- The capture timeout covers DNS/startup/navigation/network-idle/wait/screenshot, with bounded process cleanup. Pair preflight and each of its two captures are bounded separately. Avoid concurrent writes to the same target. Successful capture/report files stay local; the guard/profiles/browser processes are temporary and cleaned up.
+- `hermes plugins validate` was unavailable (Hermes CLI not installed). Existing repository manifest/registration/schema/isolated-import and real adapter tests passed. No live Hermes host or Windows run is claimed.
+- `engine/templates/report.html` and every other UI file are unchanged; template SHA-256 remains `e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2`. Diff thresholds, limits, report schema and dependency manifests are unchanged. Commits are local on `feat/url-capture`; nothing was pushed, merged or deployed.
+
 ## Previous task: Settings General + About
 
 Branch: `release/hackathon` (pulled, at b2560d2, after the Content check commits). Only `engine/templates/report.html` + this file.

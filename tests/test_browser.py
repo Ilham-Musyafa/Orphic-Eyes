@@ -1,4 +1,4 @@
-"""Real installed-browser tests; browser absence is a failure, not a skip."""
+"""Real installed-browser tests; skip cleanly when a browser is absent."""
 
 import json
 from pathlib import Path
@@ -21,7 +21,7 @@ class BrowserTests(unittest.TestCase):
         cls.folder = Path(cls.temp.name)
         cls.browser = detect_browser()
         if cls.browser is None:
-            raise AssertionError("integration tests require installed Edge or Chrome")
+            raise unittest.SkipTest("Integration tests require installed Edge, Chrome or Chromium")
         for shot, page, width in (("a1", "page_a", 1280), ("a2", "page_a", 1280),
                                   ("b", "page_b", 1280), ("r1", "page_real", 1280),
                                   ("r2", "page_real", 1280), ("small", "page_a", 960)):

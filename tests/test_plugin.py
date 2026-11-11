@@ -159,7 +159,7 @@ assert 'engine' not in sys.modules
 
     def test_all_handlers_unwritable_root(self):
         self.baseline()
-        arguments = [{"url": "http://localhost"}, {}, {"all": True}, {},
+        arguments = [{"url": "http://localhost"}, {}, {"name": "default", "after_url": "http://localhost"}, {"all": True}, {},
                      {"action": "add", "region": {"x": 0, "y": 0, "w": 10, "h": 10}}]
         with patch.object(tools, "resolve_data_dir", side_effect=PermissionError("data directory permission denied")):
             for handler, args in zip(HANDLERS, arguments):
