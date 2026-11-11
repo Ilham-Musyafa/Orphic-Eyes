@@ -1,6 +1,20 @@
 # HANDOFF
 
-## Current task: Panel reopen, New review, Selection panel polish
+## Current task: Final pre-demo audit (fix/final-audit)
+
+Branch: `fix/final-audit` from release/hackathon after merging origin/fix/test-reliability (5736938) → `9cb2ef8` and origin/docs/roadmap (cad0ea2) → `82f009e`. Both merge commits had a HANDOFF-only conflict; both sides were kept and no line from either side was lost.
+
+### Results
+- pytest after the merges: **189 passed**, 204 subtests (was 169 passed / 6 failed / 7 errors). Matches Codex.
+- Walkthrough (Try sample → Move rough box → snap chip → Enter → move → Add request → Content check → Preview prompt → Verify dialog → Settings, all 7 tabs) at 1440/1600/1366/1280/1100/900/390, light + dark: 0 JS errors. One layout break: at 1600–1799 px the header overflowed and pushed Copy prompt off-screen (the "New review" label appeared at 1600 while the brand name is shown). **Blocker, fixed** in `3c3fb5b`: label only from 1800 px. Header checked at 1280/1366/1440/1600/1799/1800/1920/2560, panel open and closed: fits.
+- Edge cases: 9000 px image → "This image is over 8000 px on a side…"; 4×3 px selection → "Select at least 8 × 8 px"; 8-request limit, tainted file:// canvas (snap silent skip, Content check honest message) covered by the suites.
+- Snap on own images (1200×800, PIL): button → (130,100,201,51), card → (600,300,401,261), icon → (200,500,61,61), blank → none. Lumen per-area results unchanged (snap suite).
+- Security: report.html has no fetch/XHR/WebSocket/EventSource/sendBeacon/Worker, no eval/new Function/string timers/document.write; the only http(s) literals are the SVG namespace and the GitHub link in About. innerHTML is only used for static SVG markup, sprite icon names and numeric ruler SVG, never for report or user data. Git history (all refs, `git log --all -p`): no .env/key/pem files, no token patterns (sk-, ghp_, github_pat_, AKIA, xox*, AIza, private keys, *_API_KEY=). URL capture: `capture_pair` and `loop_step` write session/metadata/report/round/prompt files without the source URL or query (session.json = mode, requests, viewport, browser, ignore regions, zones). Temp profiles/dirs are removed (`TemporaryDirectory`, `mkdtemp` + `rmtree` in `_browser_process`, process terminate→kill in finally). Catalog disclosure (headless browser, local files, loopback server, no telemetry, prompts never sent or executed) matches the code.
+- Polish (each its own commit): neutral, lighter grid over screenshots `3f47f04` (light .06 instead of the suggested .12, because .12 looked darker than the old blue grid; dark .10); softer "Unexpected" chip, 11 px/500 with a warm tint `95b46a0` (the status comes from engine classification, so the wording stays); sidebar toggle in the same spot open/collapsed `d1d345a` (sbt 21/21, was 20/21).
+- Not changed (listed for after submit): Design Studio items 4–10, quick-tag second tap removing the phrase, the "To review" wording.
+- Final checks on fix/final-audit: Copy prompt byte-identical; A/B 157, Selection panel 88, labels 604, zoom 106, Details panel 132, snap 64, theme 86, General 24, About 63, Content check 85, shortcuts 35, Settings 168, rebinding 92, refactor 12, read-only 36, Verify 86, typing 48, sidebar toggle **21/21**, engine requests 8 (Verify over http). Walkthrough issues: 0. pytest: 189 passed.
+
+## Previous task: Panel reopen, New review, Selection panel polish
 
 Branch: `feat/panel-polish` from origin/release/hackathon at 6f58b85; merges back with a merge commit. fix/test-reliability (Codex) is not touched.
 
@@ -41,8 +55,8 @@ Branch: `release/hackathon` (pulled, at effa230). Only engine/templates/report.h
 - Step 3 (found during the full run): snap timing was 17–67 ms on the largest windows (Card 1, Today panel, ~360 k px). It was above the 50 ms target on some runs because the inner loops cost too much per pixel. Fix, same results: reused scratch buffers, per-channel lookup tables instead of Math.abs, the dilation buffer doubles as the visited flag, and no modulo in the BFS. Four consecutive runs: max 21–30 ms; snap test 64/64 each time.
 - Correction: `sr/mreg.py` ("mobile regression") compares two fixed copies made at 17:27 (`reg/base` vs `reg/cur`, same 732,546 bytes). It never loads the current template, so its earlier "14/14 identical" said nothing about recent work, and 13/14 now is screenshot timing. It is dropped from the checks; phone coverage comes from the 390 px runs in each suite.
 - Checks: Copy prompt byte-identical; labels 604/604, zoom 106/106, panel 132/132, snap 64/64, theme 86/86, General 24/24, About 63/63, Content check 85/85, shortcuts 35/35, Settings 168/168, rebinding 92/92, refactor 12/12, read-only 36/36, Verify 86/86, typing 48/48, engine requests 8/8, sidebar toggle 20/21 (known). pytest: 182 tests, 169 passed, 6 failed and 7 errors, all system-browser capture tests, unchanged.
-## Current task: Test reliability and submit audit (Codex)
-## Current task: Two-minute roadmap (docs only)
+## Previous task: Test reliability and submit audit (Codex)
+## Previous task: Two-minute roadmap (docs only)
 
 Branch: `docs/roadmap`, from `origin/fix/test-reliability` at 57369380ccc3f9abae6c2387fb66a1512f557b82. No merges. Scope: ROADMAP.md, one README link line and this handoff.
 
