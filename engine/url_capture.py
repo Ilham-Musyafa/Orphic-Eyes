@@ -88,21 +88,29 @@ def _stop(browser):
 
 def _endpoint(profile, browser, deadline):
     port_file = profile / "DevToolsActivePort"
-    while not port_file.is_file():
+    # The port file and the first page target become available separately.
+    # Do not mistake a partial file or an empty /json/list for capture failure.
+    while True:
         if browser.poll() is not None:
             raise CaptureError("Browser could not start; check browser sandbox/launch permissions")
+        connection = None
+        try:
+            lines = port_file.read_text(encoding="ascii").splitlines()
+            port = int(lines[0])
+            connection = http.client.HTTPConnection("127.0.0.1", port, timeout=_remaining(deadline))
+            connection.request("GET", "/json/list")
+            response = connection.getresponse()
+            if response.status == 200:
+                targets = json.loads(response.read(1024 * 1024))
+                for target in targets:
+                    if target.get("type") == "page" and target.get("webSocketDebuggerUrl"):
+                        return target["webSocketDebuggerUrl"]
+        except (OSError, ValueError, IndexError, http.client.HTTPException):
+            _remaining(deadline)
+        finally:
+            if connection is not None:
+                connection.close()
         time.sleep(min(0.02, _remaining(deadline)))
-    port = int(port_file.read_text(encoding="ascii").splitlines()[0])
-    connection = http.client.HTTPConnection("127.0.0.1", port, timeout=_remaining(deadline))
-    try:
-        connection.request("GET", "/json/list")
-        response = connection.getresponse()
-        if response.status != 200:
-            raise CaptureError("Browser debugging endpoint unavailable")
-        targets = json.loads(response.read(1024 * 1024))
-        return next(target["webSocketDebuggerUrl"] for target in targets if target.get("type") == "page")
-    finally:
-        connection.close()
 
 
 def _events(client, loader_id, frame_id, proxy, seen):

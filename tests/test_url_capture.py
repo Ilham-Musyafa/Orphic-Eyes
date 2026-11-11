@@ -76,6 +76,20 @@ class URLValidationTests(unittest.TestCase):
 
 
 class CaptureFailureTests(unittest.TestCase):
+    def test_browser_endpoint_waits_for_complete_port_file_and_page_target(self):
+        from unittest.mock import Mock
+        with tempfile.TemporaryDirectory() as temporary, \
+                patch.object(Path, "read_text", side_effect=["", "1234\n", "1234\n"]), \
+                patch.object(url_capture.http.client, "HTTPConnection") as connection:
+            response = connection.return_value.getresponse.return_value
+            response.status = 200
+            response.read.side_effect = [b"[]", b'[{"type":"page","webSocketDebuggerUrl":"ws://127.0.0.1:1234/devtools/page/test"}]']
+            browser = Mock()
+            browser.poll.return_value = None
+            endpoint = url_capture._endpoint(Path(temporary), browser, time.monotonic() + 1)
+            self.assertEqual(endpoint, "ws://127.0.0.1:1234/devtools/page/test")
+            self.assertEqual(connection.return_value.close.call_count, 2)
+
     def test_no_browser_has_clear_error_and_preserves_output(self):
         with tempfile.TemporaryDirectory() as folder:
             output = Path(folder) / "existing.png"

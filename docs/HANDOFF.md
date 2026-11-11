@@ -17,6 +17,7 @@ Branch: `feat/auto-loop`, from pushed `feat/url-capture` at `d92bbaa83782cbbc830
 
 - Engine loop implemented in engine/loop.py with fixed baseline/initial snapshots, immutable session goals, consecutive per-round folders, an exclusive session lock, transactional round publication and persisted stop results. The session never saves after_url or executes/sends prompt text. Existing compare_images, 32px clustering, 3x3 zone names, 5% threshold and bounded request matcher are reused unchanged.
 - Eleven loop unit tests pass after reducing one explicit-move test fixture's dimensions to fit comfortably within the existing matcher budget on shared CI. The combined browser integration run passed HTTP same-origin canvas access and the real two-round Hermes path; final suite verification remains pending.
+- Added a bounded browser-startup readiness fix after an intermittent capture error: DevToolsActivePort can be partial and /json/list can initially contain no page. Discovery now waits under the existing timeout rather than raising from incomplete state; a regression test covers both conditions. No timeout/matching budgets or screenshot thresholds changed.
 ### Constraints and starting state
 - Never edit/stage engine/templates/report.html, README.md or any UI file; Claude owns report.html on release/hackathon.
 - Source template starting SHA-256: e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2. README starting SHA-256: c1cb30ccf91990d01faea7ac4ed989d2154150ef3f4a809329ee04036d9ae0ae.
