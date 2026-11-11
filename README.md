@@ -4,12 +4,12 @@
 
 # Orphic Eyes
 
-*See it. Point at it. Tell the agent.*
+*Review the pixels. Point at an area. Copy a prompt.*
 
 Orphic Eyes verifies UI edits from before/after screenshots using pixels, with no
 DOM, CSS or page-code inspection. Each requested change gets its own verdict,
 kept separate from the visual status. The default offline HTML report lets you
-review differences and prepare instructions to copy back to Hermes.
+review differences and copy a prompt to paste into an AI assistant.
 
 Tested with Python 3.12 and 3.14; `/orphic doctor` checks for 3.12 or newer.
 Pillow is the only Python dependency, and an installed Edge, Chrome or Chromium
@@ -44,9 +44,12 @@ the requested edits can be verified. Read both before deciding what to fix.
 
 ![Review report with three request verdicts](docs/images/review-verdicts.png)
 
-All pages shown here are from the synthetic Lumen Demo scenario.
+![Move mode with guides on a selected area](docs/images/move-guides.png)
 
-<!-- TODO: add move-guides.png / add-mode.png -->
+![Add mode placing a new element](docs/images/add-mode.png)
+
+All pages shown here are from the synthetic Lumen Demo scenario. Review is
+shown Side by side; a report opens on Slider. Move and Add show the After image.
 
 ## Demo
 
@@ -72,13 +75,29 @@ select one explicitly: `py -3.12 -B demo/run_demo.py --repeat 2`.
 
 ## Point & Tell in the report UI
 
-- **Review:** inspect visual changes, request verdicts and before/after images.
-- **Move:** select an image area and describe its intended destination.
-- **Add:** describe new content and where it should go. Add instructions are
-  not engine requests and are not verified by the engine.
-- **Copy for Hermes:** copy the instructions, paste them into Hermes and press
-  Enter. Nothing is sent automatically.
-- **Text size S/M/L:** adjust report text size.
+A report opens in Review, on the Slider view. Keys 1, 2, and 3 switch mode.
+
+- **Review:** inspect changed areas and the separate request verdicts. The
+  picture can be Side by side, Slider, Overlay, or Diff. Pages, Changes, and
+  Requests are sidebar tabs. The Changes tab includes the area map.
+- **Move:** drag an area on the After image and set where it should go. The bar
+  has Grid, Snap, Axis lock, and Exact (2 px) or Approx (8 px). Guides mark the
+  original edges and the new edges, with the distance in pixels. Tools are
+  Select (V), Move (M), and Hand (hold Space).
+- **Add:** drag where new content should appear and describe it. Add
+  instructions are not engine requests and are not verified by the engine.
+  Place (P) draws the area.
+- **Copy prompt** (Ctrl+Enter): copies the Move and Add requests drawn in this
+  session as one prompt for any AI assistant. It will not copy until this
+  session has a Move or Add request. Checked engine verdicts are not part of
+  that prompt. Paste it yourself. Nothing is sent automatically.
+- **Copy fix message:** with one changed area selected, copies a short note for
+  that area only.
+- **Undo / Redo:** Ctrl+Z and Ctrl+Shift+Z.
+- **Text size and theme:** Settings (Ctrl+,) → Appearance. Text size is S, M,
+  or L and scales the report labels. Theme is Light, Dark, or System.
+- **Shortcuts:** press ? for the list in the report. The command palette is
+  Ctrl+K.
 
 Motion and animation cannot be verified from screenshots.
 
@@ -123,8 +142,8 @@ Hermes surfaces: `orphic_baseline`, `orphic_compare`, `orphic_approve`,
 skills, dashboard or Desktop pages are registered.
 
 The default report uses inline CSS/JavaScript, embedded JSON and adjacent local
-images for offline review. Copy for Hermes writes instructions to the clipboard;
-pasting them into Hermes remains manual.
+images for offline review. Copy prompt and Copy fix message write text to the
+clipboard. Pasting that text into an assistant remains manual.
 
 ## Install
 
