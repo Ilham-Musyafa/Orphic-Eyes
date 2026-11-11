@@ -241,6 +241,9 @@ textarea[aria-disabled="true"],input[aria-disabled="true"],select[aria-disabled=
 .vf-section{margin:var(--s2) 0 0;font-size:var(--fs-cap);font-weight:var(--w-strong);letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
 .vf-note{margin:0;color:var(--muted);font-size:var(--fs-sec)}
 .req-sheet-actions{display:inline-flex;gap:var(--s2)}
+.vf-history{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:var(--fs-sec);color:var(--muted)}
+.vf-history li{display:flex;gap:var(--s2)}
+.vf-history b{color:var(--ink);font-weight:var(--w-medium);flex:none}
 .prompt-text{margin:0;padding:var(--s3) var(--s4);font-family:var(--font-mono);font-size:var(--fs-mono);line-height:var(--lh-body);white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;color:var(--ink);background:var(--soft);flex:1;min-height:0;user-select:text}
 .modal-actions{display:flex;justify-content:flex-end;gap:var(--s2);padding:var(--s3) var(--s4);border-top:1px solid var(--line)}
 .menu button[aria-checked="true"]{font-weight:var(--w-strong)}
@@ -860,6 +863,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   .vf-crop img{max-width:100%;max-height:140px}
   .vf-modal .modal-actions{flex-wrap:wrap;padding:var(--s3) var(--s4) calc(var(--s3) + env(safe-area-inset-bottom,0px))}
   .vf-modal .modal-actions .btn{flex:1 1 auto;min-height:44px}
+  .vf-modal .modal-actions .vf-close{display:none}
   .req-sheet-foot .req-sheet-actions .btn{min-height:44px;padding:0 var(--s3)}
 }
 /* phone: picture sits at the top; every control is a 44px touch target */
@@ -2985,6 +2989,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       vf.type = 'button';
       vf.setAttribute('data-verify', '');
       vf.setAttribute('data-tip', 'Check a new screenshot against these requests');
+      vf.setAttribute('data-sc', 'verify.open');
       foot.appendChild(vf);
       list.appendChild(foot);
     }
@@ -4644,6 +4649,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       'panel.sidebar': function () { toggleSidebar(); },
       'panel.inspector': function () { toggleInspector(); },
       'prompt.copy': function () { copyPrompt(); },
+      'verify.open': function () { openVerify(); },
       'mode.review': function () { setMode('review'); },
       'mode.move': function () { setMode('move'); },
       'mode.add': function () { setMode('add'); },
@@ -5468,7 +5474,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     { id: 'mode.review', group: 'Modes', action: 'Review mode', keys: '1', when: 'global' },
     { id: 'mode.move', group: 'Modes', action: 'Move mode', keys: '2', when: 'global' },
     { id: 'mode.add', group: 'Modes', action: 'Add mode', keys: '3', when: 'global' },
-    { id: 'prompt.copy', group: 'Requests', action: 'Copy prompt', keys: 'Ctrl+Enter', when: 'global' }
+    { id: 'prompt.copy', group: 'Requests', action: 'Copy prompt', keys: 'Ctrl+Enter', when: 'global' },
+    { id: 'verify.open', group: 'Requests', action: 'Verify fixes', keys: 'Shift+V', when: 'global' }
   ];
   /* Fixed keys for moving inside lists, menus, tabs and the slider. Not listed, not editable,
      but matched by the same matchShortcut() so no key check lives anywhere else. */
@@ -6454,6 +6461,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     function add(group, label, run, shortcutId) { list.push({ group: group, label: label, run: run, kbd: shortcutId ? formatKeys(shortcutId) : '' }); }
     add('Action', 'Copy prompt', copyPrompt, 'prompt.copy');
     add('Action', 'Preview prompt', openPromptPreview);
+    if (verifyCount()) add('Action', 'Verify fixes', openVerify, 'verify.open');
     ['review', 'move', 'add'].forEach(function (m, i) {
       add('Mode', 'Switch to ' + m.charAt(0).toUpperCase() + m.slice(1) + ' mode', function () { setMode(m); }, 'mode.' + m);
     });
@@ -7418,7 +7426,64 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     });
     body.appendChild(list);
   }
-  function renderVerifyHistory(body) { /* filled in with rounds */ }
+  function renderVerifyHistory(body) {
+    var h = state.verify.history;
+    if (!h.length) return;
+    body.appendChild(el('h3', 'vf-section', 'Earlier rounds'));
+    var list = el('ul', 'vf-history');
+    h.forEach(function (row) {
+      var li = el('li');
+      li.appendChild(el('b', null, 'Round ' + row.round));
+      li.appendChild(el('span', null, row.name + ' \u2014 ' + row.summary));
+      list.appendChild(li);
+    });
+    body.appendChild(list);
+  }
+  /* Next round: the checked screenshot becomes the After; this round's requests go to the history. */
+  function startNextRound() {
+    var v = state.verify;
+    if (!v.shot || !v.results) return;
+    var images = (state.report && state.report.images) || {};
+    var shot = v.shot;
+    var round = v.round + 1;
+    var beforeEntry = state.slots.before;
+    var start = beforeEntry ? Promise.resolve(beforeEntry) : new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () { resolve({ name: 'before.png', size: 0, w: img.naturalWidth, h: img.naturalHeight, url: safePath(images.before), img: img }); };
+      img.onerror = function () { reject(new Error('The Before image could not be loaded.')); };
+      img.src = safePath(images.before);
+    });
+    return start.then(function (before) {
+      v.history.push({ round: round, name: shot.name, summary: verifySummaryText(),
+        results: v.results.map(function (r) { return { type: r.item.type, name: r.item.name, status: r.status, reason: r.reason }; }) });
+      var oldAfter = state.slots.after;
+      if (oldAfter && oldAfter !== shot) dropUrl(oldAfter.url);
+      state.slots.before = before;
+      state.slots.after = shot;
+      state.drafts = [];
+      state.addDrafts = [];
+      state.selection = null;
+      state.selectedDraft = null;
+      state.addSelection = null;
+      state.addSelected = null;
+      state.offset = { dx: 0, dy: 0 };
+      state.history = [];
+      state.future = [];
+      v.round = round;
+      v.shot = null;
+      v.results = null;
+      v.unexpected = [];
+      v.error = '';
+      dropVerifyUrls();
+      closeLayer();
+      return afterSlotsChanged();
+    }).then(function () {
+      toast('Round ' + round + ' started: ' + shot.name + ' is the new After');
+    }).catch(function (err) {
+      v.error = err && err.message ? err.message : MSG_READ;
+      renderVerify();
+    });
+  }
   /* Follow-up prompt: same general format as Copy prompt, only what is still wrong. */
   function followUpItems() {
     return (state.verify.results || []).filter(function (r) { return r.status === 'fail' || r.status === 'unclear'; });
@@ -7481,10 +7546,17 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     if (!bar) return;
     bar.innerHTML = '';
     var v = state.verify;
-    var close = el('button', 'btn', 'Close');
+    var close = el('button', 'btn vf-close', 'Close');
     close.type = 'button';
     close.addEventListener('click', function () { closeLayer(); });
     bar.appendChild(close);
+    var next = el('button', 'btn', 'Use Round ' + (v.round + 1) + ' as new After');
+    next.type = 'button';
+    next.id = 'vfNextRound';
+    explainDisabled(next, v.results ? '' : 'Load the next screenshot first',
+      'Round ' + (v.round + 1) + ' becomes the After. This round\u2019s requests move to the history.');
+    next.addEventListener('click', function () { if (next.getAttribute('aria-disabled') !== 'true') startNextRound(); });
+    bar.appendChild(next);
     var follow = el('button', 'btn primary', 'Copy follow-up prompt');
     follow.type = 'button';
     follow.id = 'vfFollowUp';
