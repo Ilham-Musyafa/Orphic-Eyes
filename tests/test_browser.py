@@ -5,6 +5,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
+from tests.browser_support import require_browser
+
 from engine import accept, approve, baseline, capture, compare, ignore_add, ignore_remove
 from engine.capture import detect_browser
 from engine.compare import compare_images
@@ -22,6 +24,7 @@ class BrowserTests(unittest.TestCase):
         cls.browser = detect_browser()
         if cls.browser is None:
             raise unittest.SkipTest("Integration tests require installed Edge, Chrome or Chromium")
+        require_browser(cls.browser)
         for shot, page, width in (("a1", "page_a", 1280), ("a2", "page_a", 1280),
                                   ("b", "page_b", 1280), ("r1", "page_real", 1280),
                                   ("r2", "page_real", 1280), ("small", "page_a", 960)):
@@ -38,6 +41,11 @@ class BrowserTests(unittest.TestCase):
         self.assertEqual(result["status"], "pass", result)
         self.assertEqual(result["changed_px"], 0)
         self.assertEqual(result["boxes"], [])
+
+    def test_capture_in_long_store_path(self):
+        output = self.folder / ("long-store-" * 9) / "shot.png"
+        self.assertTrue(capture((FIXTURES / "page_a.html").as_uri(), output, browser=self.browser))
+        self.assertTrue(output.is_file())
 
     def test_button_shift(self):
         result = self.diff("a1", "b")

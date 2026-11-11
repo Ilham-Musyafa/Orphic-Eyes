@@ -6,11 +6,17 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
+
+from tests.browser_support import require_browser
 
 from PIL import Image
 
 from engine.serve import ReportServer, REGISTRY
+from engine._browser_process import launch_options, stop_browser
+from engine._devtools import DevTools
+from engine.url_capture import _endpoint
 
 capture_module = importlib.import_module("engine.capture")
 
@@ -36,6 +42,7 @@ class ServeBrowserTests(unittest.TestCase):
         cls.browser = capture_module.detect_browser(os.environ.get("ORPHIC_BROWSER"))
         if cls.browser is None:
             raise unittest.SkipTest("Same-origin canvas check requires installed Edge, Chrome or Chromium")
+        require_browser()
 
     def test_http_report_can_read_adjacent_image_pixels(self):
         with tempfile.TemporaryDirectory(prefix="oe_http_") as temporary:
@@ -58,14 +65,31 @@ image.onload = () => {
 image.src = 'baseline.png';
 </script></body>''')
             with ReportServer(root) as server, tempfile.TemporaryDirectory(prefix="oe_ch_") as profile:
-                completed = subprocess.run([self.browser, "--headless=new", "--disable-gpu", "--no-first-run",
-                                             "--disable-extensions", "--disable-background-networking",
-                                             "--virtual-time-budget=2000", "--user-data-dir=" + profile,
-                                             "--dump-dom", server.base_url + "/"],
-                                            capture_output=True, text=True, timeout=20)
-                self.assertEqual(completed.returncode, 0)
-                self.assertIn("</script>PIXELS_OK:255", completed.stdout)
-                self.assertNotIn("</script>PIXELS_BLOCKED", completed.stdout)
+                # Assert the real canvas read independently of Chromium CLI
+                # shutdown and inherited stdout pipes (--dump-dom can stall).
+                process = subprocess.Popen([self.browser, "--headless=new", "--disable-gpu", "--no-first-run",
+                                            "--disable-extensions", "--disable-background-networking",
+                                            "--remote-debugging-port=0", "--user-data-dir=" + profile,
+                                            "about:blank"], stdout=subprocess.DEVNULL,
+                                           stderr=subprocess.DEVNULL, **launch_options())
+                client = None
+                try:
+                    deadline = time.monotonic() + 20
+                    client = DevTools(_endpoint(Path(profile), process, deadline), deadline)
+                    client.call("Page.enable")
+                    client.call("Page.navigate", {"url": server.base_url + "/"})
+                    text = ""
+                    while time.monotonic() < deadline:
+                        text = client.call("Runtime.evaluate", {
+                            "expression": "document.body ? document.body.innerText : ''",
+                            "returnByValue": True})["result"].get("value", "")
+                        if "PIXELS_" in text:
+                            break
+                        time.sleep(0.02)
+                    self.assertIn("PIXELS_OK:255", text)
+                    self.assertNotIn("PIXELS_BLOCKED", text)
+                finally:
+                    stop_browser(process, client)
 
 
 if __name__ == "__main__":

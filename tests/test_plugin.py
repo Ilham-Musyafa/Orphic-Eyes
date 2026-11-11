@@ -11,6 +11,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+
+from tests.browser_support import require_browser
 from unittest.mock import patch
 
 from PIL import Image
@@ -315,6 +317,7 @@ class PluginBrowserTests(unittest.TestCase):
     def setUpClass(cls):
         if importlib.import_module("engine.capture").detect_browser() is None:
             raise unittest.SkipTest("Plugin E2E requires installed Edge, Chrome or Chromium")
+        require_browser()
 
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(dir=ROOT, prefix="test_plugin_browser_")

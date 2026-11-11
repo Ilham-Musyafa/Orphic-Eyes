@@ -7,6 +7,8 @@ import tempfile
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import unittest
+
+from tests.browser_support import require_browser
 from unittest.mock import patch
 
 from engine.serve import ReportServer
@@ -51,6 +53,7 @@ class LoopBrowserTests(unittest.TestCase):
     def setUpClass(cls):
         if detect_browser(os.environ.get("ORPHIC_BROWSER")) is None:
             raise unittest.SkipTest("Loop E2E requires installed Edge, Chrome or Chromium")
+        require_browser()
 
     def test_two_real_http_rounds_via_hermes_then_done(self):
         state = {"color": "blue"}

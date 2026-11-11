@@ -158,35 +158,57 @@ class InputTests(unittest.TestCase):
 
 
 class CaptureProcessTests(unittest.TestCase):
-    def test_reference_flags_timeout_and_store_local_profile(self):
+    def test_protocol_completion_and_profile_cleanup(self):
+        import base64
         module = importlib.import_module("engine.capture")
+        png = io.BytesIO()
+        Image.new("RGB", (1280, 800)).save(png, format="PNG")
         with tempfile.TemporaryDirectory(dir=ROOT, prefix="test_capture_") as folder:
             output = Path(folder) / "current.png"
             with patch.object(module, "detect_browser", return_value="browser.exe"), \
-                    patch.object(module.subprocess, "Popen") as popen:
+                    patch.object(module.subprocess, "Popen") as popen, \
+                    patch("engine.url_capture._endpoint", return_value="ws://127.0.0.1/test"), \
+                    patch.object(module, "DevTools") as devtools, \
+                    patch("engine._browser_process._signal_tree"):
                 process = popen.return_value
-                process.wait.side_effect = [subprocess.TimeoutExpired("browser", 45), 0]
                 process.poll.return_value = 0
-
-                def launched(*args, **kwargs):
-                    Image.new("RGB", (1280, 800)).save(output)
-                    return process
-
-                popen.side_effect = launched
+                process.wait.return_value = 0
+                client = devtools.return_value
+                client.events = [{"method": "Page.lifecycleEvent", "params": {"loaderId": "page", "name": "networkIdle"}},
+                                 {"method": "Emulation.virtualTimeBudgetExpired"}]
+                client.call.side_effect = lambda method, params=None: (
+                    {"data": base64.b64encode(png.getvalue()).decode()} if method == "Page.captureScreenshot" else
+                    {"loaderId": "page"} if method == "Page.navigate" else {})
                 self.assertTrue(capture("http://localhost:8000", output))
-                process.kill.assert_called_once()
-                self.assertEqual(process.wait.call_args_list[0].kwargs, {"timeout": 45})
+                # No wait for CLI screenshot exit; only the bounded graceful close.
+                process.wait.assert_called_once_with(timeout=0.5)
+                client.call.assert_any_call("Emulation.setVirtualTimePolicy", {
+                    "policy": "advance", "budget": 2000})
+                client.call.assert_any_call("Page.navigate", {"url": "http://localhost:8000"})
                 command = popen.call_args.args[0]
-                self.assertEqual(command[1:9], [
-                    "--headless=new", "--disable-gpu", "--hide-scrollbars",
-                    "--force-device-scale-factor=1", "--force-prefers-reduced-motion",
-                    "--run-all-compositor-stages-before-draw", "--virtual-time-budget=2000",
-                    "--window-size=1280,800"])
-                profile = Path(command[9].split("=", 1)[1])
-                self.assertEqual(profile.parent, output.parent)
+                self.assertIn("--remote-debugging-port=0", command)
+                self.assertNotIn("--no-sandbox", command)
+                self.assertFalse(any(arg.startswith("--screenshot=") for arg in command))
+                profile = Path(next(arg.split("=", 1)[1] for arg in command if arg.startswith("--user-data-dir=")))
+                self.assertEqual(profile.parent, Path(tempfile.gettempdir()))
                 self.assertFalse(profile.exists())
-                self.assertEqual(command[10:], ["--screenshot=" + str(output), "http://localhost:8000"])
                 self.assertEqual(popen.call_args.kwargs["env"]["TEMP"], str(profile))
+
+    def test_protocol_timeout_returns_false_and_removes_profile(self):
+        module = importlib.import_module("engine.capture")
+        with tempfile.TemporaryDirectory() as folder:
+            output = Path(folder) / "current.png"
+            Image.new("RGB", (10, 10)).save(output)
+            with patch.object(module, "detect_browser", return_value="browser.exe"), \
+                    patch.object(module.subprocess, "Popen") as popen, \
+                    patch("engine.url_capture._endpoint", side_effect=TimeoutError), \
+                    patch("engine._browser_process._signal_tree") as signal_tree:
+                popen.return_value.poll.return_value = 0
+                self.assertFalse(capture("http://localhost:8000", output))
+                self.assertFalse(output.exists())
+                profile = Path(next(arg.split("=", 1)[1] for arg in popen.call_args.args[0] if arg.startswith("--user-data-dir=")))
+                self.assertFalse(profile.exists())
+                self.assertEqual(signal_tree.call_count, 2)
 
     def test_stale_screenshot_does_not_count_as_success(self):
         module = importlib.import_module("engine.capture")

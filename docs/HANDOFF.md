@@ -41,6 +41,151 @@ Branch: `release/hackathon` (pulled, at effa230). Only engine/templates/report.h
 - Step 3 (found during the full run): snap timing was 17–67 ms on the largest windows (Card 1, Today panel, ~360 k px). It was above the 50 ms target on some runs because the inner loops cost too much per pixel. Fix, same results: reused scratch buffers, per-channel lookup tables instead of Math.abs, the dilation buffer doubles as the visited flag, and no modulo in the BFS. Four consecutive runs: max 21–30 ms; snap test 64/64 each time.
 - Correction: `sr/mreg.py` ("mobile regression") compares two fixed copies made at 17:27 (`reg/base` vs `reg/cur`, same 732,546 bytes). It never loads the current template, so its earlier "14/14 identical" said nothing about recent work, and 13/14 now is screenshot timing. It is dropped from the checks; phone coverage comes from the 390 px runs in each suite.
 - Checks: Copy prompt byte-identical; labels 604/604, zoom 106/106, panel 132/132, snap 64/64, theme 86/86, General 24/24, About 63/63, Content check 85/85, shortcuts 35/35, Settings 168/168, rebinding 92/92, refactor 12/12, read-only 36/36, Verify 86/86, typing 48/48, engine requests 8/8, sidebar toggle 20/21 (known). pytest: 182 tests, 169 passed, 6 failed and 7 errors, all system-browser capture tests, unchanged.
+## Current task: Test reliability and submit audit (Codex)
+
+Branch: `fix/test-reliability`, from `origin/docs/submit-prep` 1048073; merged `origin/release/hackathon` 283e7cd, then refreshed to effa230 (panel/snap UI) before final verification. Both merges conflicted only in HANDOFF; both sides were retained. Imported report.html is byte-identical to the release ref; no template edits.
+
+1. Reproduce browser startup/CLI shutdown and inspect retained failure logs; fix bounded process/profile cleanup without changing capture or matcher limits.
+2. Probe installed browser usability once per suite; mark only real-browser tests and skip with actionable diagnostics when unavailable. Keep genuine capture/matching regressions failing after the probe succeeds.
+3. Audit manifest/version, tool schemas/handlers, catalog and README; correct only mismatches.
+4. Run three consecutive full pytest suites, record summaries/skips, and finish this handoff plus SUBMIT gates. Commit small changes and push only this branch; confirm remote SHA. No PR, merge into release/hackathon, or deployment.
+
+
+### Changes and root-cause assessment
+
+| Earlier failure | Evidence and disposition |
+| --- | --- |
+| Release 169 passed / 6 failed / 7 errors, system-browser capture | Detection checked only whether an executable file existed. Native Chromium in this container cannot launch successfully; extracted Chrome 157.0.8103.50 aborts with a sandbox-helper/launch-permissions error. The same extracted browser renders through an explicit **test-only**, external `--no-sandbox` launcher. Production launch flags retain browser sandboxing. Tests now use a cached, independent native DevTools startup probe; only browser tests skip when startup is unusable. Successful startup does not catch or skip capture/matcher regressions. |
+| Legacy capture stalls / five local-browser workflow failures | Reproduced the same screenshot command with identical flags: a repository-local `orphic_profile_*` plus TMP/TEMP/TMPDIR stalled beyond an 8s diagnostic deadline, while a short system-temp profile completed with exit 0 and a valid PNG. Chromium's nested temporary Unix socket paths have a much smaller limit than normal filesystem paths. Local capture now uses short `oe_*` system-temp profiles, as URL capture already did. A real-browser regression captures successfully into a long store path. An initial repeated verification still caught one 45s `/orphic demo` CLI-exit stall (187 passed / 1 failed); this was not hidden or counted as acceptance. Local capture was then changed to DevTools completion, with the same 45s deadline, so valid screenshot retrieval no longer depends on CLI shutdown. |
+| Capture timeout accepted as success | Source and the old unit test explicitly accepted an existing PNG after the real 45s browser deadline. That could count a partially completed/timed-out invocation as a pass. Local capture now takes its completed PNG directly from DevTools and rejects capture timeout/protocol failure; the timeout regression requires failure and profile removal. It no longer waits for screenshot-CLI exit. The 45s real deadline and 2000ms virtual rendering budget are unchanged; virtual time is advanced after the page reaches network idle, avoiding an early about:blank budget event. PNG type and exact dimensions are checked. |
+| URL pair failed during browser cleanup | Previous log retained only the sanitized phase, not the original OS exception, so its exact exception type cannot be recovered. Established lifecycle defects: shutdown used the navigation deadline, waited only for the leader and could remove a profile while children were still alive. Both capture paths now launch an owned POSIX session, close DevTools with a separate 250ms allowance, terminate/kill the owned tree even after leader exit, and bound all waits. Windows targets the owned PID tree with taskkill, falling back to kill; native Windows verification remains required. Profile removal retries transient ENOTEMPTY/EACCES/EBUSY for at most 250ms and reports persistent errors instead of ignoring them. A real stdlib subprocess regression proves a SIGTERM-ignoring renderer is killed even after its leader exits; a profile-race regression proves removal finishes. |
+| 20s `--dump-dom` timeout in ServeBrowserTests | The old assertion coupled canvas success to Chromium CLI exit and inherited stdout/stderr EOF. subprocess.run timeout cleanup targets the leader, not its browser tree. The exact internal reason the historical Chrome CLI stalled is unavailable; Chrome itself is not claimed repaired. The test now executes the same real HTTP/image/canvas read through a bounded DevTools page session, reads the actual result, uses DEVNULL streams and always stops the owned tree. The assertion deadline remains 20s. Real-browser verification passes. |
+| RealRequestTests exhausted the 1.2s request matcher budget; shift hint absent under the 0.5s optional budget | Historical logs prove a genuine request-budget expiry; the missing shift alone did not establish its cause. The earlier isolated shift search completed in 0.167s. No matcher code, thresholds, candidate coverage, time limits or verdict assertions were changed here. Stalled/leftover browser processes provide a concrete source of avoidable load, but historical CPU scheduling was not recorded, so attributing either matcher event solely to that load would be speculation. These remain valid conservative unknown/no-hint outcomes on a loaded machine, not evidence that every machine must finish within budget. The unchanged real matcher tests are included in the final repeated full runs; Windows must verify them too. |
+| Earlier default URL capture 30s timeout and serve registry child 5s timeout | Exact historical stalled operations were not traced. Current capture retains its 30s deadline and the CLI test retains 5s. Short profiles, owned-tree cleanup and healthy-browser verification address demonstrated lifecycle causes; no timeout was widened. Final repeated suites exercise both paths. |
+
+Local capture now honors ORPHIC_BROWSER as documented; previously only the new URL path honored it. This lets the same explicitly selected installed browser serve legacy baselines, doctor, demos and URL captures. No browser is bundled and no production `--no-sandbox` flag is added.
+
+The environment disconnected once during work. After reconnect, the command sandbox denied socket creation (PermissionError: Operation not permitted), including loopback HTTP tests. Verification uses an approved per-command network permission so those tests actually run; they were not converted into skips. Pytest was installed only into the existing development venv; plugin.yaml, requirements.txt and runtime dependencies are unchanged.
+
+### Final manifest / capability audit
+
+Audited the merged engine and release template, not an unmerged feature branch. Manifest/catalog name is `orphic-eyes`, version is `0.3.0`, kind is standalone, license Apache-2.0 and runtime dependency is Pillow>=10,<14. README gives the same runtime requirement and no conflicting version. Registration uses toolset `orphic`; no hooks, middleware or required environment variables are registered. HERMES_HOME and ORPHIC_BROWSER are optional overrides, so catalog requires_env remains empty. The catalog intentionally contains tool names, not unsupported parameter definitions.
+
+| Tool | Required schema parameters | Full accepted parameter set | Result |
+| --- | --- | --- | --- |
+| orphic_baseline | url | name, url, viewport, width, height | Manifest/catalog/README/handler agree |
+| orphic_compare | none | name, url, expect, requests, before_url, after_url, width, height, wait_ms, timeout_ms, allow_local | Agree; pair fields require both URLs and exclude url/expect/requests |
+| orphic_loop_step | name, after_url | name, after_url, requests, max_rounds, allow_local, wait_ms, timeout_ms | Agree; fixed session goals/round limit |
+| orphic_approve | none | name, boxes, all | Agree; boxes or all=true, comparison required |
+| orphic_accept | none | name | Agree; comparison required |
+| orphic_ignore | action, region | name, action, region | Agree; add/remove, integer x/y/w/h |
+
+Static audit script imported the real schemas, checked every property set against the handler's actual allowlist via AST, compared ordered six-tool names/name/version between manifest and catalog, and validated README JSON example keys/required fields. All passed. Required conditional request fields remain enforced by engine.requests: id/type, from for move/hide/revert, to for move; move sizes equal; exact/approximate tolerances stay 2/8px. This audit is not a native Hermes admission run.
+
+Mismatches corrected only: (1) Python `/orphic help` omitted loop_step and incorrectly described every tool as local-only; (2) README claimed release UI was absent after the merge; (3) catalog still called Content check unconfirmed despite its implementation in the imported template; (4) README browser-skip/temporary-profile wording and ORPHIC_BROWSER behavior now match code. Added the exact tool parameter table to README. No manifest/version bump was needed. No template edits. Final zero catalog SHA, Linux-only platforms, optional unestablished requires_hermes and native validation remain owner gates.
+
+### Verification and remaining owner actions
+
+Final code is based on release/hackathon `effa23060a0f689bd41efa2df3322aa69204da10` (merged as `706d668`), with local-capture fix `b5f629f`. The imported template is byte-identical to effa230. The 189 cases retain the original 182 tests and add seven regressions; matcher/time-budget assertions remain intact.
+
+Verified runtime: Python 3.12.14, Pillow 13.0.0, pytest 9.2.0 and real Google Chrome 157.0.8103.50. Container browser testing uses an explicitly selected external `/tmp/orphic-chrome-test-launcher` containing `exec /tmp/orphic-browser-audit/opt/google/chrome/chrome --no-sandbox "$@"`, because native browser sandbox startup is unavailable here. This is test-environment configuration only, never a production default or a claim of native Windows/browser-sandbox validation. The launcher and downloaded/extracted browser are outside Git. No TLS override is used.
+
+Three full suites run sequentially without concurrent demos or browser work, via the existing development venv: `ORPHIC_BROWSER=/tmp/orphic-chrome-test-launcher /workspace/.venvs/orphic-eyes/bin/python -B -m pytest -q -ra`. Per-run JUnit XML and complete stdout are under `/tmp/orphic-reliability-cdp/`. The earlier 188-case exploratory sequence contained a genuine demo capture failure; it is recorded above and is not counted among the final runs.
+
+```text
+Run 1: 189 passed, 204 subtests passed in 86.07s (0:01:26)
+Run 2: 189 passed, 204 subtests passed in 87.59s (0:01:27)
+Run 3: 189 passed, 204 subtests passed in 85.83s (0:01:25)
+```
+
+Each run exited 0; JUnit confirms 189 cases, zero failures, zero errors and zero skips. All 22 real-browser tests ran and passed in every acceptance run.
+
+Default browser verification, with ORPHIC_BROWSER unset:
+
+`167 passed, 22 skipped, 202 subtests passed in 8.69s`
+
+All 22 skips have this exact reason: **No usable system browser: /usr/bin/chromium exited -6 during headless startup; check sandbox/launch permissions**. These are skips, not xfails or passes; the 167 remaining tests actually ran. Missing-browser and installed-but-unusable class skip behavior are also tested through unittest.TestResult.
+
+- `tests.test_browser.BrowserTests.test_button_shift`
+- `tests.test_browser.BrowserTests.test_capture_in_long_store_path`
+- `tests.test_browser.BrowserTests.test_different_viewports`
+- `tests.test_browser.BrowserTests.test_real_store_workflow`
+- `tests.test_browser.BrowserTests.test_realistic_page_twice`
+- `tests.test_browser.BrowserTests.test_same_page_twice`
+- `tests.test_browser.BrowserTests.test_stage3_shifted_button_workflow`
+- `tests.test_browser.BrowserTests.test_very_different_pages`
+- `tests.test_loop_plugin.LoopBrowserTests.test_two_real_http_rounds_via_hermes_then_done`
+- `tests.test_plugin.PluginBrowserTests.test_real_handler_workflow`
+- `tests.test_plugin.PluginBrowserTests.test_real_slash_doctor_and_offline_demo`
+- `tests.test_roundtrip.MoveBoxRegressionTests.test_flat_button_horizontal_move_changed_pixel_bounds`
+- `tests.test_roundtrip.ViewportTests.test_real_mobile_png_width_390`
+- `tests.test_roundtrip.RealRequestTests.test_file_pages_move_done_wrong_target_and_flat_unknown`
+- `tests.test_serve_cli.ServeBrowserTests.test_http_report_can_read_adjacent_image_pixels`
+- `tests.test_url_capture.URLBrowserTests.test_cli_pair_uses_existing_status_exit_code_and_writes_report`
+- `tests.test_url_capture.URLBrowserTests.test_default_viewport_repeated_pixels_and_motion_disabled`
+- `tests.test_url_capture.URLBrowserTests.test_full_page_and_custom_viewport`
+- `tests.test_url_capture.URLBrowserTests.test_navigation_timeout_does_not_hang_or_publish_screenshot`
+- `tests.test_url_capture.URLBrowserTests.test_pair_report_from_two_local_pages`
+- `tests.test_url_capture.URLBrowserTests.test_public_page_cannot_redirect_or_load_resource_from_private_network`
+- `tests.test_url_plugin.URLPluginBrowserTests.test_pair_report_and_real_hermes_call`
+
+Final checks: schema/handler/manifest/catalog/README/help audit passed; git diff --check passed; plugin.yaml, requirements.txt and all matcher source files are unchanged. report.html is byte-identical to the audited release effa230. No source changes followed the final three runs; this commit records documentation only.
+
+Ilham/Claude must integrate the desired fixes into release/hackathon themselves, freeze a new pushed final commit, then recheck the audit on that exact commit. Ilham must run WINDOWS-TEST.md on Windows/Edge or Chrome: capture and long-store paths, timeout/cleanup (including Task Manager process/profile checks), real request/shift budgets, same-origin canvas Verify/Content check and two loop rounds. Also verify public-site/DNS/proxy access and a live Hermes host, run `hermes plugins validate PATH --install-deps`, retain its log, and replace the catalog's zero pin only with the validated final SHA. Keep Windows out of catalog platforms until those checks pass. No new minimum Hermes version is guessed.
+
+
+## Previous task: Submission-night artifacts
+
+Branch: docs/submit-prep from origin/docs/windows-test. README and catalog draft are already present and origin/docs/readme is an ancestor; no merge is necessary.
+
+1. Recheck current public upstream catalog schema/examples/admission CLI and prepare a field comparison. Preserve an obvious zero SHA; keep Windows a commented test-dependent TODO only.
+2. Write docs/SUBMIT.md in submission-night order, with pinned-release validation, anonymous-public checks, owner-only fork/PR/X/form steps, consistent ready-to-paste disclosures and a complete owned/blocking TODO table. Do not perform those publication actions.
+3. Check YAML, links, commands and disclosure consistency; record unavailable native validation/Typeform field access honestly. Commit small docs-only changes and push only docs/submit-prep, confirming origin. No engine, tests, dependencies, README changes unless correcting a code contradiction, or release/hackathon modifications. No secrets/.env access.
+
+### Artifacts prepared
+- Added docs/SUBMIT.md: owner-only submission sequence; freeze final pushed release SHA in a separate clone, edit a separate catalog proposal, make repo public and verify anonymously, validate the exact checkout, fork/copy one file/open PR, post tagged under-90s X video, submit the two correct URLs and save confirmation before 05:00 WIB on Thursday 12 November 2026. Time conversion verified with zoneinfo; organizer deadline itself is from Ilham's brief, not independently confirmed.
+- Re-read current public NousResearch/hermes-agent plugin-catalog/README.md, official website/docs/developer-guide/plugins/catalog-submission.md, accessible-session-list.yaml and hermes_cli/subcommands/plugins.py. Added field-by-field source audit and correct directory-based `hermes plugins validate PATH --install-deps`; YAML is not the validate target and there is no catalog install-deps field.
+- Catalog retains a quoted 40-zero SHA and platforms [linux]; added commented Windows TODO conditional on exact-pin WINDOWS-TEST.md success. No SHA invented. requires_hermes remains absent because no tested minimum exists. Optional image/gallery fields remain optional, with actual UI evidence requested for review.
+- Ready-to-paste PR disclosure draft names all six tools/commands, pixel-only processing, local artifacts and reads outside store, browser/proxy/profile/server processes, resources/redirects/network exceptions, no telemetry or credential-store/.env access, legacy URL state, AI coding assistants, font licenses, sample images and independence from Nous. README otherwise says the same; its unconditional temporary-profile cleanup wording was minimally changed to say cleanup is attempted and failures may leave artifacts, matching the existing error paths and observed cleanup failures.
+- Typeform URL returned HTTP 403 from this environment. No live labels/field order/confirmation text invented: checklist maps upstream PR URL to PR field and X status URL to video field, with manual label/organizer confirmation explicitly blocking. The final TODO table inventories every README/YAML/SUBMIT placeholder plus manual gates with Ilham/Claude/Codex owners and blocking status.
+
+### Verification / next owner actions
+- Existing PyYAML safe_load passed. All 14 draft top-level fields matched the real example's field names and Python types; capability keys match the example and six tool names match plugin.yaml. Linux-only platforms and exact zero-string length checked. Markdown fences, relative links and TODO owner values checked; git diff --check passed.
+- Hermes CLI absent (`command -v hermes` returned no executable); native install-deps validation was NOT run and no pass is claimed. PowerShell instructions were source-reviewed, not executed on Windows. No tests, dependencies, engine, UI or release/hackathon changes; README has only the cleanup-disclosure qualification.
+- README/catalog already inherited origin/docs/readme through origin/docs/windows-test; ancestry verified, no merge required.
+- Remaining blockers are enumerated in SUBMIT.md: final combined release, flaky runtime tests, Windows/live-host/public-site evidence as claimed, native admission validation, final nonzero pin, public visibility, screenshots/video/PR/X/form actions. Owners must complete these; this documentation does not make them true.
+- Publish only docs/submit-prep and verify its ref. Do not open PRs, change visibility, post, submit the form, merge, deploy or push protected branches in this task.
+
+### Final disclosure correction
+- Corrected one README sentence only: cleanup is attempted and errors can leave artifacts, rather than implying cleanup always succeeds. This is grounded in existing capture cleanup/error handling and the recorded cleanup-stage failure; no feature or other README content changed. PR draft uses the same conservative wording. Final diff is documentation/catalog only.
+
+## Previous task: Beginner Windows guide and timeout investigation
+
+Branch: docs/windows-test from docs/readme at 9e5bf71bec8514de09c4dd5e937fa86845b1fdc2.
+
+1. Verify Windows-facing repository commands and official Hermes installation/local-plugin syntax. Write a PowerShell-only beginner guide with expected results, failure evidence and separate terminal instructions.
+2. Cover public capture, same-origin HTTP reports, branch-specific UI availability, a deterministic local two-round loop, optional Hermes host validation and a results checklist. Do not claim Content check exists on this engine branch.
+3. Investigate the previous 30-second browser capture and 5-second child-process timeouts. Run three sequential full suites without competing demo work. Change test-only timeout settings only with clear evidence of harmless environment slowness; never relax capture/matcher checks or alter feature code.
+4. Record evidence, commit small documentation steps and push only docs/windows-test. No README/template/engine edits, protected-branch pushes, PRs or merges. Never read .env.
+
+### Guide progress
+- Added docs/WINDOWS-TEST.md with native PowerShell commands, fresh checkout/venv without activation-policy changes, logs/expected results, public capture, HTTP serving and UI availability gates, exact local fixture files and two-round loop, official native Hermes installation/local file-Git installation/validation, cleanup and results checklist.
+- Official Hermes main README currently provides `iex (irm https://hermes-agent.nousresearch.com/install.ps1)` for native Windows. Source: https://github.com/NousResearch/hermes-agent#quick-install and official installation docs. Local file:// Git source and --ref verified in upstream hermes_cli/plugins_cmd.py and plugins_cmd_install.py; directory argument plus --install-deps verified in hermes_cli/subcommands/plugins.py. No invented native installer or unsupported raw directory install syntax.
+- The guide explicitly blocks Verify/Content check acceptance when those controls are absent on this engine-based branch, and requests a final approved combined commit without switching/editing release/hackathon. PowerShell is not available in this Linux environment, so syntax is reviewed, not claimed executed on Windows.
+- Both previous timeout paths and isolated successes are documented as evidence of sensitivity, not a proven slowness root cause. No test timeout settings or real checks changed. Three sequential full suites are running under /tmp/orphic-windows-validation/.
+
+### Three consecutive suite runs — results and timeout assessment
+- Command: existing browser launcher + project Python, `-B -m unittest discover -v`; three runs sequentially, no concurrent demo. Raw logs: /tmp/orphic-windows-validation/full-1.log, full-2.log, full-3.log. No source, dependency or test-setting changes.
+- Run 1: 182 run, 180 passed, 2 failures, 0 errors, 221.469s. RealRequestTests.test_file_pages_move_done_wrong_target_and_flat_unknown explicitly returned unknown with `Search time budget exceeded; no pixel verdict` (real 1.2s request budget). RequestTests.test_shift_hint_minus_30 returned no hint; source has a real 0.5s optional search budget and drops a hint on exhausted/uncertain search. Missing hint alone does not prove its exact cause.
+- Run 2: 182 run, 181 passed, 0 failures, 1 error, 218.540s. ServeBrowserTests.test_http_report_can_read_adjacent_image_pixels: Chrome --dump-dom child exceeded the 20s test-only subprocess timeout. This does not establish whether the browser was healthy-but-slow or stalled.
+- Run 3: 182 run, 181 passed, 1 failure, 0 errors, 218.054s. URLBrowserTests.test_pair_report_from_two_local_pages returned an error during browser cleanup. Increasing a navigation timeout is not an appropriate presumed fix for a shutdown/profile cleanup failure. Underlying lifecycle exception remains to be diagnosed; test-only instrumentation follows.
+- Previous doc task failures were the default viewport capture's real 30s deadline and server registry discovery child's 5s test wrapper. They passed individually; that is evidence of variability, not proof all are harmless startup slowness. A larger test-only startup allowance is justified only after showing the child is healthy beyond the deadline. No such evidence was established, so no timeout changes were made.
+- Three consecutive green suites were NOT achieved. Keep this submission gate open. Production matcher limits must not be increased to manufacture a pass; browser lifecycle/matching performance investigation belongs in a separately authorized engine task. Windows/Edge/live Hermes/public-site behavior remains unverified until Ilham runs the guide.
+
+### Final investigation and guide checks
+- Focused test-only instrumentation (no production modifications) reran the failed pair-report check and shift hint: both passed, 28.173s total. The shift search returned a unique match in 0.167s, within the unchanged 0.5s limit. No cleanup exception reproduced, so its underlying exception type/OS cause cannot honestly be stated. Log: /tmp/orphic-windows-validation/focused-diagnostics.log. Treat cleanup/lifecycle as unresolved, not as permission to widen timeout settings.
+- Reviewed every fenced block as PowerShell (PowerShell itself unavailable here), balanced all code fences, and checked relative links. Repo commands/options verified against engine/cli.py, commands.py, requirements.txt and existing schemas/tests; official native installer/local-file Git plugin source linked in the guide. Added explicit Start-Process working directories and standard per-user Chrome path as well as system Chrome/Edge paths. No dependency was added.
+- Final scope is docs/WINDOWS-TEST.md and this handoff only. README, engine (including report.html), test settings, dependencies and release/hackathon are untouched. Push only docs/windows-test; no protected-branch push, PR, merge or deployment. Final pushed SHA is reported by git ls-remote in the chat.
 
 ## Previous task: Details panel always reachable + snap to element
 

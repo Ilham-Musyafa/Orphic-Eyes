@@ -8,6 +8,8 @@ import sys
 from pathlib import Path
 import tempfile
 import unittest
+
+from tests.browser_support import require_browser
 from unittest.mock import patch
 
 from PIL import Image
@@ -26,6 +28,7 @@ class MoveBoxRegressionTests(unittest.TestCase):
     def test_flat_button_horizontal_move_changed_pixel_bounds(self):
         if detect_browser() is None:
             self.skipTest("Installed local browser required for exact file:// reproduction")
+        require_browser()
         with tempfile.TemporaryDirectory(prefix="orphic-box-repro-") as folder:
             before = baseline("repro", (FIXTURES / "move_104.html").as_uri(), folder)
             self.assertEqual(before["status"], "pass", before)
@@ -362,6 +365,7 @@ class ViewportTests(unittest.TestCase):
     def test_real_mobile_png_width_390(self):
         if detect_browser() is None:
             self.skipTest("Real mobile capture requires Edge, Chrome or Chromium")
+        require_browser()
         result = json.loads(tools.handle_baseline({"url": (FIXTURES / "move_104.html").as_uri(), "viewport": "mobile"}))
         self.assertTrue(result["success"], result)
         with Image.open(result["paths"]["baseline"]) as image:
@@ -378,6 +382,7 @@ class RealRequestTests(unittest.TestCase):
     def test_file_pages_move_done_wrong_target_and_flat_unknown(self):
         if detect_browser() is None:
             self.skipTest("Real Point & Tell verification requires an installed local browser")
+        require_browser()
         with tempfile.TemporaryDirectory(prefix="orphic-real-intents-") as home, \
                 patch.dict(os.environ, {"HERMES_HOME": home}), \
                 patch.dict(sys.modules, {"hermes_constants": None}):

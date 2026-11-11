@@ -18,8 +18,10 @@ category: tools
 version: "0.3.0"
 docs_url: https://github.com/Ilham-Musyafa/orphic-eyes#readme
 readme: true
-# Only Linux Chrome has automated coverage. Expand after validation.
+# Only Linux Chrome has automated coverage.
 platforms: [linux]
+# TODO (Ilham): use [linux, windows] ONLY after docs/WINDOWS-TEST.md passes
+# on the exact final pinned commit; do not advertise Windows before that.
 # requires_hermes omitted: no tested Hermes minimum version is established.
 # TODO: add pinned final-release screenshots/video documentation when available.
 known_issues:
@@ -27,7 +29,7 @@ known_issues:
   - Final combined engine/UI release must pass hermes plugins validate with --install-deps.
   - Requires Python 3.12 or newer, Pillow and an installed Edge/Chrome/Chromium browser.
   - Windows, macOS and a live Hermes host are not covered by automated verification.
-  - Release-only UI features must be included in the selected final commit; Content check is unconfirmed.
+  - The combined report template includes Content check (pixel-only); verify UI behavior on the final pinned release.
   - Public DNS and proxy rules can block capture; login walls and dynamic pages can affect pixels.
 capabilities:
   provides_tools:

@@ -8,7 +8,7 @@ Telling an AI what looks wrong is slow and vague. Orphic Eyes gives Hermes a vis
 
 Built for the Nous Research Hermes Agent Plugin Hackathon. This is a submission candidate, not an approved catalog listing.
 
-> **Branch status:** this README includes the engine from `feat/auto-loop`. UI features marked **release UI** were inspected on `release/hackathon` at `aa8f14c2308aeaacab825ba8ec139ba4ee97bb54`; they are not all included in this branch's template. A final combined release and validation are still required.
+> **Branch status:** this checkout combines the URL capture/auto-loop engine with the `release/hackathon` report UI, including features marked **release UI** below. The final submission commit must still be frozen and validated with Hermes.
 
 **TODO — demo video:** add a public video link, under 90 seconds.  
 **TODO — screenshots:** add captures of the final combined release; no current screenshot is presented as that release.
@@ -86,6 +86,17 @@ python -m engine.cli serve --store ./review-store --name first-review --timeout 
 
 The plugin registers `orphic_baseline`, `orphic_compare`, `orphic_loop_step`, `orphic_approve`, `orphic_accept` and `orphic_ignore` in the `orphic` toolset. `/orphic doctor` checks the local runtime; `/orphic demo` exercises the adapter's offline demo. These are Hermes chat commands, not shell commands.
 
+| Tool | Required parameters | Optional parameters |
+| --- | --- | --- |
+| `orphic_baseline` | `url` | `name`, `viewport`, `width`, `height` |
+| `orphic_compare` | None; legacy mode needs an existing baseline | `name`, `url`, `expect`, `requests`, `before_url`, `after_url`, `width`, `height`, `wait_ms`, `timeout_ms`, `allow_local` |
+| `orphic_loop_step` | `name`, `after_url` | `requests`, `max_rounds`, `allow_local`, `wait_ms`, `timeout_ms` |
+| `orphic_approve` | None; needs an existing comparison | `name`, `boxes`, `all` |
+| `orphic_accept` | None; needs an existing comparison | `name` |
+| `orphic_ignore` | `action`, `region` | `name` |
+
+`name` defaults to `default` except for loop steps. URL-pair compare requires both `before_url` and `after_url` and cannot combine them with `url`, `expect` or `requests`. Baseline accepts a viewport preset or explicit dimensions, never both. Approve selects `boxes` or `all=true`. Regions use integer `x,y,w,h`; requests require `id,type`, plus `from` for move/hide/revert and `to` for move. Supported request types are move/hide/revert/comment; precision defaults to approximate.
+
 Capture two local pages without a prior baseline:
 
 ```json
@@ -120,7 +131,7 @@ The report UI performs its review locally and has no automatic network-service c
 URL capture navigates to the URLs the user supplies; those pages may load subresources, follow redirects or make their own network requests. It is not an arbitrary crawler, and there is no Orphic-hosted screenshot service. The guarded capture path accepts HTTP/HTTPS only, blocks private addresses unless `allow_local` is explicit, and never permits file/javascript/data input URLs. The legacy local baseline API separately supports local file pages; it is not the guarded public-URL API.
 
 - **Reads/writes:** screenshots, reports, requests, approvals and loop history are stored locally. Hermes storage is under its resolved home's `orphic-eyes/`; standalone callers choose a store. Explicit input images/pages, Python packages, browser executables and system fonts can be read outside that store. Doctor probes storage write access.
-- **Processes:** captures launch an installed headless browser with argument lists, not a shell. URL capture uses a temporary loopback guard proxy and browser profiles. The optional report server is a long-running loopback process until Ctrl+C/timeout; it serves only report HTML/JSON and PNGs. Temporary profiles are cleaned up, but captured content may itself contain sensitive information.
+- **Processes:** captures launch an installed headless browser with argument lists, not a shell. Browser profiles use short system-temp paths, outside the report store, and cleanup stops the owned process tree before removing them. URL capture also uses a temporary loopback guard proxy. The optional report server is a long-running loopback process until Ctrl+C/timeout; it serves only report HTML/JSON and PNGs. Cleanup failures are capture failures and can leave local artifacts. Captured content may itself contain sensitive information.
 - **Credentials:** no credential store or .env files are read, no model credentials are required, and no source URL is saved by the new capture/loop path. Legacy baseline state can save URLs. Avoid credential-bearing URLs. Pages can create temporary cookies; existing proxy/CA configuration is inherited.
 - **Telemetry:** no plugin telemetry or usage reporting is implemented. Browser behavior and resources loaded by captured pages remain outside this claim.
 
@@ -147,4 +158,4 @@ Run the existing tests from the repository root:
 python -B -m unittest discover -v
 ```
 
-Browser tests skip when no browser is installed; launch failures with an installed browser are errors to investigate. In restricted CI environments, use supported browser launch permissions rather than disabling browser sandboxing or TLS verification. [HANDOFF.md](docs/HANDOFF.md) records this branch's command verification and test evidence.
+Real-browser tests use a cached native startup probe and skip with an actionable reason when Edge/Chrome/Chromium is absent or cannot launch. Once the probe succeeds, capture/matcher assertions run normally and failures remain failures. `ORPHIC_BROWSER` selects an explicit executable for both capture paths. Pytest users can select these tests with `-m browser` (pytest is development tooling, not a plugin dependency). In restricted CI environments, use supported browser launch permissions; production code does not disable browser sandboxing or TLS verification. [HANDOFF.md](docs/HANDOFF.md) records test evidence and environment-specific test launch settings.
