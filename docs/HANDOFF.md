@@ -14,7 +14,7 @@ Branch: `feat/url-capture`, from `origin/stage-5e` at `6bde560c28f05d7d50d66e69f
 - Existing browser launcher: `/workspace/.orphic-eyes/run`; Python: `/workspace/.venvs/orphic-eyes/bin/python`. It maps a working official Chrome build without changing repository files and keeps temporary socket paths short. Browser sandbox remains enabled.
 - `engine/templates/report.html` is owned by another agent: do not edit or stage it. Initial SHA-256: e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2.
 - Step 1 complete: bounded standard-library DevTools WebSocket transport plus an HTTP CONNECT guard. Every browser destination is resolved and checked; direct and upstream public connections pin a validated numeric address to prevent DNS rebinding. Inherited proxies and TLS validation remain enabled. Policy failures/errors omit URLs and browser logs.
-- Validation so far: all 150 existing/new tests passed before the additional upstream-pinning regression test; browserless simulation ran 135 tests, with 7 skip records and zero failures/errors. Final validation will follow the remaining changes.
+- Final full suite: 153 passed, 0 skipped, 0 failures/errors (44.609s). Browserless simulation: unittest ran 137 test methods and reported 7 skips (four class-setup skips and three test-method skips), zero failures/errors. Both new and existing browser paths skip on absence.
 - Step 2 complete: `engine.url_capture.capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250, *, timeout_ms=30000, allow_local=False, browser=None)` raises safe `CaptureError`/`CaptureTimeout`/`BrowserNotFound` errors and atomically publishes a verified PNG. `engine.capture_url` exports this API; legacy `engine.capture` stays unchanged for local-file callers.
 - `engine.capture_pair(before_url, after_url, store_dir, *, name="urls", width=1440, height=900, wait_ms=250, timeout_ms=30000, allow_local=False, browser=None)` captures identical viewports, calls unchanged `compare_images`, `build_report`, `write_report`, and returns the existing schema plus output paths. Each capture has its own deadline (pair preflight DNS is also bounded). URLs/queries are never saved. A nonempty target is rejected; use a fresh name. Staging prevents partial pairs on capture failure.
 - CLI: `python -B -m engine.cli capture-pair BEFORE_URL AFTER_URL --store STORE --name FRESH_NAME [--width 1440 --height 900 --wait-ms 250 --timeout-ms 30000 --allow-local]`. Exit codes retain pass=0/check=1/fail=2/error=3.
@@ -24,6 +24,74 @@ Branch: `feat/url-capture`, from `origin/stage-5e` at `6bde560c28f05d7d50d66e69f
 - Updated the old `tests/test_browser.py` class to raise SkipTest when no browser is installed. Added Hermes schema/error/real-HTTP round-trip coverage and an explicit missing-browser skip regression test.
 - Plugin validation available here: no `hermes` executable is installed, so `hermes plugins validate` is unavailable. The repository's manifest/registration, isolated package import, schema/adapter, local browser workflows and report freshness suites ran: 31 tests passed, zero skips/failures.
 - Scope remains Python engine, minimal existing Python Hermes adapter, tests and this handoff. No UI, dependency manifest, thresholds or report schema changes. No push, merge or deployment.
+
+### Verification and continuation
+
+No new Python dependency: the implementation uses Python's standard library and the existing Pillow dependency. Verified here with Python 3.12.14, Pillow 13.0.0 and official Google Chrome 157.0.8103.50 on Linux. Installed Edge/Chrome/Chromium are discovered using the existing paths; the new API also accepts `browser=` or `ORPHIC_BROWSER`. Windows/Edge launch compatibility follows the existing executable discovery and standard socket/subprocess APIs but has not been run on Windows in this session.
+
+Run the full suite from `/workspace/Orphic-Eyes`:
+
+```sh
+/workspace/.orphic-eyes/run /workspace/.venvs/orphic-eyes/bin/python -B -m unittest discover -v
+```
+
+The runtime's nested command sandbox prevents browser sandbox startup. Use approved normal launch permissions (`require_escalated`) for the launcher; browser sandboxing and TLS verification remain enabled. The retained test logs are `/workspace/.orphic-eyes/url-example/full-tests.log` and `browserless-tests.log`. Browserless simulation patched browser discovery to return None in engine.capture, engine.url_capture and engine.store before test discovery; this did not disable assertions or alter production code.
+
+Exact registered schema can be printed from the repository:
+
+```sh
+python -B -c 'import json, orphic_tools; print(json.dumps(next(schema for name, schema, handler in orphic_tools.TOOL_DEFINITIONS if name == "orphic_compare"), indent=2))'
+```
+
+New `orphic_compare` pair-mode schema fields (the existing `name`, `url`, `requests` and `expect` fields remain):
+
+| Field | Type | Default / requirement |
+| --- | --- | --- |
+| before_url | string | Required together with after_url in pair mode; public http/https |
+| after_url | string | Required together with before_url in pair mode; public http/https |
+| width | integer >= 1 | 1440 |
+| height | integer >= 1 | 900 |
+| wait_ms | integer >= 0 | 250, after network idle |
+| timeout_ms | integer >= 1 | 30000 per capture; greater than wait_ms |
+| allow_local | boolean | false; explicit opt-in for trusted private HTTP(S) pages/resources/redirects |
+
+The schema retains optional legacy mode; the handler enforces the pair-field requirements and rejects mixing modes. Pair mode needs a fresh, empty target name. It never saves the source URL or implicit recapture state. To capture again, supply another pair with a fresh name. Approve/accept can still review the generated files through their existing pipeline; implicit legacy recapture needs a legacy baseline.
+
+Example Hermes adapter call (verified against a temporary local HTTP server):
+
+```json
+{"name":"orphic_compare","arguments":{"name":"hermes-url-example","before_url":"http://127.0.0.1:8765/page_a.html","after_url":"http://127.0.0.1:8765/page_b.html","width":1440,"height":900,"allow_local":true}}
+```
+
+Response excerpt:
+
+```json
+{"success":true,"status":"check","message":"1 changed zone | Check these changes","summary":{"changed_px":2041,"changed_percent":0.157,"box_count":1,"unexpected_count":1},"paths":{"report":"/workspace/.orphic-eyes/url-example/hermes/orphic-eyes/hermes-url-example/report.json","html":"/workspace/.orphic-eyes/url-example/hermes/orphic-eyes/hermes-url-example/report.html"}}
+```
+
+Exact schema/call/response are retained outside the checkout as `tool-schema.json`, `example-call.json`, and `example-response.json` in `/workspace/.orphic-eyes/url-example/`.
+
+Reproduce the CLI example in two terminals (choose a fresh target name if rerunning). The temporary server used for verification was stopped afterward:
+
+```sh
+# Terminal 1, from the repository root:
+python -B -m http.server 8765 --bind 127.0.0.1 --directory tests/fixtures
+
+# Terminal 2, from the repository root:
+/workspace/.orphic-eyes/run /workspace/.venvs/orphic-eyes/bin/python -B -m engine.cli capture-pair http://127.0.0.1:8765/page_a.html http://127.0.0.1:8765/page_b.html --allow-local --store /workspace/.orphic-eyes/url-example --name comparison
+```
+
+Verified CLI result: exit 1 (`check`, a successful comparison requiring review), 1440x900, one changed zone, 2,041 changed pixels (0.157%). Changed box: x=48, y=232, w=186, h=49. Outputs under `/workspace/.orphic-eyes/url-example/comparison/`: `baseline.png`, `current.png`, `diff.png`, `metadata.json`, `report.json`, `report.html`. Repeated-capture tests separately verified identical pixels, disabled CSS motion, and full-page dimensions. Report HTML embeds exactly the same JSON as report.json.
+
+### Limits and safety notes
+
+- Strict URL capture is `engine.url_capture.capture` / `engine.capture_url`; the existing `engine.capture` remains a local-file compatibility API. The new API always rejects file/javascript/data input URLs, including with allow_local enabled. Invalid URL, blocked private destination, unavailable browser, navigation/HTTP error and timeout errors are clear and omit the source URL. No .env files are read or printed.
+- Public DNS must resolve to exclusively public addresses. DNS failure is fail-closed. Public-site capture was not verified in this Cloud instance because public DNS was unavailable/restricted; the real integration tests and example use local HTTP with explicit allow_local. Required preview/live domains and their resources must also be permitted by the environment's outbound policy.
+- The inherited proxy is honored. In public-only mode its CONNECT destination is a validated numeric IP to prevent DNS rebinding at the proxy; hostname-only proxy allowlists or credential routes may reject this. The proxy must support HTTP CONNECT for HTTP and HTTPS, and browser/system CA trust must be configured. No TLS/checksum verification or browser sandbox was disabled. This policy is intentionally not bypassed.
+- Fresh browser profiles have no saved login/cookies. Login walls, cookie banners, sites that block headless browsers, CSP that prevents a rendering override, or dynamic video/canvas/timers can affect screenshots. Cross-browser/OS/font rendering can differ. Full-page capture is only on the single-capture API; pair reports deliberately use equal viewports.
+- The capture timeout covers DNS/startup/navigation/network-idle/wait/screenshot, with bounded process cleanup. Pair preflight and each of its two captures are bounded separately. Avoid concurrent writes to the same target. Successful capture/report files stay local; the guard/profiles/browser processes are temporary and cleaned up.
+- `hermes plugins validate` was unavailable (Hermes CLI not installed). Existing repository manifest/registration/schema/isolated-import and real adapter tests passed. No live Hermes host or Windows run is claimed.
+- `engine/templates/report.html` and every other UI file are unchanged; template SHA-256 remains `e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2`. Diff thresholds, limits, report schema and dependency manifests are unchanged. Commits are local on `feat/url-capture`; nothing was pushed, merged or deployed.
 
 ## Previous task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
 
