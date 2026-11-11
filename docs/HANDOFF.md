@@ -1,6 +1,24 @@
 # HANDOFF
 
-## Current task: URL capture engine
+## Current task: Local report server and Hermes-driven auto loop
+
+Branch: `feat/auto-loop`, from pushed `feat/url-capture` at `d92bbaa83782cbbc8300ee54bde7dbe427c38e93`.
+
+### Plan
+1. Push only feat/url-capture and confirm with ls-remote. Done: `d92bbaa83782cbbc8300ee54bde7dbe427c38e93 refs/heads/feat/url-capture`.
+2. Implement a loopback-only, read-only report server with random default port, confined file access, clean shutdown/timeout, CLI latest/named selection, and cross-process server discovery. Return report_url (or startup instructions) from captures/compares without changing report schema/templates.
+3. Implement immutable loop session anchors and per-round captures/reports. Compare each new image with the prior round, while checking fixed goals: existing Point & Tell requests anchored to the original baseline, or exact restoration of initial changed areas to the original baseline when requests are absent. Recompute persistent unexpected zones against that fixed anchor. Do not confuse no new changes with goal completion. Return continue/done/max_rounds/needs_human and a neutral, pixel-only follow-up prompt. Reuse existing diff/matching thresholds and limits.
+4. Register orphic_loop_step using the existing Hermes adapter pattern (requires the minimal plugin.yaml tool declaration as well as Python registration). Test serving confinement and actual HTTP image access, two-round correction, unchanged failure, unexpected changes, max-round and unclear paths, missing-browser skips, and full regression suite. Document examples/limits in docs/AUTO-LOOP.md and update this handoff after every step.
+5. Commit in small steps, push only feat/auto-loop, confirm both feature refs with ls-remote. No PRs, merges or deployments.
+
+### Constraints and starting state
+- Never edit/stage engine/templates/report.html, README.md or any UI file; Claude owns report.html on release/hackathon.
+- Source template starting SHA-256: e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2. README starting SHA-256: c1cb30ccf91990d01faea7ac4ed989d2154150ef3f4a809329ee04036d9ae0ae.
+- Keep diff thresholds, matching budgets/limits and report schema unchanged. No new dependency planned. Never read .env or log source URL values.
+- Repository was clean at the start. No pushes to main/stage-5e/release branches.
+- Current runtime: Python `/workspace/.venvs/orphic-eyes/bin/python`, browser-enabled command prefix `/workspace/.orphic-eyes/run`. Normal browser-launch permissions are required; keep browser sandbox and TLS validation enabled.
+
+## Previous task: URL capture engine
 
 Branch: `feat/url-capture`, from `origin/stage-5e` at `6bde560c28f05d7d50d66e69fb1a47849be4612a`.
 
