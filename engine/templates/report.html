@@ -2420,7 +2420,7 @@ body.insp-closed .inspector{border-left:0}
     tabs.innerHTML = '';
     var report = state.report;
     if (!report) {
-      list.appendChild(el('p', 'empty-note', 'No page yet. Load a report to see its page here.'));
+      list.appendChild(el('p', 'empty-note', 'Load images to start'));
       return;
     }
     var pageName = report.name || 'report';
@@ -2520,7 +2520,7 @@ body.insp-closed .inspector{border-left:0}
     var addCount = state.addDrafts.length;
 
     if (!state.boxes.length) {
-      holder.appendChild(state.report ? el('p', 'empty-note', 'No changed areas. Both pictures look the same.') : guideBlock());
+      holder.appendChild(el('p', 'empty-note', state.report ? 'No changed areas. Both pictures look the same.' : 'Load images to start'));
     } else {
       state.boxes.forEach(function (box) {
         var status = boxStatus(box);
@@ -2562,6 +2562,10 @@ body.insp-closed .inspector{border-left:0}
       seen[key] = true;
     }
     list.innerHTML = '';
+    if (!state.report) {
+      list.appendChild(el('p', 'empty-note', 'Load images to start'));
+      return;
+    }
     if (!state.requests.length && !draftCount && !addCount) {
       var empty = el('div', 'guide');
       empty.appendChild(el('strong', null, 'No requests yet'));
@@ -3232,7 +3236,7 @@ body.insp-closed .inspector{border-left:0}
       title.textContent = 'Details';
       chip.textContent = '';
       chip.hidden = true;
-      body.appendChild(emptyInspector('Load a report to begin'));
+      body.appendChild(el('p', 'empty-note', 'Load images to start'));
       return;
     }
     chip.hidden = false;
@@ -3778,7 +3782,10 @@ body.insp-closed .inspector{border-left:0}
     $('#floatTop').hidden = !state.report;
     $('#zoomPill').hidden = !state.report;
     var hint = $('#moveHint');
-    if (hint) hint.textContent = state.mode === 'add' ? HINT_ADD : state.mode === 'move' ? HINT_MOVE : 'This tool only sees pixels, not page code.';
+    if (hint) {
+      hint.textContent = state.mode === 'add' ? HINT_ADD : state.mode === 'move' ? HINT_MOVE : 'This tool only sees pixels, not page code.';
+      hint.hidden = !state.report;
+    }
     /* Each mode shows only its own controls. */
     var forNodes = document.querySelectorAll('#floatTop [data-for], #moveToolbar [data-for]');
     for (var f = 0; f < forNodes.length; f++) {
@@ -3851,6 +3858,7 @@ body.insp-closed .inspector{border-left:0}
     var size = stageSize();
     var label = size.w + 'x' + size.h;
     $('#captureSize').textContent = report ? size.w + '\u00d7' + size.h : '\u2014';
+    $('#captureChip').hidden = !report;
     $('#captureName').textContent = report ? presetName(size.w, size.h) : 'Capture';
     if (!report) {
       $('#sbCapture').textContent = 'No report loaded';
