@@ -574,14 +574,8 @@ body.insp-closed .inspector{border-left:0}
 .modal{width:min(640px,100%);max-height:76vh;display:flex;flex-direction:column;border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop);overflow:hidden}
 .modal-head{display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s3) var(--s3) var(--s4);border-bottom:1px solid var(--line)}
 .modal-head h2{margin:0;flex:1;font-size:var(--fs-section);font-weight:var(--w-strong)}
-.modal-body{display:grid;grid-template-columns:160px minmax(0,1fr);min-height:0;flex:1}
 .modal-foot{display:flex;align-items:center;gap:6px;padding:var(--s2) var(--s4);border-top:1px solid var(--line);color:var(--muted);font-size:var(--fs-sec)}
 .modal-foot .ic{width:14px;height:14px;color:var(--green)}
-.modal-nav{padding:var(--s2);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:2px}
-.modal-nav button{text-align:left;min-height:var(--hit);padding:0 var(--s3);border-radius:var(--r-btn);color:var(--muted);font-weight:var(--w-medium)}
-.modal-nav button:hover{background:var(--hover);color:var(--ink)}
-.modal-nav button.on{background:var(--active);color:var(--ink);font-weight:var(--w-strong)}
-.modal-pane{padding:var(--s4);overflow:auto}
 .set-row{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);padding:var(--s2) 0;min-height:44px}
 .set-row+.set-row{border-top:1px solid var(--line)}
 .set-row .set-label{display:flex;flex-direction:column;min-width:0}
@@ -596,6 +590,29 @@ body.insp-closed .inspector{border-left:0}
 .kbd-list .kbd-group{grid-column:1/-1;margin-top:var(--s3)}
 .kbd-list .kbd-group:first-child{margin-top:0}
 .about p{margin:0 0 var(--s3);color:var(--muted)}
+/* settings modal */
+.scrim.st-scrim{background:rgba(0,0,0,.4);align-items:center;padding:var(--s4)}
+.st-modal{--st-surface:var(--panel);--st-side:#F6F6F4;--st-line:#E8E8E4;--st-ink:var(--ink);--st-muted:var(--muted);--st-active:#2F80FF;--st-active-ink:#1D63D3;--st-active-bg:rgba(47,128,255,.10);--st-danger:var(--red);
+  position:relative;display:grid;grid-template-columns:200px minmax(0,1fr);width:min(760px,92vw);height:min(560px,86vh);border-radius:12px;background:var(--st-surface);color:var(--st-ink);box-shadow:0 24px 64px rgba(20,20,25,.22),0 4px 12px rgba(20,20,25,.08);overflow:hidden}
+.st-side{display:flex;flex-direction:column;gap:var(--s3);min-height:0;padding:12px;background:var(--st-side);border-right:1px solid var(--st-line)}
+.st-title{margin:6px 10px 2px;font-size:var(--fs-panel);font-weight:var(--w-strong)}
+.st-nav{display:flex;flex-direction:column;gap:2px;min-height:0;overflow:auto}
+.st-nav [role="tab"]{position:relative;display:flex;align-items:center;gap:10px;height:36px;flex:none;padding:0 10px;border-radius:8px;color:var(--st-muted);font-size:var(--fs-body);font-weight:var(--w-medium);text-align:left}
+.st-nav [role="tab"] .ic{width:16px;height:16px;flex:none}
+.st-nav [role="tab"]:hover{background:var(--hover);color:var(--st-ink)}
+.st-nav [role="tab"][aria-selected="true"]{background:var(--st-active-bg);color:var(--st-active-ink)}
+.st-nav [role="tab"][aria-selected="true"] .ic{color:var(--st-active)}
+.st-version{margin:auto 10px 4px;font-size:var(--fs-cap);color:var(--st-muted)}
+.st-main{position:relative;display:flex;flex-direction:column;min-width:0;min-height:0}
+.st-close{position:absolute;top:14px;right:14px;z-index:3;width:32px;height:32px}
+.st-panel{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;padding:0 28px 24px}
+.st-panel:focus-visible{outline-offset:-2px}
+.st-head{position:sticky;top:0;z-index:2;margin:0 -28px var(--s2);padding:24px 60px 12px 28px;background:var(--st-surface)}
+.st-head h3{margin:0;font-size:calc(18px * var(--fs-scale));font-weight:var(--w-strong);line-height:1.3}
+.st-head p{margin:4px 0 0;font-size:var(--fs-body);color:var(--st-muted)}
+.st-body{display:flex;flex-direction:column;gap:24px}
+.st-foot{display:flex;align-items:center;gap:6px;padding:10px 28px;border-top:1px solid var(--st-line);font-size:var(--fs-sec);color:var(--st-muted)}
+.st-foot .ic{width:14px;height:14px;color:var(--green)}
 .about p:first-child{color:var(--ink)}
 /* command palette */
 .palette{width:min(560px,100%);border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop);overflow:hidden}
@@ -778,6 +795,7 @@ body.insp-closed .inspector{border-left:0}
   <symbol id="i-check" viewBox="0 0 16 16"><path d="m3 8.5 3.2 3L13 4.75"/></symbol>
   <symbol id="i-image" viewBox="0 0 16 16"><rect x="1.75" y="2.75" width="12.5" height="10.5" rx="2"/><circle cx="5.75" cy="6.25" r="1.25"/><path d="m2 11.5 3.5-3 2.5 2 2.25-2 3.75 3"/></symbol>
   <symbol id="i-keyboard" viewBox="0 0 16 16"><rect x="1.75" y="3.75" width="12.5" height="8.5" rx="1.5"/><path d="M4.5 6.5h.01M7 6.5h.01M9.5 6.5h.01M12 6.5h.01M5 9.5h6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 16 16"><path d="M8 1.75 2.75 3.75v4c0 3.1 2.2 5.4 5.25 6.5 3.05-1.1 5.25-3.4 5.25-6.5v-4z"/></symbol>
   <symbol id="i-info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.25"/><path d="M8 7.25v3.75M8 5v.05"/></symbol>
   <symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.5v9l7-4.5z"/></symbol>
   <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.25M8 13.25v1.25M14.5 8h-1.25M2.75 8H1.5M12.6 3.4l-.9.9M4.3 11.7l-.9.9M12.6 12.6l-.9-.9M4.3 4.3l-.9-.9"/></symbol>
@@ -5275,9 +5293,24 @@ body.insp-closed .inspector{border-left:0}
   }
   function openShortcuts() { openSettings('shortcuts'); }
 
-  /* settings */
+  /* settings: left tab list, one panel; phones get a two-level list */
+  var SETTINGS_TABS = [
+    { id: 'general', label: 'General', icon: 'gear', sub: 'Get to know the app.' },
+    { id: 'appearance', label: 'Appearance', icon: 'sun', sub: 'Theme and text size.' },
+    { id: 'canvas', label: 'Canvas', icon: 'image', sub: 'How the picture opens, and the grid, snapping and rulers.' },
+    { id: 'prompt', label: 'Copy prompt', icon: 'copy', sub: 'What goes into the prompt you copy.' },
+    { id: 'privacy', label: 'Data & privacy', icon: 'shield', sub: 'What this page keeps, and how to reset it.' },
+    { id: 'shortcuts', label: 'Shortcuts', icon: 'keyboard', sub: 'Keys that work in this app.' },
+    { id: 'about', label: 'About', icon: 'info', sub: 'What Orphic Eyes is.' }
+  ];
+  var SETTINGS_VERSION = 'dev';   /* no version constant exists in the app yet */
   var settingsTab = 'general';
+  var settingsLevel = 1;          /* phones: 1 = list of sections, 2 = one section */
   var resetArmed = false;
+  function settingsTabInfo(id) {
+    for (var i = 0; i < SETTINGS_TABS.length; i++) if (SETTINGS_TABS[i].id === id) return SETTINGS_TABS[i];
+    return SETTINGS_TABS[0];
+  }
   function segControl(options, value, onPick, label) {
     var seg = el('div', 'seg');
     seg.setAttribute('role', 'group');
@@ -5286,6 +5319,7 @@ body.insp-closed .inspector{border-left:0}
       var b = el('button', String(opt[0]) === String(value) ? 'on' : '', opt[1]);
       b.type = 'button';
       b.setAttribute('aria-pressed', String(opt[0]) === String(value) ? 'true' : 'false');
+      b.setAttribute('data-st-key', label + ':' + opt[0]);
       b.addEventListener('click', function () { onPick(opt[0]); });
       seg.appendChild(b);
     });
@@ -5297,6 +5331,7 @@ body.insp-closed .inspector{border-left:0}
     b.setAttribute('role', 'switch');
     b.setAttribute('aria-checked', on ? 'true' : 'false');
     b.setAttribute('aria-label', label);
+    b.setAttribute('data-st-key', label);
     b.addEventListener('click', function () { onFlip(!on); });
     return b;
   }
@@ -5309,30 +5344,28 @@ body.insp-closed .inspector{border-left:0}
     row.appendChild(control);
     return row;
   }
-  function settingsPane(tab) {
-    var pane = el('div', 'modal-pane');
+  function actionButton(text, key, onClick) {
+    var b = el('button', 'btn', text);
+    b.type = 'button';
+    b.setAttribute('data-st-key', key);
+    b.addEventListener('click', onClick);
+    return b;
+  }
+  function resetPreferences() {
+    try { window.localStorage.removeItem(PREFS_KEY); } catch (err) { /* ignore */ }
+    loadPrefs();
+    prefs.tourDone = true;
+    savePrefs();
+    applyTheme(prefs.theme);
+    applyTextSize(state.textSize);
+    render();
+    refreshSettings();
+    toast('Preferences reset');
+  }
+  function settingsContent(tab) {
+    var pane = el('div', 'st-body');
     if (tab === 'general') {
-      var reset = el('button', 'btn', resetArmed ? 'Click again to reset' : 'Reset preferences');
-      reset.type = 'button';
-      if (resetArmed) reset.style.color = 'var(--red)';
-      reset.addEventListener('click', function () {
-        if (!resetArmed) { resetArmed = true; refreshSettings(); return; }
-        resetArmed = false;
-        try { window.localStorage.removeItem(PREFS_KEY); } catch (err) { /* ignore */ }
-        loadPrefs();
-        prefs.tourDone = true;
-        savePrefs();
-        applyTheme(prefs.theme);
-        applyTextSize(state.textSize);
-        render();
-        refreshSettings();
-        toast('Preferences reset');
-      });
-      pane.appendChild(setRow('Reset preferences', 'Theme, text size, panels and canvas options go back to their defaults.', reset));
-      var tour = el('button', 'btn', 'Start tour');
-      tour.type = 'button';
-      tour.addEventListener('click', function () { closeLayer(true); startTour(); });
-      pane.appendChild(setRow('Quick tour', 'A four-step walk through the app.', tour));
+      pane.appendChild(setRow('Quick tour', 'A four-step walk through the app.', actionButton('Start tour', 'tour', function () { closeLayer(true); startTour(); })));
     } else if (tab === 'appearance') {
       pane.appendChild(setRow('Theme', null, segControl([['light', 'Light'], ['dark', 'Dark'], ['system', 'System']], prefs.theme, setTheme, 'Theme')));
       pane.appendChild(setRow('Text size', 'Scales every label in the app.', segControl([['s', 'S'], ['m', 'M'], ['l', 'L']], state.textSize, setTextSize, 'Text size')));
@@ -5371,6 +5404,14 @@ body.insp-closed .inspector{border-left:0}
       link.setAttribute('data-preview-prompt', '');
       card.appendChild(link);
       pane.appendChild(card);
+    } else if (tab === 'privacy') {
+      var reset = actionButton(resetArmed ? 'Click again to reset' : 'Reset preferences', 'reset', function () {
+        if (!resetArmed) { resetArmed = true; refreshSettings(); return; }
+        resetArmed = false;
+        resetPreferences();
+      });
+      if (resetArmed) reset.style.color = 'var(--red)';
+      pane.appendChild(setRow('Reset preferences', 'Theme, text size, panels and canvas options go back to their defaults.', reset));
     } else if (tab === 'shortcuts') {
       pane.appendChild(shortcutList());
     } else {
@@ -5382,54 +5423,121 @@ body.insp-closed .inspector{border-left:0}
     }
     return pane;
   }
+  function renderSettingsPanel(modal) {
+    var info = settingsTabInfo(settingsTab);
+    var panel = modal.querySelector('.st-panel');
+    panel.setAttribute('aria-labelledby', 'stTab-' + info.id);
+    modal.querySelector('.st-head h3').textContent = info.label;
+    modal.querySelector('.st-head p').textContent = info.sub;
+    var old = panel.querySelector('.st-body');
+    var fresh = settingsContent(info.id);
+    if (old) panel.replaceChild(fresh, old); else panel.appendChild(fresh);
+    modal.querySelectorAll('.st-nav [role="tab"]').forEach(function (b) {
+      var on = b.getAttribute('data-settings-tab') === info.id;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-selected', on ? 'true' : 'false');
+      b.tabIndex = on ? 0 : -1;
+    });
+    modal.setAttribute('data-level', String(settingsLevel));
+  }
+  function selectSettingsTab(id, focusTab) {
+    var modal = document.querySelector('#layer .st-modal');
+    settingsTab = id;
+    resetArmed = false;
+    if (!modal) return;
+    renderSettingsPanel(modal);
+    modal.querySelector('.st-panel').scrollTop = 0;
+    if (focusTab) {
+      var tab = modal.querySelector('#stTab-' + id);
+      if (tab) tab.focus();
+    }
+  }
   function settingsModal() {
-    var modal = el('div', 'modal');
+    var modal = el('div', 'st-modal');
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-label', 'Settings');
-    var head = el('div', 'modal-head');
-    head.appendChild(el('h2', null, settingsTab === 'shortcuts' ? 'Keyboard shortcuts' : 'Settings'));
-    var close = el('button', 'icon-btn');
-    close.type = 'button';
-    close.setAttribute('aria-label', 'Close');
-    close.appendChild(icon('x'));
-    close.addEventListener('click', function () { closeLayer(); });
-    head.appendChild(close);
-    modal.appendChild(head);
-    var bodyNode = el('div', 'modal-body');
-    var nav = el('div', 'modal-nav');
+    modal.setAttribute('aria-labelledby', 'stTitle');
+    var side = el('div', 'st-side');
+    var title = el('h2', 'st-title', 'Settings');
+    title.id = 'stTitle';
+    side.appendChild(title);
+    var nav = el('div', 'st-nav');
     nav.setAttribute('role', 'tablist');
-    [['general', 'General'], ['appearance', 'Appearance'], ['canvas', 'Canvas'], ['prompt', 'Copy prompt'], ['shortcuts', 'Shortcuts'], ['about', 'About']].forEach(function (t) {
-      var b = el('button', settingsTab === t[0] ? 'on' : '', t[1]);
+    nav.setAttribute('aria-orientation', 'vertical');
+    nav.setAttribute('aria-labelledby', 'stTitle');
+    SETTINGS_TABS.forEach(function (t) {
+      var b = el('button');
       b.type = 'button';
+      b.id = 'stTab-' + t.id;
       b.setAttribute('role', 'tab');
-      b.setAttribute('aria-selected', settingsTab === t[0] ? 'true' : 'false');
-      b.setAttribute('data-settings-tab', t[0]);
-      b.addEventListener('click', function () { settingsTab = t[0]; resetArmed = false; refreshSettings(t[0]); });
+      b.setAttribute('aria-controls', 'stPanel');
+      b.setAttribute('data-settings-tab', t.id);
+      b.appendChild(icon(t.icon));
+      b.appendChild(el('span', 'st-tab-label', t.label));
+      b.addEventListener('click', function () { selectSettingsTab(t.id, false); });
       nav.appendChild(b);
     });
-    bodyNode.appendChild(nav);
-    bodyNode.appendChild(settingsPane(settingsTab));
-    modal.appendChild(bodyNode);
-    var foot = el('div', 'modal-foot');
+    nav.addEventListener('keydown', function (event) {
+      var ids = SETTINGS_TABS.map(function (t) { return t.id; });
+      var i = ids.indexOf(settingsTab);
+      var next = null;
+      if (event.key === 'ArrowDown') next = ids[(i + 1) % ids.length];
+      else if (event.key === 'ArrowUp') next = ids[(i - 1 + ids.length) % ids.length];
+      else if (event.key === 'Home') next = ids[0];
+      else if (event.key === 'End') next = ids[ids.length - 1];
+      if (!next) return;
+      event.preventDefault();
+      selectSettingsTab(next, true);
+    });
+    side.appendChild(nav);
+    side.appendChild(el('p', 'st-version', 'Version ' + SETTINGS_VERSION));
+    modal.appendChild(side);
+    var main = el('div', 'st-main');
+    var close = el('button', 'icon-btn st-close');
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Close settings');
+    close.appendChild(icon('x'));
+    close.addEventListener('click', function () { closeLayer(); });
+    var panel = el('div', 'st-panel');
+    panel.id = 'stPanel';
+    panel.setAttribute('role', 'tabpanel');
+    panel.tabIndex = 0;
+    var head = el('div', 'st-head');
+    head.appendChild(el('h3'));
+    head.appendChild(el('p'));
+    panel.appendChild(head);
+    main.appendChild(panel);
+    var foot = el('div', 'st-foot');
     foot.appendChild(icon('check'));
-    foot.appendChild(el('span', null, 'Changes save automatically.'));
-    modal.appendChild(foot);
+    foot.appendChild(el('span', null, 'Changes save automatically'));
+    main.appendChild(foot);
+    main.appendChild(close);
+    modal.appendChild(main);
+    renderSettingsPanel(modal);
     return modal;
   }
   function openSettings(tab) {
     settingsTab = tab || settingsTab || 'general';
+    settingsLevel = tab ? 2 : 1;
     resetArmed = false;
-    openLayer(scrim(settingsModal()), { focus: '.modal-nav button.on' });
+    var wrap = scrim(settingsModal());
+    wrap.classList.add('st-scrim');
+    openLayer(wrap, { focus: '.st-nav [aria-selected="true"]' });
   }
-  function refreshSettings(focusTab) {
-    var current = document.querySelector('#layer .modal');
-    if (!current) return;
-    var focusedTab = focusTab || (document.activeElement && document.activeElement.getAttribute('data-settings-tab'));
-    var fresh = settingsModal();
-    current.parentNode.replaceChild(fresh, current);
-    var target = focusedTab ? fresh.querySelector('[data-settings-tab="' + focusedTab + '"]') : fresh.querySelector('.modal-pane button, .modal-nav button.on');
-    if (target) target.focus();
+  /* Re-draw the open panel after a change; keep its scroll and the focused control. */
+  function refreshSettings() {
+    var modal = document.querySelector('#layer .st-modal');
+    if (!modal) return;
+    var panel = modal.querySelector('.st-panel');
+    var active = document.activeElement;
+    var key = active && panel.contains(active) ? active.getAttribute('data-st-key') : null;
+    var top = panel.scrollTop;
+    renderSettingsPanel(modal);
+    panel.scrollTop = top;
+    if (key) {
+      var again = panel.querySelector('[data-st-key="' + key.replace(/"/g, '\\"') + '"]');
+      if (again) again.focus();
+    }
   }
 
   /* command palette */
