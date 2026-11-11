@@ -1,6 +1,25 @@
 # HANDOFF
 
-## Current task: Settings General + About
+## Current task: Merge auto-loop + readme, header theme toggle, small UI fixes
+
+Branch: `release/hackathon` (pulled, at 5c573c2). `docs/windows-test` is not touched.
+
+### Investigation
+- Remote refs: `feat/url-capture` d92bbaa ⊂ `feat/auto-loop` ab5f9e3 ⊂ `docs/readme` 9e5bf71; all branch from `stage-5e` 6bde560. Neither touches `engine/templates/report.html`.
+- Dry run (`git merge-tree`): only `docs/HANDOFF.md` conflicts, for both merges. README.md is unchanged on release/hackathon since 6bde560, so docs/readme's README comes in cleanly.
+- URL labels: `engine/url_capture.capture_pair` deliberately never writes the source URLs. Its docstring says "Source URLs and queries are never persisted in report metadata or logs", and Codex's HANDOFF repeats this as a privacy rule. `metadata.json` comes from `_metadata(executable, width, height, 0)` and `report.json` from the unchanged `build_report`; neither has a URL field. Showing labels would need an engine/schema change, which this task does not cover. Engine files may only change through the merges.
+
+### Plan
+1. `git merge origin/feat/auto-loop`, then `git merge origin/docs/readme` (merge commits). On the HANDOFF conflict, keep every section in this order: this task, the engine/README sections, then the older UI sections. Run the full suite after each merge.
+2. URL labels: not built. The UI cannot show what the report does not contain, and inventing a field would be a fake feature. Proof: run a real capture-pair on two local pages and show that report.json/metadata.json contain no URL. Open question for Ilham: allow the engine to store the URLs (privacy trade-off), or leave labels out.
+3. Header: the gear next to Copy prompt becomes a light/dark toggle (sun in light, moon in dark, aria-pressed = dark, rotate/fade swap, off under reduced motion). It saves `prefs.theme`; "System" resolves to an explicit light/dark on the first click; Appearance stays in sync. Editable shortcut `theme.toggle`. Settings stays reachable through Ctrl+,, the palette, and a visible entry (the sidebar footer already has a "Settings" button on desktop; check the phone menu).
+4. About: remove the two credit lines. Data & privacy: reset description mentions the General settings.
+5. README: the Content check row becomes implemented (pixel-only, looks removed/added/changed, no OCR); font licenses stay.
+
+### Status
+- Plan written.
+
+## Previous task: Settings General + About
 
 Branch: `release/hackathon` (pulled, at b2560d2, after the Content check commits). Only `engine/templates/report.html` + this file.
 
