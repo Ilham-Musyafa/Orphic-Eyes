@@ -2394,21 +2394,15 @@ body.insp-closed .inspector{border-left:0}
     var report = state.report;
     chip.className = 'status-chip hide-sm';
     var pending = state.drafts.length + state.addDrafts.length;
-    if (!report) {
-      chip.textContent = 'Draft';
-      chip.setAttribute('data-tip', 'No report loaded');
-      return;
-    }
+    chip.hidden = !report;
+    if (!report) return;
+    /* Same state as the inspector banner: pass / check / fail. */
     var status = STATUS_TEXT[report.status] ? report.status : 'check';
+    var CHIP_TEXT = { pass: 'Ready', check: 'Check changes', fail: 'Big change' };
     var tip = STATUS_TEXT[status] + ' · ' + state.boxes.length + ' changed area' + (state.boxes.length === 1 ? '' : 's');
-    if (pending) {
-      chip.classList.add('draft');
-      chip.textContent = pending + ' request' + (pending === 1 ? '' : 's');
-      tip = pending + ' new request' + (pending === 1 ? '' : 's') + ' ready to copy · ' + tip;
-    } else {
-      chip.classList.add(status);
-      chip.textContent = 'Ready';
-    }
+    if (pending) tip += ' · ' + pending + ' new request' + (pending === 1 ? '' : 's') + ' ready to copy';
+    chip.classList.add(status);
+    chip.textContent = CHIP_TEXT[status];
     chip.setAttribute('data-tip', tip);
     chip.setAttribute('aria-label', chip.textContent + '. ' + tip);
   }
