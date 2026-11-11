@@ -174,7 +174,6 @@ body.insp-closed{--inspector-cur:0px}
 .sheet-grip{display:none}
 .req-sheet-foot,.modal-head .m-close{display:none}
 body.touch .tip kbd,body.touch .menu kbd{display:none}
-.kbd-list .kbd-touch{grid-column:1 / -1;margin:0 0 var(--s2)}
 .stepper-short{display:none;font-size:var(--fs-sec);color:var(--muted);white-space:nowrap}
 @media (max-width:1599px){.step-label{display:none}.step+.step::before{width:8px}}
 @media (max-width:1279px){.capture-chip{display:none}.header{grid-template-columns:auto minmax(0,1fr) auto}.header .hd-center{justify-self:center}}
@@ -572,10 +571,6 @@ body.insp-closed .inspector{border-left:0}
 .modal{width:min(640px,100%);max-height:76vh;display:flex;flex-direction:column;border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop);overflow:hidden}
 .modal-head{display:flex;align-items:center;gap:var(--s2);padding:var(--s3) var(--s3) var(--s3) var(--s4);border-bottom:1px solid var(--line)}
 .modal-head h2{margin:0;flex:1;font-size:var(--fs-section);font-weight:var(--w-strong)}
-.kbd-list{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px var(--s4);font-size:var(--fs-body)}
-.kbd-list kbd{font-family:var(--font-mono);font-size:var(--fs-sec);background:var(--surface);border-radius:5px;padding:1px 7px;justify-self:end;white-space:nowrap}
-.kbd-list .kbd-group{grid-column:1/-1;margin-top:var(--s3)}
-.kbd-list .kbd-group:first-child{margin-top:0}
 /* settings modal */
 .scrim.st-scrim{background:rgba(0,0,0,.4);align-items:center;padding:var(--s4)}
 .st-modal{--st-surface:var(--panel);--st-side:#F6F6F4;--st-line:#E8E8E4;--st-ink:var(--ink);--st-muted:var(--muted);--st-active:#2F80FF;--st-active-ink:#1D63D3;--st-active-bg:rgba(47,128,255,.10);--st-danger:var(--red);
@@ -630,6 +625,23 @@ body.insp-closed .inspector{border-left:0}
 .st-about p{margin:0 0 10px;font-size:var(--fs-body);line-height:1.55;color:var(--st-muted)}
 .st-about p:first-child{color:var(--st-ink)}
 .st-about p:last-child{margin-bottom:0}
+.st-shortcuts{display:flex;flex-direction:column;gap:20px}
+.st-sc-search{position:relative;display:flex;align-items:center}
+.st-sc-search>.ic{position:absolute;left:10px;width:14px;height:14px;color:var(--st-muted);pointer-events:none}
+.st-sc-search input{width:100%;height:32px;padding:0 10px 0 32px;border:1px solid var(--line2);border-radius:8px;background:var(--input);color:var(--st-ink);font:inherit;font-size:var(--fs-body)}
+.st-sc-search input::placeholder{color:var(--st-muted)}
+.st-sc-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;min-height:44px;padding:6px 16px;border-top:1px solid var(--st-line)}
+.st-sc-row.st-first{border-top:0}
+.st-sc-text{display:flex;flex-direction:column;min-width:0}
+.st-sc-action{font-size:var(--fs-body);font-weight:var(--w-medium);line-height:1.35}
+.st-sc-when{font-size:var(--fs-sec);color:var(--st-muted)}
+.st-keys{display:inline-flex;align-items:center;gap:4px;flex:none}
+kbd.st-key{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:22px;height:22px;padding:0 6px;border:1px solid var(--line2);border-bottom-width:2px;border-radius:6px;background:var(--surface);color:var(--st-ink);font-family:var(--font-mono);font-size:11px;font-weight:var(--w-medium);line-height:1}
+:root[data-theme="dark"] kbd.st-key{background:#ffffff0f;border-color:#ffffff1f}
+mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
+.st-sc-empty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:28px 16px;text-align:center;color:var(--st-muted);font-size:var(--fs-body)}
+.st-sc-empty p{margin:0}
+.st-sc-tip{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0;font-size:var(--fs-sec);color:var(--st-muted)}
 /* command palette */
 .palette{width:min(560px,100%);border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop);overflow:hidden}
 .palette-input{display:flex;align-items:center;gap:var(--s2);padding:0 var(--s4);border-bottom:1px solid var(--line);color:var(--muted)}
@@ -5286,26 +5298,180 @@ body.insp-closed .inspector{border-left:0}
     }, 0);
   }
 
-  /* shortcuts */
+  /* shortcuts: only bindings that have a handler in the keydown code above */
   var SHORTCUTS = [
-    ['General', null],
-    ['Command palette', 'Ctrl+K'], ['Copy prompt', 'Ctrl+Enter'], ['Undo', 'Ctrl+Z'], ['Redo', 'Ctrl+Shift+Z'],
-    ['Toggle sidebar', 'Ctrl+B'], ['Toggle details panel', 'Ctrl+I'], ['Settings', 'Ctrl+,'], ['Keyboard shortcuts', '?'],
-    ['Close / clear selection', 'Esc'],
-    ['Modes', null], ['Review', '1'], ['Move', '2'], ['Add', '3'],
-    ['Tools (Move and Add)', null], ['Select', 'V'], ['Move', 'M'], ['Place (Add mode)', 'P'], ['Hand (hold)', 'Space'],
-    ['Lock to one axis while dragging', 'Shift'],
-    ['View', null], ['Zoom to fit', '0']
+    { group: 'General', action: 'Open command palette', keys: ['Mod', 'K'] },
+    { group: 'General', action: 'Open settings', keys: ['Mod', ','] },
+    { group: 'General', action: 'Show keyboard shortcuts', keys: ['?'] },
+    { group: 'General', action: 'Undo', keys: ['Mod', 'Z'] },
+    { group: 'General', action: 'Redo', keys: ['Mod', 'Shift', 'Z'] },
+    { group: 'General', action: 'Close or clear selection', keys: ['Esc'] },
+    { group: 'Navigation', action: 'Toggle sidebar', keys: ['Mod', 'B'] },
+    { group: 'Navigation', action: 'Toggle details panel', keys: ['Mod', 'I'] },
+    { group: 'Canvas', action: 'Zoom to fit', keys: ['0'] },
+    { group: 'Canvas', action: 'Select tool', keys: ['V'], when: 'In Move and Add' },
+    { group: 'Canvas', action: 'Move tool', keys: ['M'], when: 'In Move mode' },
+    { group: 'Canvas', action: 'Place tool', keys: ['P'], when: 'In Add mode' },
+    { group: 'Canvas', action: 'Hand tool (hold)', keys: ['Space'], when: 'In Move and Add' },
+    { group: 'Canvas', action: 'Lock to one axis', keys: ['Shift'], when: 'While moving an area' },
+    { group: 'Modes', action: 'Review mode', keys: ['1'] },
+    { group: 'Modes', action: 'Move mode', keys: ['2'] },
+    { group: 'Modes', action: 'Add mode', keys: ['3'] },
+    { group: 'Requests', action: 'Copy prompt', keys: ['Mod', 'Enter'] }
   ];
-  function shortcutList() {
-    var list = el('div', 'kbd-list');
-    if (isTouch()) list.appendChild(el('p', 'hint-note kbd-touch', 'Keyboard shortcuts work with a physical keyboard.'));
-    SHORTCUTS.forEach(function (row) {
-      if (!row[1]) { list.appendChild(el('div', 'caption kbd-group', row[0])); return; }
-      list.appendChild(el('span', null, row[0]));
-      list.appendChild(el('kbd', null, row[1]));
+  var SHORTCUT_GROUPS = ['General', 'Navigation', 'Canvas', 'Modes', 'Requests'];
+  var IS_MAC = (function () {
+    try {
+      var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+      return /mac|iphone|ipad|ipod/i.test(platform);
+    } catch (err) { return false; }
+  })();
+  var KEY_NAMES = {
+    Mod: { show: IS_MAC ? '⌘' : 'Ctrl', say: IS_MAC ? 'Command' : 'Control', words: ['ctrl', 'control', 'cmd', 'command', 'mod', '⌘'] },
+    Shift: { show: IS_MAC ? '⇧' : 'Shift', say: 'Shift', words: ['shift', '⇧'] },
+    Alt: { show: IS_MAC ? '⌥' : 'Alt', say: IS_MAC ? 'Option' : 'Alt', words: ['alt', 'option', '⌥'] },
+    Enter: { show: 'Enter', say: 'Enter', words: ['enter', 'return'] },
+    Esc: { show: 'Esc', say: 'Escape', words: ['esc', 'escape'] },
+    Space: { show: 'Space', say: 'Space', words: ['space'] },
+    ',': { show: ',', say: 'comma', words: [',', 'comma'] },
+    '?': { show: '?', say: 'question mark', words: ['?', 'question'] }
+  };
+  function keyName(k) { return KEY_NAMES[k] || { show: k, say: k, words: [k.toLowerCase()] }; }
+  function keycaps(keys) {
+    var wrap = el('span', 'st-keys');
+    keys.forEach(function (k) { wrap.appendChild(el('kbd', 'st-key', keyName(k).show)); });
+    return wrap;
+  }
+  var shortcutQuery = '';
+  /* "ctrl k" matches Ctrl K: one-letter words match key names only; longer words also match the text. */
+  function shortcutMatch(sc, tokens) {
+    var text = (sc.action + ' ' + sc.group + ' ' + (sc.when || '')).toLowerCase();
+    var words = [];
+    sc.keys.forEach(function (k) { words = words.concat(keyName(k).words); });
+    return tokens.every(function (t) {
+      if (words.indexOf(t) !== -1) return true;
+      if (t.length < 2) return false;
+      if (text.indexOf(t) !== -1) return true;
+      return words.some(function (w) { return w.indexOf(t) === 0; });
     });
-    return list;
+  }
+  function markText(node, text, tokens) {
+    node.textContent = '';
+    var lower = text.toLowerCase();
+    var hits = [];
+    tokens.forEach(function (t) {
+      if (t.length < 2) return;
+      var at = lower.indexOf(t);
+      if (at !== -1) hits.push([at, at + t.length]);
+    });
+    hits.sort(function (a, b) { return a[0] - b[0]; });
+    var pos = 0;
+    hits.forEach(function (h) {
+      if (h[0] < pos) return;
+      if (h[0] > pos) node.appendChild(document.createTextNode(text.slice(pos, h[0])));
+      node.appendChild(el('mark', 'st-hit', text.slice(h[0], h[1])));
+      pos = h[1];
+    });
+    if (pos < text.length) node.appendChild(document.createTextNode(text.slice(pos)));
+  }
+  function shortcutList() {
+    var wrap = el('div', 'st-shortcuts');
+    if (isTouch()) wrap.appendChild(stCallout('Keyboard shortcuts work with a physical keyboard.'));
+    var search = el('div', 'st-sc-search');
+    search.appendChild(icon('search'));
+    var label = el('label', 'sr-only', 'Search shortcuts');
+    label.setAttribute('for', 'stScSearch');
+    search.appendChild(label);
+    var input = el('input');
+    input.type = 'search';
+    input.id = 'stScSearch';
+    input.placeholder = 'Search shortcuts';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.setAttribute('data-st-key', 'scsearch');
+    input.value = shortcutQuery;
+    search.appendChild(input);
+    wrap.appendChild(search);
+    var live = el('p', 'sr-only');
+    live.setAttribute('aria-live', 'polite');
+    wrap.appendChild(live);
+    var groups = [];
+    SHORTCUT_GROUPS.forEach(function (g) {
+      var items = SHORTCUTS.filter(function (sc) { return sc.group === g; });
+      if (!items.length) return;
+      var rows = items.map(function (sc) {
+        var row = el('div', 'st-sc-row');
+        row.setAttribute('role', 'listitem');
+        row.setAttribute('aria-label', sc.action + ', ' + sc.keys.map(function (k) { return keyName(k).say; }).join(' plus ') + (sc.when ? ' (' + sc.when.toLowerCase() + ')' : ''));
+        var text = el('span', 'st-sc-text');
+        text.setAttribute('aria-hidden', 'true');
+        var action = el('span', 'st-sc-action', sc.action);
+        text.appendChild(action);
+        if (sc.when) text.appendChild(el('span', 'st-sc-when', sc.when));
+        row.appendChild(text);
+        var caps = keycaps(sc.keys);
+        caps.setAttribute('aria-hidden', 'true');
+        row.appendChild(caps);
+        return { sc: sc, row: row, action: action };
+      });
+      var group = stGroup(g, rows.map(function (r) { return r.row; }));
+      group.querySelector('.st-card').setAttribute('role', 'list');
+      wrap.appendChild(group);
+      groups.push({ node: group, rows: rows });
+    });
+    var empty = el('div', 'st-sc-empty');
+    empty.hidden = true;
+    var emptyText = el('p');
+    empty.appendChild(emptyText);
+    var clear = el('button', 'link-btn', 'Clear search');
+    clear.type = 'button';
+    clear.setAttribute('data-st-key', 'scclear');
+    clear.addEventListener('click', function () { input.value = ''; filter(); input.focus(); });
+    empty.appendChild(clear);
+    wrap.appendChild(empty);
+    /* Ctrl+K exists (command palette), so the tip can point at it. */
+    var tip = el('p', 'st-sc-tip');
+    tip.appendChild(el('span', null, 'Tip: press'));
+    tip.appendChild(keycaps(['Mod', 'K']));
+    tip.appendChild(el('span', null, 'to run any action by name.'));
+    wrap.appendChild(tip);
+    function filter() {
+      shortcutQuery = input.value;
+      var tokens = input.value.toLowerCase().split(/[\s+]+/).filter(Boolean);
+      var total = 0;
+      groups.forEach(function (g) {
+        var shown = 0;
+        g.rows.forEach(function (r) {
+          var hit = !tokens.length || shortcutMatch(r.sc, tokens);
+          r.row.hidden = !hit;
+          r.row.classList.toggle('st-first', hit && !shown);
+          markText(r.action, r.sc.action, hit ? tokens : []);
+          if (hit) shown += 1;
+        });
+        g.node.hidden = !shown;
+        total += shown;
+      });
+      empty.hidden = total > 0;
+      emptyText.textContent = 'No shortcuts match “' + input.value.trim() + '”.';
+      live.textContent = total + ' shortcut' + (total === 1 ? '' : 's');
+    }
+    input.addEventListener('input', filter);
+    input.addEventListener('keydown', function (event) {
+      /* First Esc clears the search; the next one closes Settings. */
+      if (event.key === 'Escape' && input.value) {
+        event.preventDefault();
+        event.stopPropagation();
+        input.value = '';
+        filter();
+      }
+    });
+    filter();
+    return wrap;
+  }
+  function focusShortcutSearch() {
+    if (isTouch() || settingsTab !== 'shortcuts') return;
+    var input = document.querySelector('#layer #stScSearch');
+    if (input) input.focus();
   }
   function openShortcuts() { openSettings('shortcuts'); }
 
@@ -5562,7 +5728,7 @@ body.insp-closed .inspector{border-left:0}
       b.setAttribute('data-settings-tab', t.id);
       b.appendChild(icon(t.icon));
       b.appendChild(el('span', 'st-tab-label', t.label));
-      b.addEventListener('click', function () { selectSettingsTab(t.id, false); });
+      b.addEventListener('click', function () { selectSettingsTab(t.id, false); focusShortcutSearch(); });
       nav.appendChild(b);
     });
     nav.addEventListener('keydown', function (event) {
@@ -5611,6 +5777,8 @@ body.insp-closed .inspector{border-left:0}
     var wrap = scrim(settingsModal());
     wrap.classList.add('st-scrim');
     openLayer(wrap, { focus: '.st-nav [aria-selected="true"]' });
+    /* openLayer focuses the tab on the next tick; the search takes over after that. */
+    setTimeout(focusShortcutSearch, 0);
   }
   /* Re-draw the open panel after a change; keep its scroll and the focused control. */
   function refreshSettings() {
