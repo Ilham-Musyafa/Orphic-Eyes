@@ -1148,7 +1148,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   var VERDICTS = { done: true, not_done: true, unknown: true, skipped: true };
   var MAX_REQUESTS = 8;
   /* Move and Add share one budget of 8 per check. */
-  function requestCount() { return state.drafts.length + state.addDrafts.length; }
+  function requestCount() { return state.drafts.length + state.addDrafts.length + state.revertDrafts.length; }
   var LIMIT_MSG = 'Limit reached. Copy this batch, then start a new one.';
   var MIN_SELECT = 8;
   var PRECISION = { exact: 'Exact', approximate: 'Approx' };
@@ -1282,6 +1282,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     addSelection: null,     /* {x,y,w,h} in after pixels */
     addSelected: null,      /* selected ADD-n id */
     addDrafts: [],
+    revertDrafts: [],       /* [{id,x,y,w,h,zone,boxId}] from Content check: "make it look like Before" */
     addLabel: '',
     addDescription: '',
     addError: null,
@@ -1470,8 +1471,12 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         motion: addHasMotion(draft) ? ANIMATION_LABEL[addAnimationOf(draft)] + ', ' + addDurationOf(draft) + ' ms, ' + addEasingOf(draft) : '',
         note: '' });
     });
+    state.revertDrafts.forEach(function (draft) {
+      list.push({ type: 'revert', name: revertName(draft), rect: { x: draft.x, y: draft.y, w: draft.w, h: draft.h }, note: '' });
+    });
     return list;
   }
+  function revertName(draft) { return zoneLabel(draft.zone) + ' area'; }
   function promptOptions() {
     return { coords: prefs.promptCoords !== false, ruleScope: prefs.promptRuleScope !== false,
       ruleAsk: prefs.promptRuleAsk !== false, page: prefs.promptPage !== false };
@@ -1767,7 +1772,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     return copy({
       selection: state.selection, offset: state.offset, label: state.label, note: state.note,
       precision: state.precision, drafts: state.drafts, selectedDraft: state.selectedDraft,
-      addSelection: state.addSelection, addSelected: state.addSelected, addDrafts: state.addDrafts,
+      addSelection: state.addSelection, addSelected: state.addSelected, addDrafts: state.addDrafts, revertDrafts: state.revertDrafts,
       addLabel: state.addLabel, addDescription: state.addDescription, addRef: state.addRef, addKind: state.addKind, addAnswers: state.addAnswers,
       addHint: state.addHint, addAnimation: state.addAnimation,
       addDuration: state.addDuration, addEasing: state.addEasing
@@ -1784,6 +1789,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     state.addSelection = snap.addSelection || null;
     state.addSelected = snap.addSelected || null;
     state.addDrafts = Array.isArray(snap.addDrafts) ? snap.addDrafts : [];
+    state.revertDrafts = Array.isArray(snap.revertDrafts) ? snap.revertDrafts : [];
     if (typeof snap.addLabel === 'string') state.addLabel = snap.addLabel;
     if (typeof snap.addDescription === 'string') state.addDescription = snap.addDescription;
     state.addRef = snap.addRef || null;
@@ -1907,12 +1913,12 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   }
   /* Undo from the toast: put the request back at the same position (its reference too). */
   function restoreRequest(kind, item, index) {
-    var list = kind === 'move' ? state.drafts : state.addDrafts;
+    var list = kind === 'move' ? state.drafts : kind === 'revert' ? state.revertDrafts : state.addDrafts;
     if (list.some(function (d) { return String(d.id) === String(item.id); })) return;
     if (requestCount() >= MAX_REQUESTS) { toast('Limit reached. Copy this batch, then start a new one.'); return; }
     var before = snapshotState();
     list.splice(Math.min(index, list.length), 0, item);
-    if (kind === 'move') state.selectedDraft = item.id; else state.addSelected = item.id;
+    if (kind === 'move') state.selectedDraft = item.id; else if (kind === 'add') state.addSelected = item.id;
     commitHistory(before);
     render();
     toast('Request restored');
@@ -2010,6 +2016,33 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     draft.animation = addAnimationOf({ animation: state.addAnimation });
     draft.duration = addDurationOf({ duration: state.addDuration });
     draft.easing = addEasingOf({ easing: state.addEasing });
+  }
+  /* Revert requests (from Content check). */
+  function nextRevertId() {
+    var used = {};
+    state.revertDrafts.forEach(function (d) { used[d.id] = true; });
+    for (var n = 1; ; n++) if (!used['RV-' + n]) return 'RV-' + n;
+  }
+  function addRevertDraft(box) {
+    if (requestCount() >= MAX_REQUESTS) { toast(LIMIT_MSG); return null; }
+    var before = snapshotState();
+    var draft = { id: nextRevertId(), x: box.x, y: box.y, w: box.w, h: box.h, zone: box.zone, boxId: box.id };
+    state.revertDrafts.push(draft);
+    commitHistory(before);
+    render();
+    toast('Revert request added \u00b7 ' + draft.id);
+    return draft;
+  }
+  function deleteRevertDraft(id) {
+    var index = -1;
+    state.revertDrafts.forEach(function (d, i) { if (String(d.id) === String(id)) index = i; });
+    if (index === -1) return;
+    var before = snapshotState();
+    var removed = copy(state.revertDrafts[index]);
+    state.revertDrafts.splice(index, 1);
+    commitHistory(before);
+    render();
+    toast('Request deleted', { action: 'Undo', duration: 5000, run: function () { restoreRequest('revert', removed, index); } });
   }
   function deleteAddDraft(id) {
     var draft = findAddDraft(id);
@@ -2685,7 +2718,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     var chip = $('#readiness');
     var report = state.report;
     chip.className = 'status-chip hide-sm';
-    var pending = state.drafts.length + state.addDrafts.length;
+    var pending = requestCount();
     chip.hidden = !report;
     if (!report) return;
     /* Same state as the inspector banner: pass / check / fail. */
@@ -2816,7 +2849,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     if (dot) dot.style.display = state.boxes.some(function (b) { return boxStatus(b) === 'unexpected'; }) ? '' : 'none';
     holder.innerHTML = '';
     var draftCount = state.drafts.length;
-    var addCount = state.addDrafts.length;
+    var addCount = state.addDrafts.length + state.revertDrafts.length;
 
     if (!state.boxes.length) {
       holder.appendChild(el('p', 'empty-note', state.report ? 'No changed areas. Both pictures look the same.' : 'Load images to start'));
@@ -2946,6 +2979,23 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       sub.appendChild(el('span', 'chip unverified', 'Not verified'));
       row.appendChild(sub);
       row.title = draft.id + ' · ' + addTitle;
+      list.appendChild(row);
+    });
+
+    /* Revert requests from Content check: the area should look like Before again. */
+    state.revertDrafts.forEach(function (draft) {
+      var row = el('div', 'row-item');
+      row.setAttribute('data-revert-draft', draft.id);
+      markNew(row, 'r:' + draft.id);
+      var line = el('div', 'line1');
+      line.appendChild(el('span', 'id-pill muted', draft.id));
+      var revertTitle = 'Revert \u00b7 ' + revertName(draft);
+      line.appendChild(el('span', 'list-name', revertTitle));
+      line.appendChild(el('span', 'chip draft hide-on-hover', 'Revert'));
+      row.appendChild(line);
+      row.appendChild(deleteButton('data-delete-revert', draft.id));
+      row.appendChild(el('div', 'list-sub num', Math.round(draft.w) + ' \u00d7 ' + Math.round(draft.h) + ' px \u00b7 back to Before'));
+      row.title = draft.id + ' \u00b7 ' + revertTitle;
       list.appendChild(row);
     });
 
@@ -4431,6 +4481,13 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       var mark = event.target.closest('[data-box]');
       if (mark) {
         selectBox(mark.getAttribute('data-box'), event.clientX, event.clientY, true);
+        return;
+      }
+      var removeRevert = event.target.closest('[data-delete-revert]');
+      if (removeRevert) {
+        var revertId = removeRevert.getAttribute('data-delete-revert');
+        if (seenKeys) delete state.seen['r:' + revertId];
+        removeWithMotion(removeRevert.closest('.row-item'), function () { deleteRevertDraft(revertId); });
         return;
       }
       var removeAdd = event.target.closest('[data-delete-add]');

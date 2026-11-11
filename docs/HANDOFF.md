@@ -15,6 +15,7 @@ Branch: `release/hackathon` (pulled, at aa8f14c). Only `engine/templates/report.
 
 ### Status
 - Plan written.
+- Step 1 done: revert requests. `state.revertDrafts` (RV-n) count toward the 8-request limit (`requestCount()`), Copy prompt lists them after Moves and Adds as `[Revert] <zone> area — … Make it look like the Before screenshot again.`, Requests shows them with delete + Undo, undo/redo snapshots include them, Verify checks them with the existing revert check (Round 2 vs Before). Copy prompt with no reverts: byte-identical. Rebinding 92/92, Verify 86/86.
 
 ## Previous task: Merge feat/url-capture + Content check view — STOPPED
 
