@@ -901,19 +901,19 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     </div>
     <div class="hd-center">
       <div class="seg" id="modeSwitch" role="group" aria-label="Mode">
-        <button type="button" data-mode="review" class="on" aria-pressed="true" data-tip="Review changes" data-kbd="1">Review</button>
-        <button type="button" data-mode="move" aria-pressed="false" data-tip="Move an element" data-kbd="2">Move</button>
-        <button type="button" data-mode="add" aria-pressed="false" data-tip="Place a new element" data-kbd="3">Add</button>
+        <button type="button" data-mode="review" class="on" aria-pressed="true" data-tip="Review changes" data-sc="mode.review">Review</button>
+        <button type="button" data-mode="move" aria-pressed="false" data-tip="Move an element" data-sc="mode.move">Move</button>
+        <button type="button" data-mode="add" aria-pressed="false" data-tip="Place a new element" data-sc="mode.add">Add</button>
       </div>
     </div>
     <div class="hd-right">
       <span class="status-chip hide-sm" id="readiness" tabindex="0">Draft</span>
       <span class="hd-divider hide-sm" aria-hidden="true"></span>
-      <button type="button" class="icon-btn hide-sm" id="undoBtn" aria-label="Undo" data-tip="Undo" data-kbd="Ctrl+Z"><svg class="ic"><use href="#i-undo"/></svg></button>
-      <button type="button" class="icon-btn hide-sm" id="redoBtn" aria-label="Redo" data-tip="Redo" data-kbd="Ctrl+Shift+Z"><svg class="ic"><use href="#i-redo"/></svg></button>
+      <button type="button" class="icon-btn hide-sm" id="undoBtn" aria-label="Undo" data-tip="Undo" data-sc="edit.undo"><svg class="ic"><use href="#i-undo"/></svg></button>
+      <button type="button" class="icon-btn hide-sm" id="redoBtn" aria-label="Redo" data-tip="Redo" data-sc="edit.redo"><svg class="ic"><use href="#i-redo"/></svg></button>
       <span class="capture-chip hide-sm hide-md" id="captureChip" tabindex="0" data-tip="Capture size comes from the report"><span class="cap-name" id="captureName">Desktop</span><span class="num" id="captureSize">&mdash;</span></span>
-      <button type="button" class="icon-btn hide-sm" id="settingsBtn" aria-label="Settings" data-tip="Settings" data-kbd="Ctrl+,"><svg class="ic"><use href="#i-gear"/></svg></button>
-      <button type="button" class="btn primary" id="copyMain" aria-label="Copy prompt" data-tip="Copy all requests as one prompt for any AI assistant" data-kbd="Ctrl+Enter"><svg class="ic copy-ic" viewBox="0 0 16 16" aria-hidden="true"><g class="ic-copy"><use href="#i-copy"/></g><path class="ic-check" d="m3 8.5 3.2 3L13 4.75" pathLength="1"/></svg><span class="lbl">Copy prompt</span></button>
+      <button type="button" class="icon-btn hide-sm" id="settingsBtn" aria-label="Settings" data-tip="Settings" data-sc="settings.open"><svg class="ic"><use href="#i-gear"/></svg></button>
+      <button type="button" class="btn primary" id="copyMain" aria-label="Copy prompt" data-tip="Copy all requests as one prompt for any AI assistant" data-sc="prompt.copy"><svg class="ic copy-ic" viewBox="0 0 16 16" aria-hidden="true"><g class="ic-copy"><use href="#i-copy"/></g><path class="ic-check" d="m3 8.5 3.2 3L13 4.75" pathLength="1"/></svg><span class="lbl">Copy prompt</span></button>
       <button type="button" class="icon-btn m-more" id="moreBtn" aria-label="More options" aria-haspopup="menu" aria-expanded="false"><svg class="ic"><use href="#i-more"/></svg></button>
     </div>
   </header>
@@ -922,7 +922,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
 
     <aside class="sidebar" id="sidebar" aria-label="Pages, changes and requests">
       <div class="sb-tabs" role="tablist" aria-label="Sidebar sections">
-        <button type="button" class="icon-btn sb-toggle" id="sbToggle" aria-label="Collapse sidebar" data-tip="Collapse sidebar" data-kbd="Ctrl+B"><svg class="ic"><use href="#i-panel-left"/></svg></button>
+        <button type="button" class="icon-btn sb-toggle" id="sbToggle" aria-label="Collapse sidebar" data-tip="Collapse sidebar" data-sc="panel.sidebar"><svg class="ic"><use href="#i-panel-left"/></svg></button>
         <button type="button" class="sb-tab" role="tab" data-tab="pages" id="tabPages" aria-label="Pages" data-tip="Pages"><svg class="ic"><use href="#i-pages"/></svg><span class="lbl">Pages</span></button>
         <button type="button" class="sb-tab on" role="tab" data-tab="changes" id="tabChanges" aria-label="Changes" data-tip="Changes"><svg class="ic"><use href="#i-changes"/></svg><span class="lbl">Changes</span><span class="badge" id="listCount">0</span><span class="dot-badge" id="changesDot"></span></button>
         <button type="button" class="sb-tab" role="tab" data-tab="requests" id="tabRequests" aria-label="Requests" data-tip="Requests"><svg class="ic"><use href="#i-requests"/></svg><span class="lbl">Requests</span><span class="badge" id="requestCount">0</span></button>
@@ -950,8 +950,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         <button type="button" class="btn" id="reqSheetPreview" data-preview-prompt>Preview prompt</button>
       </div>
       <div class="sb-foot">
-        <button type="button" class="btn ghost" id="helpBtn" aria-label="Help" data-tip="Help" data-kbd="?"><svg class="ic"><use href="#i-help"/></svg><span class="lbl">Help</span></button>
-        <button type="button" class="btn ghost" id="settingsBtn2" aria-label="Settings" data-tip="Settings" data-kbd="Ctrl+,"><svg class="ic"><use href="#i-gear"/></svg><span class="lbl">Settings</span></button>
+        <button type="button" class="btn ghost" id="helpBtn" aria-label="Help" data-tip="Help" data-sc="help.shortcuts"><svg class="ic"><use href="#i-help"/></svg><span class="lbl">Help</span></button>
+        <button type="button" class="btn ghost" id="settingsBtn2" aria-label="Settings" data-tip="Settings" data-sc="settings.open"><svg class="ic"><use href="#i-gear"/></svg><span class="lbl">Settings</span></button>
       </div>
     </aside>
 
@@ -972,7 +972,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         <div class="float-group" data-for="move" role="group" aria-label="Move options">
           <button type="button" class="opt" id="gridBtn" aria-pressed="true" data-tip="Show the grid">Grid 8</button>
           <button type="button" class="opt" id="snapBtn" aria-pressed="true" data-tip="Snap offsets to the grid">Snap</button>
-          <button type="button" class="opt" id="axisBtn" aria-pressed="false" data-tip="Lock movement to one axis" data-kbd="Shift">Axis lock</button>
+          <button type="button" class="opt" id="axisBtn" aria-pressed="false" data-tip="Lock movement to one axis" data-sc="canvas.axisLock">Axis lock</button>
           <span class="float-sep" aria-hidden="true"></span>
           <button type="button" class="opt" id="exactBtn" aria-pressed="true" data-tip="Exact = 2 px">Exact</button>
           <button type="button" class="opt" id="approxBtn" aria-pressed="false" data-tip="Approx = 8 px">Approx</button>
@@ -983,15 +983,15 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       </div>
 
       <div class="float dock" id="moveToolbar" role="toolbar" aria-label="Tools" hidden>
-        <button type="button" class="tool" data-tool="select" data-for="move" aria-label="Select" data-tip="Select area" data-kbd="V"><svg class="ic"><use href="#i-select"/></svg><span class="lbl">Select</span></button>
-        <button type="button" class="tool" data-tool="move" data-for="move" aria-label="Move" data-tip="Move" data-kbd="M"><svg class="ic"><use href="#i-move"/></svg><span class="lbl">Move</span></button>
-        <button type="button" class="tool" data-tool="select" data-for="add" aria-label="Select" data-tip="Select area" data-kbd="V"><svg class="ic"><use href="#i-select"/></svg><span class="lbl">Select</span></button>
-        <button type="button" class="tool" data-tool="place" data-for="add" aria-label="Place" data-tip="Place a new element" data-kbd="P"><svg class="ic"><use href="#i-place"/></svg><span class="lbl">Place</span></button>
-        <button type="button" class="tool" data-tool="hand" aria-label="Hand" data-tip="Hand: drag to pan" data-kbd="Space"><svg class="ic"><use href="#i-hand"/></svg><span class="lbl">Hand</span></button>
+        <button type="button" class="tool" data-tool="select" data-for="move" aria-label="Select" data-tip="Select area" data-sc="tool.select"><svg class="ic"><use href="#i-select"/></svg><span class="lbl">Select</span></button>
+        <button type="button" class="tool" data-tool="move" data-for="move" aria-label="Move" data-tip="Move" data-sc="tool.move"><svg class="ic"><use href="#i-move"/></svg><span class="lbl">Move</span></button>
+        <button type="button" class="tool" data-tool="select" data-for="add" aria-label="Select" data-tip="Select area" data-sc="tool.select"><svg class="ic"><use href="#i-select"/></svg><span class="lbl">Select</span></button>
+        <button type="button" class="tool" data-tool="place" data-for="add" aria-label="Place" data-tip="Place a new element" data-sc="tool.place"><svg class="ic"><use href="#i-place"/></svg><span class="lbl">Place</span></button>
+        <button type="button" class="tool" data-tool="hand" aria-label="Hand" data-tip="Hand: drag to pan" data-sc="tool.hand"><svg class="ic"><use href="#i-hand"/></svg><span class="lbl">Hand</span></button>
       </div>
 
       <div class="float zoom-pill" id="zoomPill" role="group" aria-label="Zoom">
-        <button type="button" class="opt" data-zoom="fit" data-tip="Fit to screen" data-kbd="0">Fit</button>
+        <button type="button" class="opt" data-zoom="fit" data-tip="Fit to screen" data-sc="zoom.fit">Fit</button>
         <button type="button" class="opt" data-zoom="0.5">50%</button>
         <button type="button" class="opt" data-zoom="1">100%</button>
         <button type="button" class="opt" data-zoom="2">200%</button>
@@ -1004,7 +1004,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       <div class="inspector-header">
         <h2 id="inspectorTitle">Details</h2>
         <span class="chip" id="inspectorChip">&mdash;</span>
-        <button type="button" class="icon-btn" id="inspectorClose" aria-label="Close panel" data-tip="Close panel" data-kbd="Ctrl+I"><svg class="ic"><use href="#i-x"/></svg></button>
+        <button type="button" class="icon-btn" id="inspectorClose" aria-label="Close panel" data-tip="Close panel" data-sc="panel.inspector"><svg class="ic"><use href="#i-x"/></svg></button>
       </div>
       <div class="summary-card" id="summaryCard"><span id="summaryText">No report loaded</span></div>
       <div class="report-note" id="reportNote" hidden></div>
@@ -1072,7 +1072,6 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   var LIMIT_MSG = 'Limit reached. Copy this batch, then start a new one.';
   var MIN_SELECT = 8;
   var PRECISION = { exact: 'Exact', approximate: 'Approx' };
-  var TOOL_KEYS = { move: { v: 'select', m: 'move' }, add: { v: 'select', p: 'place' } };
   var CURSOR_CLASS = { select: 'cursor-cross', move: 'cursor-grab', hand: 'cursor-grab', place: 'cursor-cross' };
   var HINT_MOVE = 'Drag an area in Move mode. This tool only sees pixels.';
   var HINT_ADD = 'Drag where the new element should appear. Motion cannot be checked from a screenshot.';
@@ -2489,7 +2488,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     }
     var dx = drag.base.dx + (point.x - drag.start.x);
     var dy = drag.base.dy + (point.y - drag.start.y);
-    if (state.axisLock || event.shiftKey) {
+    if (state.axisLock || matchShortcut(event, 'canvas.axisLock')) {
       if (Math.abs(dx - drag.base.dx) >= Math.abs(dy - drag.base.dy)) dy = drag.base.dy;
       else dx = drag.base.dx;
     }
@@ -3117,12 +3116,13 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     handle.style.left = 'clamp(' + HANDLE_MIN_INSET + 'px,' + state.sliderPct +
       '%,calc(100% - ' + HANDLE_MIN_INSET + 'px))';
     handle.addEventListener('keydown', function (event) {
-      var step = event.shiftKey ? 10 : 1;
+      var step = matchShortcut(event, 'w.shift') ? 10 : 1;
       var next = state.sliderPct;
-      if (event.key === 'ArrowLeft') next -= step;
-      else if (event.key === 'ArrowRight') next += step;
-      else if (event.key === 'Home') next = 0;
-      else if (event.key === 'End') next = 100;
+      var key = matchShortcut(event, ['w.left', 'w.right', 'w.home', 'w.end'], { anyModifiers: true });
+      if (key === 'w.left') next -= step;
+      else if (key === 'w.right') next += step;
+      else if (key === 'w.home') next = 0;
+      else if (key === 'w.end') next = 100;
       else return;
       event.preventDefault();
       applySlider(next);
@@ -4549,30 +4549,30 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       if (id && id.indexOf('add') === 0) commitAddField();
     });
 
+    /* App shortcuts: every key goes through matchShortcut(); actions by id. */
+    var SHORTCUT_RUN = {
+      'palette.open': function () { openPalette(); },
+      'settings.open': function () { openSettings(); },
+      'help.shortcuts': function () { openShortcuts(); },
+      'edit.undo': function () { undo(); },
+      'edit.redo': function () { redo(); },
+      'edit.redoAlt': function () { redo(); },
+      'panel.sidebar': function () { toggleSidebar(); },
+      'panel.inspector': function () { toggleInspector(); },
+      'prompt.copy': function () { copyPrompt(); },
+      'mode.review': function () { setMode('review'); },
+      'mode.move': function () { setMode('move'); },
+      'mode.add': function () { setMode('add'); },
+      'zoom.fit': function () { setZoom('fit'); },
+      'tool.select': function () { setTool('select'); },
+      'tool.move': function () { setTool('move'); },
+      'tool.place': function () { setTool('place'); }
+    };
     document.addEventListener('keydown', function (event) {
       var writing = event.target && event.target.matches &&
         event.target.matches('input,textarea,select,[contenteditable]');
-      var mod = event.ctrlKey || event.metaKey;
       if (overlayOpen()) return; /* palette, settings and menus handle their own keys */
-      if (mod && !event.altKey) {
-        var key = String(event.key).toLowerCase();
-        if (key === 'k') { event.preventDefault(); openPalette(); return; }
-        if (key === 'b') { event.preventDefault(); toggleSidebar(); return; }
-        if (key === 'i') { event.preventDefault(); toggleInspector(); return; }
-        if (key === ',') { event.preventDefault(); openSettings(); return; }
-        if (key === 'enter') { event.preventDefault(); copyPrompt(); return; }
-        if (key === 'z') {
-          event.preventDefault();
-          if (event.shiftKey) redo(); else undo();
-          return;
-        }
-        if (key === 'y') {
-          event.preventDefault();
-          redo();
-          return;
-        }
-      }
-      if (event.key === 'Escape') {
+      if (matchShortcut(event, 'general.escape', { anyModifiers: true })) {
         /* Esc drops the transient selection; the drafts themselves stay. */
         if (state.mode === 'add' && (state.addSelection || state.drawRect)) {
           state.addSelection = null;
@@ -4594,16 +4594,14 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
           render();
           return;
         }
-      }
-      if (writing || mod || event.altKey) return;
-      if (event.key === '?') { event.preventDefault(); openShortcuts(); return; }
-      if (event.key === '1' || event.key === '2' || event.key === '3') {
-        setMode(['review', 'move', 'add'][Number(event.key) - 1]);
         return;
       }
-      if (event.key === '0') { setZoom('fit'); return; }
-      if (state.mode !== 'move' && state.mode !== 'add') return;
-      if (event.key === ' ' || event.code === 'Space') {
+      var id = matchShortcut(event);
+      if (!id || id === 'general.tab') return;
+      var bound = parseBinding(getBinding(id));
+      /* Keys without Ctrl or Alt never fire while typing in a field. */
+      if (writing && !bound.Ctrl && !bound.Alt) return;
+      if (id === 'tool.hand') {
         /* A focused button keeps Space for itself (press), so Hand never steals it. */
         if (event.target && event.target.closest && event.target.closest('button, [role="button"], a, summary')) return;
         event.preventDefault();
@@ -4613,15 +4611,13 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         }
         return;
       }
-      var tool = TOOL_KEYS[state.mode === 'add' ? 'add' : 'move'][String(event.key).toLowerCase()];
-      if (tool) {
-        event.preventDefault();
-        setTool(tool);
-      }
+      if (!SHORTCUT_RUN[id]) return;
+      event.preventDefault();
+      SHORTCUT_RUN[id]();
     });
 
     document.addEventListener('keyup', function (event) {
-      if ((event.key === ' ' || event.code === 'Space') && state.spaceReturn) {
+      if (state.spaceReturn && matchShortcut(event, 'tool.hand', { anyModifiers: true })) {
         var back = state.spaceReturn;
         state.spaceReturn = null;
         setTool(back);
@@ -4645,7 +4641,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     theme: 'light', textSize: 'm', sidebarCollapsed: null, sidebarTab: 'changes',
     inspectorOpen: true, defaultView: 'slider', showGrid: true, snap: true, gridSize: 8,
     rulers: true, defaultPrecision: 'exact', tourDone: false,
-    promptCoords: true, promptRuleScope: true, promptRuleAsk: true, promptPage: true
+    promptCoords: true, promptRuleScope: true, promptRuleAsk: true, promptPage: true,
+    shortcuts: {}   /* only changed bindings: { id: "Ctrl+Shift+K" | null } */
   };
   var prefs = copy(PREF_DEFAULTS);
 
@@ -4669,6 +4666,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     if ([4, 8, 16].indexOf(prefs.gridSize) === -1) prefs.gridSize = 8;
     if (['side', 'slider', 'overlay', 'diff'].indexOf(prefs.defaultView) === -1) prefs.defaultView = 'slider';
     if (['changes', 'pages', 'requests'].indexOf(prefs.sidebarTab) === -1) prefs.sidebarTab = 'changes';
+    prefs.shortcuts = cleanShortcutPrefs(prefs.shortcuts);
     state.textSize = prefs.textSize;
     state.view = prefs.defaultView;
     /* One grid switch for Review, Move and Add. Older saves used "grid". */
@@ -4778,7 +4776,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   ['mousedown', 'keydown'].forEach(function (type) {
     document.addEventListener(type, function (event) {
       var t = event.target;
-      if (t && t.tagName === 'SELECT' && t.getAttribute('aria-disabled') === 'true' && (type === 'mousedown' || /^(Arrow|Enter| |Home|End|Page)/.test(event.key))) {
+      if (t && t.tagName === 'SELECT' && t.getAttribute('aria-disabled') === 'true' && (type === 'mousedown' || matchShortcut(event, ['w.up', 'w.down', 'w.left', 'w.right', 'w.enter', 'w.space', 'w.home', 'w.end', 'w.pageUp', 'w.pageDown'], { anyModifiers: true }))) {
         event.preventDefault();
         if (type === 'mousedown') toast(t.getAttribute('data-why'));
       }
@@ -5058,9 +5056,10 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     });
     var grip = $('#sheetHandle');
     grip.addEventListener('keydown', function (event) {
-      if (!isPhone() || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+      var key = matchShortcut(event, ['w.up', 'w.down'], { anyModifiers: true });
+      if (!isPhone() || !key) return;
       event.preventDefault();
-      var i = PHONE_POS.indexOf(state.sheetPos || 'peek') + (event.key === 'ArrowUp' ? 1 : -1);
+      var i = PHONE_POS.indexOf(state.sheetPos || 'peek') + (key === 'w.up' ? 1 : -1);
       setSheetPos(PHONE_POS[clamp(i, 0, PHONE_POS.length - 1)]);
     });
     /* A tap on the picture lets the sheet rest at Peek again. */
@@ -5133,7 +5132,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       if (!text) return;
       current = target;
       tip.textContent = text;
-      var kbd = target.getAttribute('data-kbd');
+      var scId = target.getAttribute('data-sc');
+      var kbd = scId ? formatKeys(scId) : '';
       if (kbd) { var k = el('kbd', null, kbd); tip.appendChild(k); }
       var r = target.getBoundingClientRect();
       tip.style.left = '0px';
@@ -5186,13 +5186,14 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   }
   function trapKeys(node) {
     node.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); closeLayer(); return; }
-      if (event.key !== 'Tab') return;
+      if (matchShortcut(event, 'general.escape', { anyModifiers: true })) { event.preventDefault(); event.stopPropagation(); closeLayer(); return; }
+      if (!matchShortcut(event, 'general.tab', { anyModifiers: true })) return;
+      var back = !!matchShortcut(event, 'w.shift');
       var items = node.querySelectorAll('button:not(:disabled), input, select, [tabindex="0"]');
       if (!items.length) return;
       var first = items[0], last = items[items.length - 1];
-      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
-      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      if (back && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!back && document.activeElement === last) { event.preventDefault(); first.focus(); }
     });
   }
   function scrim(inner) {
@@ -5284,11 +5285,12 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     menu.appendChild(item('play', 'Start tour', function () { startTour(); }));
     trapKeys(menu);
     menu.addEventListener('keydown', function (event) {
-      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      var key = matchShortcut(event, ['w.down', 'w.up'], { anyModifiers: true });
+      if (!key) return;
       event.preventDefault();
       var items = Array.prototype.slice.call(menu.querySelectorAll('button'));
       var i = items.indexOf(document.activeElement);
-      items[(i + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+      items[(i + (key === 'w.down' ? 1 : items.length - 1)) % items.length].focus();
     });
     anchor.setAttribute('aria-expanded', 'true');
     anchor.focus();
@@ -5314,7 +5316,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   function openHelpMenu(anchor) {
     var menu = el('div', 'menu');
     menu.setAttribute('role', 'menu');
-    [['keyboard', 'Keyboard shortcuts', '?', openShortcuts],
+    [['keyboard', 'Keyboard shortcuts', formatKeys('help.shortcuts'), openShortcuts],
      ['play', 'Quick tour', '', function () { startTour(); }],
      ['info', 'About', '', function () { openSettings('about'); }]].forEach(function (item) {
       var b = el('button');
@@ -5328,11 +5330,12 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     });
     trapKeys(menu);
     menu.addEventListener('keydown', function (event) {
-      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      var key = matchShortcut(event, ['w.down', 'w.up'], { anyModifiers: true });
+      if (!key) return;
       event.preventDefault();
       var items = Array.prototype.slice.call(menu.querySelectorAll('button'));
       var i = items.indexOf(document.activeElement);
-      items[(i + (event.key === 'ArrowDown' ? 1 : items.length - 1)) % items.length].focus();
+      items[(i + (key === 'w.down' ? 1 : items.length - 1)) % items.length].focus();
     });
     openLayer(menu);
     var r = anchor.getBoundingClientRect();
@@ -5347,56 +5350,187 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     }, 0);
   }
 
-  /* shortcuts: only bindings that have a handler in the keydown code above */
+  /* =================================================================
+     Keyboard shortcuts — one table, one matcher, one formatter.
+     A binding is a string in a fixed order: Ctrl+Alt+Shift+Key.
+     "Ctrl" means Ctrl or ⌘ (Meta), exactly like before. null = Not set.
+     ================================================================= */
   var SHORTCUTS = [
-    { group: 'General', action: 'Open command palette', keys: ['Mod', 'K'] },
-    { group: 'General', action: 'Open settings', keys: ['Mod', ','] },
-    { group: 'General', action: 'Show keyboard shortcuts', keys: ['?'] },
-    { group: 'General', action: 'Undo', keys: ['Mod', 'Z'] },
-    { group: 'General', action: 'Redo', keys: ['Mod', 'Shift', 'Z'] },
-    { group: 'General', action: 'Close or clear selection', keys: ['Esc'] },
-    { group: 'Navigation', action: 'Toggle sidebar', keys: ['Mod', 'B'] },
-    { group: 'Navigation', action: 'Toggle details panel', keys: ['Mod', 'I'] },
-    { group: 'Canvas', action: 'Zoom to fit', keys: ['0'] },
-    { group: 'Canvas', action: 'Select tool', keys: ['V'], when: 'In Move and Add' },
-    { group: 'Canvas', action: 'Move tool', keys: ['M'], when: 'In Move mode' },
-    { group: 'Canvas', action: 'Place tool', keys: ['P'], when: 'In Add mode' },
-    { group: 'Canvas', action: 'Hand tool (hold)', keys: ['Space'], when: 'In Move and Add' },
-    { group: 'Canvas', action: 'Lock to one axis', keys: ['Shift'], when: 'While moving an area' },
-    { group: 'Modes', action: 'Review mode', keys: ['1'] },
-    { group: 'Modes', action: 'Move mode', keys: ['2'] },
-    { group: 'Modes', action: 'Add mode', keys: ['3'] },
-    { group: 'Requests', action: 'Copy prompt', keys: ['Mod', 'Enter'] }
+    { id: 'palette.open', group: 'General', action: 'Open command palette', keys: 'Ctrl+K', when: 'global' },
+    { id: 'settings.open', group: 'General', action: 'Open settings', keys: 'Ctrl+,', when: 'global' },
+    { id: 'help.shortcuts', group: 'General', action: 'Show keyboard shortcuts', keys: '?', when: 'global' },
+    { id: 'edit.undo', group: 'General', action: 'Undo', keys: 'Ctrl+Z', when: 'global' },
+    { id: 'edit.redo', group: 'General', action: 'Redo', keys: 'Ctrl+Shift+Z', when: 'global' },
+    { id: 'edit.redoAlt', group: 'General', action: 'Redo (second key)', keys: 'Ctrl+Y', when: 'global' },
+    { id: 'general.escape', group: 'General', action: 'Close or clear selection', keys: 'Esc', when: 'global', editable: false },
+    { id: 'general.tab', group: 'General', action: 'Move between controls', keys: 'Tab', when: 'global', editable: false },
+    { id: 'panel.sidebar', group: 'Navigation', action: 'Toggle sidebar', keys: 'Ctrl+B', when: 'global' },
+    { id: 'panel.inspector', group: 'Navigation', action: 'Toggle details panel', keys: 'Ctrl+I', when: 'global' },
+    { id: 'zoom.fit', group: 'Canvas', action: 'Zoom to fit', keys: '0', when: 'global' },
+    { id: 'tool.select', group: 'Canvas', action: 'Select tool', keys: 'V', when: 'moveadd' },
+    { id: 'tool.move', group: 'Canvas', action: 'Move tool', keys: 'M', when: 'move' },
+    { id: 'tool.place', group: 'Canvas', action: 'Place tool', keys: 'P', when: 'add' },
+    /* Hold gestures: they act while the key is held, so they stay fixed. */
+    { id: 'tool.hand', group: 'Canvas', action: 'Hand tool (hold)', keys: 'Space', when: 'moveadd', editable: false },
+    { id: 'canvas.axisLock', group: 'Canvas', action: 'Lock to one axis (hold)', keys: 'Shift', when: 'drag', editable: false },
+    { id: 'mode.review', group: 'Modes', action: 'Review mode', keys: '1', when: 'global' },
+    { id: 'mode.move', group: 'Modes', action: 'Move mode', keys: '2', when: 'global' },
+    { id: 'mode.add', group: 'Modes', action: 'Add mode', keys: '3', when: 'global' },
+    { id: 'prompt.copy', group: 'Requests', action: 'Copy prompt', keys: 'Ctrl+Enter', when: 'global' }
   ];
+  /* Fixed keys for moving inside lists, menus, tabs and the slider. Not listed, not editable,
+     but matched by the same matchShortcut() so no key check lives anywhere else. */
+  var WIDGET_KEYS = {
+    'w.up': 'ArrowUp', 'w.down': 'ArrowDown', 'w.left': 'ArrowLeft', 'w.right': 'ArrowRight',
+    'w.shift': 'Shift',
+    'w.home': 'Home', 'w.end': 'End', 'w.pageUp': 'PageUp', 'w.pageDown': 'PageDown',
+    'w.enter': 'Enter', 'w.space': 'Space'
+  };
   var SHORTCUT_GROUPS = ['General', 'Navigation', 'Canvas', 'Modes', 'Requests'];
+  var WHEN_LABEL = { global: '', move: 'In Move mode', add: 'In Add mode', moveadd: 'In Move and Add', drag: 'While moving an area' };
   var IS_MAC = (function () {
     try {
       var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
       return /mac|iphone|ipad|ipod/i.test(platform);
     } catch (err) { return false; }
   })();
+  var SHORTCUT_BY_ID = {};
+  SHORTCUTS.forEach(function (sc) { if (sc.editable === undefined) sc.editable = true; SHORTCUT_BY_ID[sc.id] = sc; });
+  var MOD_ORDER = ['Ctrl', 'Alt', 'Shift'];
+  var KEY_ALIASES = { '+': 'Plus', ' ': 'Space', Spacebar: 'Space', Escape: 'Esc', Esc: 'Esc', Up: 'ArrowUp', Down: 'ArrowDown', Left: 'ArrowLeft', Right: 'ArrowRight' };
+  var MODIFIER_KEYS = { Control: 'Ctrl', Meta: 'Ctrl', OS: 'Ctrl', Alt: 'Alt', AltGraph: 'Alt', Shift: 'Shift' };
+
+  /* The user's binding, else the default. Locked shortcuts always use the default. */
+  function getBinding(id) {
+    var sc = SHORTCUT_BY_ID[id];
+    if (!sc) return WIDGET_KEYS[id] || null;
+    var own = prefs.shortcuts || {};
+    if (sc.editable && Object.prototype.hasOwnProperty.call(own, id)) return own[id];
+    return sc.keys;
+  }
+  function parseBinding(str) {
+    var out = { Ctrl: false, Alt: false, Shift: false, key: null };
+    if (!str) return out;
+    str.split('+').forEach(function (part) {
+      if (MOD_ORDER.indexOf(part) !== -1) out[part] = true;
+      else if (part) out.key = part;
+    });
+    return out;
+  }
+  function joinBinding(b) {
+    var parts = MOD_ORDER.filter(function (m) { return b[m]; });
+    if (b.key) parts.push(b.key);
+    return parts.join('+');
+  }
+  /* Keyboard event -> normalized binding. Shifted symbols (? , !) keep their own character and drop Shift. */
+  function eventBinding(event) {
+    var b = { Ctrl: !!(event.ctrlKey || event.metaKey), Alt: !!event.altKey, Shift: !!event.shiftKey, key: null };
+    var key = event.key;
+    if (key === undefined || key === null || key === 'Unidentified' || key === 'Dead') return b;
+    if (MODIFIER_KEYS[key]) { b[MODIFIER_KEYS[key]] = true; return b; }
+    var raw = key;
+    key = KEY_ALIASES[key] || key;
+    if (raw.length === 1 && raw !== ' ') {
+      if (/[a-z0-9]/i.test(raw)) key = raw.toUpperCase();
+      else b.Shift = false;
+    }
+    b.key = key;
+    return b;
+  }
+  function whenActive(when) {
+    if (when === 'move') return state.mode === 'move';
+    if (when === 'add') return state.mode === 'add';
+    if (when === 'moveadd') return state.mode === 'move' || state.mode === 'add';
+    return when === 'global';
+  }
+  /* THE matcher. ids: one id or a list; without ids every app shortcut active right now is tried.
+     opts.anyModifiers: compare the key only. Pointer events: a modifier-only binding is "held". */
+  function matchShortcut(event, ids, opts) {
+    var list = ids ? [].concat(ids) : SHORTCUTS.filter(function (sc) { return whenActive(sc.when); }).map(function (sc) { return sc.id; });
+    var keyboard = typeof event.key === 'string';
+    var got = keyboard ? eventBinding(event) : { Ctrl: !!(event.ctrlKey || event.metaKey), Alt: !!event.altKey, Shift: !!event.shiftKey, key: null };
+    var gotStr = joinBinding(got);
+    for (var i = 0; i < list.length; i++) {
+      var want = getBinding(list[i]);
+      if (!want) continue;
+      var w = parseBinding(want);
+      if (!w.key) {
+        /* modifier-only binding (e.g. Shift while dragging): matches while it is held */
+        if (!w.Ctrl && !w.Alt && !w.Shift) continue;
+        if (MOD_ORDER.every(function (m) { return !w[m] || got[m]; })) return list[i];
+        continue;
+      }
+      if (!keyboard) continue;
+      if (opts && opts.anyModifiers ? got.key === w.key : gotStr === joinBinding(w)) return list[i];
+    }
+    return null;
+  }
   var KEY_NAMES = {
-    Mod: { show: IS_MAC ? '⌘' : 'Ctrl', say: IS_MAC ? 'Command' : 'Control', words: ['ctrl', 'control', 'cmd', 'command', 'mod', '⌘'] },
+    Ctrl: { show: IS_MAC ? '⌘' : 'Ctrl', say: IS_MAC ? 'Command' : 'Control', words: ['ctrl', 'control', 'cmd', 'command', 'mod', '⌘'] },
     Shift: { show: IS_MAC ? '⇧' : 'Shift', say: 'Shift', words: ['shift', '⇧'] },
     Alt: { show: IS_MAC ? '⌥' : 'Alt', say: IS_MAC ? 'Option' : 'Alt', words: ['alt', 'option', '⌥'] },
     Enter: { show: 'Enter', say: 'Enter', words: ['enter', 'return'] },
     Esc: { show: 'Esc', say: 'Escape', words: ['esc', 'escape'] },
     Space: { show: 'Space', say: 'Space', words: ['space'] },
+    Tab: { show: 'Tab', say: 'Tab', words: ['tab'] },
+    ArrowUp: { show: '↑', say: 'Up arrow', words: ['up', 'arrow'] },
+    ArrowDown: { show: '↓', say: 'Down arrow', words: ['down', 'arrow'] },
+    ArrowLeft: { show: '←', say: 'Left arrow', words: ['left', 'arrow'] },
+    ArrowRight: { show: '→', say: 'Right arrow', words: ['right', 'arrow'] },
+    Plus: { show: '+', say: 'plus', words: ['+', 'plus'] },
     ',': { show: ',', say: 'comma', words: [',', 'comma'] },
+    '.': { show: '.', say: 'period', words: ['.', 'period'] },
+    '/': { show: '/', say: 'slash', words: ['/', 'slash'] },
     '?': { show: '?', say: 'question mark', words: ['?', 'question'] }
   };
-  function keyName(k) { return KEY_NAMES[k] || { show: k, say: k, words: [k.toLowerCase()] }; }
-  function keycaps(keys) {
+  function keyName(k) { return KEY_NAMES[k] || { show: k, say: k, words: [String(k).toLowerCase()] }; }
+  /* Binding string -> key tokens in order (for keycaps, search and screen readers). */
+  function bindingTokens(str) {
+    var b = parseBinding(str);
+    var parts = MOD_ORDER.filter(function (m) { return b[m]; });
+    if (b.key) parts.push(b.key);
+    return parts;
+  }
+  function formatBinding(str) {
+    if (!str) return '';
+    var shown = bindingTokens(str).map(function (k) { return keyName(k).show; });
+    return IS_MAC ? shown.join('') : shown.join('+');
+  }
+  /* THE formatter: tooltips, command palette, Help menu and the Shortcuts tab all use it. */
+  function formatKeys(id) { return formatBinding(getBinding(id)); }
+  function sayKeys(id) {
+    var str = getBinding(id);
+    if (!str) return 'not set';
+    return bindingTokens(str).map(function (k) { return keyName(k).say; }).join(' plus ');
+  }
+  /* Saved overrides: known, editable ids only; values are a binding string or null. */
+  function cleanShortcutPrefs(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    Object.keys(raw).forEach(function (id) {
+      var sc = SHORTCUT_BY_ID[id];
+      if (!sc || !sc.editable) return;
+      var v = raw[id];
+      if (v === null) { out[id] = null; return; }
+      if (typeof v !== 'string' || !v) return;
+      var norm = joinBinding(parseBinding(v));
+      if (norm && norm !== sc.keys) out[id] = norm;
+    });
+    return out;
+  }
+
+  function keycaps(tokens) {
     var wrap = el('span', 'st-keys');
-    keys.forEach(function (k) { wrap.appendChild(el('kbd', 'st-key', keyName(k).show)); });
+    tokens.forEach(function (k) { wrap.appendChild(el('kbd', 'st-key', keyName(k).show)); });
     return wrap;
   }
+
   var shortcutQuery = '';
   /* "ctrl k" matches Ctrl K: one-letter words match key names only; longer words also match the text. */
   function shortcutMatch(sc, tokens) {
-    var text = (sc.action + ' ' + sc.group + ' ' + (sc.when || '')).toLowerCase();
+    var text = (sc.action + ' ' + sc.group + ' ' + (WHEN_LABEL[sc.when] || '')).toLowerCase();
     var words = [];
-    sc.keys.forEach(function (k) { words = words.concat(keyName(k).words); });
+    bindingTokens(getBinding(sc.id)).forEach(function (k) { words = words.concat(keyName(k).words); });
     return tokens.every(function (t) {
       if (words.indexOf(t) !== -1) return true;
       if (t.length < 2) return false;
@@ -5451,14 +5585,15 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       var rows = items.map(function (sc) {
         var row = el('div', 'st-sc-row');
         row.setAttribute('role', 'listitem');
-        row.setAttribute('aria-label', sc.action + ', ' + sc.keys.map(function (k) { return keyName(k).say; }).join(' plus ') + (sc.when ? ' (' + sc.when.toLowerCase() + ')' : ''));
+        var whenText = WHEN_LABEL[sc.when] || '';
+        row.setAttribute('aria-label', sc.action + ', ' + sayKeys(sc.id) + (whenText ? ' (' + whenText.toLowerCase() + ')' : ''));
         var text = el('span', 'st-sc-text');
         text.setAttribute('aria-hidden', 'true');
         var action = el('span', 'st-sc-action', sc.action);
         text.appendChild(action);
-        if (sc.when) text.appendChild(el('span', 'st-sc-when', sc.when));
+        if (whenText) text.appendChild(el('span', 'st-sc-when', whenText));
         row.appendChild(text);
-        var caps = keycaps(sc.keys);
+        var caps = keycaps(bindingTokens(getBinding(sc.id)));
         caps.setAttribute('aria-hidden', 'true');
         row.appendChild(caps);
         return { sc: sc, row: row, action: action };
@@ -5478,12 +5613,14 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     clear.addEventListener('click', function () { input.value = ''; filter(); input.focus(); });
     empty.appendChild(clear);
     wrap.appendChild(empty);
-    /* Ctrl+K exists (command palette), so the tip can point at it. */
-    var tip = el('p', 'st-sc-tip');
-    tip.appendChild(el('span', null, 'Tip: press'));
-    tip.appendChild(keycaps(['Mod', 'K']));
-    tip.appendChild(el('span', null, 'to run any action by name.'));
-    wrap.appendChild(tip);
+    /* The tip names the command palette's own binding, and only while it has one. */
+    if (getBinding('palette.open')) {
+      var tip = el('p', 'st-sc-tip');
+      tip.appendChild(el('span', null, 'Tip: press'));
+      tip.appendChild(keycaps(bindingTokens(getBinding('palette.open'))));
+      tip.appendChild(el('span', null, 'to run any action by name.'));
+      wrap.appendChild(tip);
+    }
     function filter() {
       shortcutQuery = input.value;
       var tokens = input.value.toLowerCase().split(/[\s+]+/).filter(Boolean);
@@ -5507,7 +5644,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     input.addEventListener('input', filter);
     input.addEventListener('keydown', function (event) {
       /* First Esc clears the search; the next one closes Settings. */
-      if (event.key === 'Escape' && input.value) {
+      if (input.value && matchShortcut(event, 'general.escape', { anyModifiers: true })) {
         event.preventDefault();
         event.stopPropagation();
         input.value = '';
@@ -5601,7 +5738,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     });
     if (!seg.querySelector('[tabindex="0"]') && buttons[0]) buttons[0].tabIndex = 0;
     seg.addEventListener('keydown', function (event) {
-      var step = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0;
+      var key = matchShortcut(event, ['w.right', 'w.down', 'w.left', 'w.up'], { anyModifiers: true });
+      var step = key === 'w.right' || key === 'w.down' ? 1 : key ? -1 : 0;
       if (!step) return;
       event.preventDefault();
       var i = buttons.indexOf(document.activeElement);
@@ -5800,10 +5938,11 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       var ids = SETTINGS_TABS.map(function (t) { return t.id; });
       var i = ids.indexOf(settingsTab);
       var next = null;
-      if (event.key === 'ArrowDown') next = ids[(i + 1) % ids.length];
-      else if (event.key === 'ArrowUp') next = ids[(i - 1 + ids.length) % ids.length];
-      else if (event.key === 'Home') next = ids[0];
-      else if (event.key === 'End') next = ids[ids.length - 1];
+      var key = matchShortcut(event, ['w.down', 'w.up', 'w.home', 'w.end'], { anyModifiers: true });
+      if (key === 'w.down') next = ids[(i + 1) % ids.length];
+      else if (key === 'w.up') next = ids[(i - 1 + ids.length) % ids.length];
+      else if (key === 'w.home') next = ids[0];
+      else if (key === 'w.end') next = ids[ids.length - 1];
       if (!next) return;
       event.preventDefault();
       selectSettingsTab(next, true);
@@ -5897,19 +6036,19 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   /* command palette */
   function paletteActions() {
     var list = [];
-    function add(group, label, run, kbd) { list.push({ group: group, label: label, run: run, kbd: kbd || '' }); }
-    add('Action', 'Copy prompt', copyPrompt, 'Ctrl+Enter');
+    function add(group, label, run, shortcutId) { list.push({ group: group, label: label, run: run, kbd: shortcutId ? formatKeys(shortcutId) : '' }); }
+    add('Action', 'Copy prompt', copyPrompt, 'prompt.copy');
     add('Action', 'Preview prompt', openPromptPreview);
     ['review', 'move', 'add'].forEach(function (m, i) {
-      add('Mode', 'Switch to ' + m.charAt(0).toUpperCase() + m.slice(1) + ' mode', function () { setMode(m); }, String(i + 1));
+      add('Mode', 'Switch to ' + m.charAt(0).toUpperCase() + m.slice(1) + ' mode', function () { setMode(m); }, 'mode.' + m);
     });
     if (state.mode === 'move') {
-      add('Tool', 'Select tool', function () { setTool('select'); }, 'V');
-      add('Tool', 'Move tool', function () { setTool('move'); }, 'M');
+      add('Tool', 'Select tool', function () { setTool('select'); }, 'tool.select');
+      add('Tool', 'Move tool', function () { setTool('move'); }, 'tool.move');
       add('Tool', 'Hand tool', function () { setTool('hand'); });
     } else if (state.mode === 'add') {
-      add('Tool', 'Select tool', function () { setTool('select'); }, 'V');
-      add('Tool', 'Place tool', function () { setTool('place'); }, 'P');
+      add('Tool', 'Select tool', function () { setTool('select'); }, 'tool.select');
+      add('Tool', 'Place tool', function () { setTool('place'); }, 'tool.place');
       add('Tool', 'Hand tool', function () { setTool('hand'); });
     }
     if (state.report) {
@@ -5918,19 +6057,19 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       });
       add('Page', 'Go to page: ' + (state.report.name || 'report'), function () { setSidebarTab('pages'); });
       [['fit', 'Fit'], ['0.5', '50%'], ['1', '100%'], ['2', '200%']].forEach(function (z) {
-        add('Zoom', 'Zoom ' + z[1], function () { setZoom(z[0]); }, z[0] === 'fit' ? '0' : '');
+        add('Zoom', 'Zoom ' + z[1], function () { setZoom(z[0]); }, z[0] === 'fit' ? 'zoom.fit' : '');
       });
     }
     var dark = document.documentElement.getAttribute('data-theme') === 'dark';
     add('Appearance', dark ? 'Switch to light theme' : 'Switch to dark theme', function () { setTheme(dark ? 'light' : 'dark'); });
     add('Appearance', 'Use system theme', function () { setTheme('system'); });
     ['s', 'm', 'l'].forEach(function (t) { add('Appearance', 'Text size ' + t.toUpperCase(), function () { setTextSize(t); }); });
-    add('Panels', 'Toggle sidebar', toggleSidebar, 'Ctrl+B');
-    add('Panels', 'Toggle details panel', toggleInspector, 'Ctrl+I');
+    add('Panels', 'Toggle sidebar', toggleSidebar, 'panel.sidebar');
+    add('Panels', 'Toggle details panel', toggleInspector, 'panel.inspector');
     add('Panels', 'Show changes', function () { setSidebarTab('changes'); });
     add('Panels', 'Show requests', function () { setSidebarTab('requests'); });
-    add('Help', 'Open settings', function () { openSettings('general'); }, 'Ctrl+,');
-    add('Help', 'Show keyboard shortcuts', openShortcuts, '?');
+    add('Help', 'Open settings', function () { openSettings('general'); }, 'settings.open');
+    add('Help', 'Show keyboard shortcuts', openShortcuts, 'help.shortcuts');
     add('Help', 'Start quick tour', function () { startTour(); });
     return list;
   }
@@ -5990,9 +6129,10 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     }
     input.addEventListener('input', function () { index = 0; draw(); });
     input.addEventListener('keydown', function (event) {
-      if (event.key === 'ArrowDown') { event.preventDefault(); index = (index + 1) % Math.max(1, shown.length); draw(); }
-      else if (event.key === 'ArrowUp') { event.preventDefault(); index = (index - 1 + shown.length) % Math.max(1, shown.length); draw(); }
-      else if (event.key === 'Enter') { event.preventDefault(); run(index); }
+      var key = matchShortcut(event, ['w.down', 'w.up', 'w.enter'], { anyModifiers: true });
+      if (key === 'w.down') { event.preventDefault(); index = (index + 1) % Math.max(1, shown.length); draw(); }
+      else if (key === 'w.up') { event.preventDefault(); index = (index - 1 + shown.length) % Math.max(1, shown.length); draw(); }
+      else if (key === 'w.enter') { event.preventDefault(); run(index); }
     });
     draw();
     openLayer(scrim(box), { focus: 'input' });
@@ -6109,10 +6249,11 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       if (event.target.closest('#sbToggle')) toggleSidebar();
     });
     document.querySelector('.sb-tabs').addEventListener('keydown', function (event) {
-      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      var key = matchShortcut(event, ['w.left', 'w.right', 'w.up', 'w.down'], { anyModifiers: true });
+      if (!key) return;
       var order = ['pages', 'changes', 'requests'];
       var i = order.indexOf(state.sidebarTab);
-      var step = event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 1;
+      var step = key === 'w.left' || key === 'w.up' ? -1 : 1;
       var next = order[(i + step + order.length) % order.length];
       event.preventDefault();
       setSidebarTab(next);
@@ -6133,7 +6274,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     });
     renderCopyButton();
     document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape' && overlayOpen()) { event.preventDefault(); closeLayer(); }
+      if (overlayOpen() && matchShortcut(event, 'general.escape', { anyModifiers: true })) { event.preventDefault(); closeLayer(); }
     });
     bindTooltips();
     bindSheet();

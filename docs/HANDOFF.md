@@ -10,7 +10,8 @@ Branch: `feat/shortcut-rebind` (from `feat/settings-redesign` at 61327c5). Only 
 3. Touch or <640px: read-only + callout; record field is a button with aria-pressed; validation messages aria-live="assertive"; Esc while recording only cancels.
 
 ### Status
-- Plan written; step 1 next.
+- Step 1 done (refactor). Every key comparison is in `eventBinding()` / `matchShortcut()`; tooltips use `data-sc`, palette/Help/Shortcuts tab use `formatKeys()`. Shortcuts tab now also lists "Redo (second key)" Ctrl+Y and "Move between controls" Tab (locked) — both existed already. Small change: matches are exact now, so extra modifiers no longer trigger (e.g. Ctrl+Shift+K used to open the palette; Shift+V used to pick Select). Widget navigation keys (arrows, Home/End, Enter, Esc, Tab) still ignore extra modifiers as before.
+- Next: step 2 (record mode, validation, conflicts, reset UI).
 
 ## Previous task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
 
