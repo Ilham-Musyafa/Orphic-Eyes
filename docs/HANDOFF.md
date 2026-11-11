@@ -1,6 +1,18 @@
 # HANDOFF
 
-## Current task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
+## Current task: Rebindable keyboard shortcuts
+
+Branch: `feat/shortcut-rebind` (from `feat/settings-redesign` at 61327c5). Only `engine/templates/report.html` + this file. Note: the sidebar-toggle click fix lives on `fix/sidebar-toggle` and is not in this branch.
+
+### Plan
+1. Refactor, no behaviour change: `SHORTCUTS` entries get `id`, `when` (global / move / add / moveadd / drag), `editable` (Esc, Tab locked; hold gestures Space + Shift locked too). Bindings are strings in one order, `Ctrl+Alt+Shift+Key` ("Ctrl" = Ctrl or ⌘). `getBinding(id)` = `prefs.shortcuts[id]` (string or null) else default. One `matchShortcut(event, ids?)` does every key comparison: app shortcuts plus a fixed, unlisted `WIDGET_KEYS` table for list/menu/slider/tab navigation (arrows, Home/End, Enter). One `formatKeys(id)` feeds tooltips (`data-sc` instead of literal `data-kbd`), the command palette, the Help menu and the Shortcuts tab. Prefs: `shortcuts: {id: "Ctrl+Shift+K" | null}`, only changed ids.
+2. Shortcuts tab: keycap button + ✎, lock icon for locked rows, "Edited" dot + ↺ reset (toast with Undo), record mode ("Press new keys…", live preview, Esc/click outside cancels, all shortcuts paused), validation (modifier alone, bare letter/number, browser combos, reserved keys), conflicts (only when `when` overlaps) with Cancel/Replace, "Reset all shortcuts" with confirm; Reset preferences also clears shortcuts.
+3. Touch or <640px: read-only + callout; record field is a button with aria-pressed; validation messages aria-live="assertive"; Esc while recording only cancels.
+
+### Status
+- Plan written; step 1 next.
+
+## Previous task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
 
 Branch: `feat/settings-redesign` (from `feat/mobile-fixes` at 0fbfaec). One commit per step. Only Settings changed; prefs stay in `orphic-eyes.prefs.v1` with the same keys.
 
