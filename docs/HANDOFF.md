@@ -1,6 +1,27 @@
 # HANDOFF
 
-## Current task: Visual fixes (desktop)
+## Current task: Mobile fixes (<640px / touch)
+
+Branch: `feat/mobile-fixes` (from `feat/visual-fixes` at 38b9b97). One commit per step. Phone rules live in `@media (max-width:639px)` blocks; touch wording uses `matchMedia('(hover: none)')` (`body.touch`). 640–767 px keeps the old bottom sheet.
+
+### Done
+1. 584071c (+ c7a45f4 focus fix) Two-row phone header: row 1 (52 px) logo, page name with ellipsis (tap opens Pages at Half; no ▾ with one page), 44×44 Copy prompt icon (disabled reason as a toast on press), "⋯" (aria-label "More options", aria-expanded). Row 2 (40 px) Review|Move|Add (44 px tap area) + "Step n of 4". ⋯ menu: status line ("3 changes · 0 approved", + requests), Preview prompt, Undo/Redo, Theme Light/Dark/System inline, Settings, Help & shortcuts, Start tour. Esc or a tap outside closes it; focus returns to ⋯.
+2. 649b893 Bottom sheet: Peek 120 px (default), Half 50vh (tab tap), Full 88vh. Handle 36×4 is a button with a 44 px hit area: tap toggles Peek/Half, drag snaps to the three positions, arrow keys step; label "Expand panel" / "Collapse panel". Sticky sheet headers, lists scroll inside (`overscroll-behavior: contain`), 24 px fade at Half that goes at the end of the list, list padding = footer + safe area + 16 px, canvas padding = current sheet height. A tap on the picture returns to Peek. Area map hidden under 640 px; each change row already names its area. The picture is fitted to the Peek layout so it does not jump when the sheet moves.
+3. 6fb40e0 Requests sheet: sticky footer "{n} of 8 requests" + 44 px "Preview prompt" (hidden at Peek, where the header shows the count). Preview on phones is full screen: text "Close" top left, full-width "Copy prompt" at the bottom.
+4. 3888376 Canvas: picture top-aligned, 8 px below the floating view/option bar (empty state starts at the top). All controls ≥44 px (floating bars, dock tools, slider handle; small change boxes get an invisible 44 px tap area). Touch wording: "Tap Load images, or try the sample." (+ "They stay in this tab and are never uploaded."), "Tap to add an image or GIF", "No requests yet. Mark an area and tap Add.", keyboard hints hidden from tooltips/menus, shortcuts list notes "Keyboard shortcuts work with a physical keyboard."
+- Checked in Chrome device emulation (touch on) at 390×844 and 360×780, light and dark: header/menu 64/64, sheet 92/92, requests/preview 68/68, canvas + touch + 44 px audit 84/84; no console errors, no horizontal overflow.
+- Desktop unchanged: pixel-identical screenshots against `feat/visual-fixes` at 1440, 1024 and 700 px, light and dark, empty + report + Move (18/18). Copy prompt text byte-identical; Load images, Add reference, Flow clarity and motion checks unchanged.
+- report.html: 421,888 → 441,018 bytes. Diff: no URLs/fetch/XHR/eval/localStorage. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
+- Screenshots: `docs/screenshots/mobile-fixes/` (390 px, light + dark, per step).
+
+### Not done
+- Optional: area map full-size overlay (the map is hidden on phones instead of shown as a thumbnail); "Fit width"/"Fit screen" in the zoom pill (no room at 360–390 px without dropping a zoom step). Stack view: Side by side already stacks Before over After on portrait, so nothing was added.
+- Not tested on a real phone or iOS Safari (Chrome emulation only); Edge not available in the cloud runner.
+
+### Next
+- Settings step 3: tab restructure
+
+## Previous task: Visual fixes (desktop)
 
 Branch: `feat/visual-fixes` (from `feat/flow-clarity` at 3b4b36e). One commit per item.
 
