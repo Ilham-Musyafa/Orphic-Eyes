@@ -1,6 +1,26 @@
 # HANDOFF
 
-## Current task: Lumen sample + typing-safe shortcuts
+## Current task: release/hackathon (stack + stage-5e, one merge)
+
+Branch: `release/hackathon` (from `feat/lumen-sample` at 3abf08d), then `git merge origin/stage-5e` (merge commit, no rebase). No PR, nothing pushed to `stage-5e` or `main`. `feat/url-capture` is not touched.
+
+### Investigation
+- Merge-base of `feat/lumen-sample` and `origin/stage-5e`: **61327c5** "docs: HANDOFF for settings redesign" (the tip of `feat/settings-redesign`). PR #1 merged `fix/sidebar-toggle` (branched from there) into stage-5e, which pulled the stack up to settings-redesign into stage-5e.
+- Commits on stage-5e not in feat/lumen-sample:
+  - `ad131f1` Fix: sidebar collapse button ignored mouse clicks — `engine/templates/report.html` (7+, 5-).
+  - `6bde560` Merge pull request #1 from Ilham-Musyafa/fix/sidebar-toggle — the merge itself. Against its first parent (old stage-5e `fb57926`) it brings in the stack (report.html, README.md, docs/HANDOFF.md, licenses/*, docs/screenshots/*); against `ad131f1` it changes nothing (`git diff ad131f1 6bde560` is empty).
+- Old stage-5e (`fb57926` "docs: link the Apache license text") is already an ancestor of feat/lumen-sample, so stage-5e has no other own work.
+- Every stack branch is an ancestor of feat/lumen-sample (`git merge-base --is-ancestor origin/<b> feat/lumen-sample` = yes, local = origin): ui-overhaul 5ef916f, feat/copy-targets 2cd2104, feat/add-action 6329be2, feat/helper-chips d34fe0a, feat/settings-prefs b5fb078, feat/fonts 917cda6, feat/copy-prompt 578f076, feat/micro-animations 17038f5, feat/load-images dc3b476, feat/add-reference a9ac1c4, feat/flow-clarity 3b4b36e, feat/visual-fixes 38b9b97, feat/mobile-fixes 0fbfaec, feat/settings-redesign 61327c5, feat/shortcut-rebind a5fe92b, feat/verify-loop 68d04c5, feat/lumen-sample 3abf08d. None missing.
+- Dry run (`git merge-tree --write-tree feat/lumen-sample origin/stage-5e`): one conflicted file, `engine/templates/report.html`. The stage-5e side is exactly `ad131f1`, which the stack already carries as `a5fe92b` (same fix, adapted to the `data-sc` shortcut tooltips and the rebindable key in the label).
+
+### Plan
+1. Merge `origin/stage-5e` into `release/hackathon`; resolve report.html hunk by hunk keeping the stack version where it already contains the stage-5e fix.
+2. Re-verify: ancestry for both branches, dry-run merge of release into stage-5e, conflict-marker grep, test suite, all earlier browser checks, Copy prompt byte identity vs feat/lumen-sample.
+
+### Status
+- Investigation written; merge next.
+
+## Previous task: Lumen sample + typing-safe shortcuts
 
 Branch: `feat/lumen-sample` (from `feat/verify-loop` at 68d04c5). Files: `engine/templates/report.html`, `samples/lumen/*` (from `assets/lumen-sample` f2e09b7), this file.
 
