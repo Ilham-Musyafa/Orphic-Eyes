@@ -1,6 +1,17 @@
 # HANDOFF
 
-## Current task: release/hackathon (stack + stage-5e, one merge)
+## Current task: Merge feat/url-capture + Content check view — STOPPED
+
+Branch: `release/hackathon` (pulled; at 3800d4f, up to date with origin).
+
+### Status
+- Stopped at step 1, as the task asks: `origin/feat/url-capture` does not exist. `git ls-remote --heads origin` (checked 2026-11-11 17:44 +07) lists only: assets/lumen-sample, feat/add-action, feat/add-reference, feat/copy-prompt, feat/copy-targets, feat/flow-clarity, feat/fonts, feat/helper-chips, feat/load-images, feat/lumen-sample, feat/micro-animations, feat/mobile-fixes, feat/settings-prefs, feat/settings-redesign, feat/shortcut-rebind, feat/verify-loop, feat/visual-fixes, fix/sidebar-toggle, release/hackathon, stage-5e, ui-overhaul. No branch with "url" in its name, locally or on GitHub.
+- Nothing merged, no UI work started (URL labels and Content check depend on what url_capture writes to the report metadata).
+
+### Next
+- When Codex pushes `feat/url-capture`: `git merge origin/feat/url-capture` into release/hackathon (keep both HANDOFF sections on conflict), run the full suite, then plan and build URL labels + Content check (report.html + this file only).
+
+## Previous task: release/hackathon (stack + stage-5e, one merge)
 
 Branch: `release/hackathon` (from `feat/lumen-sample` at 3abf08d), then `git merge origin/stage-5e` (merge commit, no rebase). No PR, nothing pushed to `stage-5e` or `main`. `feat/url-capture` is not touched.
 
