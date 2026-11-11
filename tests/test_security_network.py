@@ -39,6 +39,26 @@ class AllowLocalConfigTests(unittest.TestCase):
         with patch.dict("sys.modules", {"hermes_cli.config": None}):
             self.assertEqual(tools.plugin_config(), {})
 
+    def test_reads_settings_from_real_hermes_config(self):
+        try:
+            importlib.import_module("hermes_cli.config")
+        except ImportError:
+            self.skipTest("Hermes is not installed")
+        # A fresh interpreter: other tests stub hermes_constants in sys.modules.
+        import subprocess
+        import sys
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        for body, expected in (("plugins:\n  entries:\n    orphic-eyes:\n      settings:\n        allow_local: true\n", "True"),
+                               ("plugins:\n  entries:\n    orphic-eyes:\n      allow_local: true\n", "False"),
+                               ("", "False")):
+            with self.subTest(body=body), tempfile.TemporaryDirectory() as home:
+                with open(os.path.join(home, "config.yaml"), "w", encoding="utf-8") as handle:
+                    handle.write(body)
+                result = subprocess.run([sys.executable, "-c", "import orphic_tools; print(orphic_tools.allow_local())"],
+                                        cwd=root, env={**os.environ, "HERMES_HOME": home},
+                                        capture_output=True, text=True, timeout=60)
+                self.assertEqual(result.stdout.strip().splitlines()[-1:], [expected], result.stderr[-500:])
+
     def test_pair_passes_config_value_to_engine(self):
         seen = {}
 

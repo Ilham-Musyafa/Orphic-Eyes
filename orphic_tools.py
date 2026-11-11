@@ -14,7 +14,7 @@ MAX_RESULT_BYTES = 4000
 STATE_FILE = "plugin-state.json"
 VIEWPORT_PRESETS = {"desktop": (1280, 720), "mobile": (390, 844), "tablet": (768, 1024)}
 PLUGIN_ID = "orphic-eyes"
-CONFIG_HINT = "plugins.entries." + PLUGIN_ID
+CONFIG_HINT = "plugins.entries." + PLUGIN_ID + ".settings"
 # Only /orphic demo sets this, for pages it wrote itself under the data directory.
 _TRUSTED_FILE_DIR = ContextVar("orphic_trusted_file_dir", default=None)
 
@@ -44,12 +44,20 @@ def resolve_data_dir():
 
 
 def plugin_config():
-    """Read the user's plugins.entries.orphic-eyes block; fail closed to defaults."""
+    """Read plugins.entries.orphic-eyes.settings (legacy: .config), as ctx.get_config does.
+
+    Any read failure falls back to the safe defaults (allow_local off, file_root = cwd).
+    """
     try:
-        from hermes_cli.config import load_config
-        config = load_config() or {}
+        from hermes_cli import config as hermes_config
+        load = getattr(hermes_config, "load_config_readonly", None) or hermes_config.load_config
+        config = load() or {}
         entry = ((config.get("plugins") or {}).get("entries") or {}).get(PLUGIN_ID) or {}
-        return entry if isinstance(entry, dict) else {}
+        for subtree in ("settings", "config"):
+            values = entry.get(subtree) if isinstance(entry, dict) else None
+            if isinstance(values, dict):
+                return values
+        return {}
     except Exception:
         return {}
 

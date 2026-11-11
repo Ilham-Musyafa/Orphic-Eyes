@@ -14,3 +14,11 @@ provides_tools:
   - orphic_accept
   - orphic_ignore
 provides_hooks: []
+config_schema:
+  allow_local:
+    type: bool
+    default: false
+    description: "Permit private/loopback HTTP(S) destinations for URL pairs and loop steps. Link-local/metadata addresses stay blocked."
+  file_root:
+    type: str
+    description: "Folder that file:// pages must be inside. Default: Hermes' working directory. Dot-directories, .env and the Hermes home are always refused."
