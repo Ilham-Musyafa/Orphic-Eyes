@@ -4659,8 +4659,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       'tool.place': function () { setTool('place'); }
     };
     document.addEventListener('keydown', function (event) {
-      var writing = event.target && event.target.matches &&
-        event.target.matches('input,textarea,select,[contenteditable]');
+      var writing = isTypingTarget(event.target);
       if (state.recordingShortcut || overlayOpen()) return; /* palette, settings and menus handle their own keys */
       if (matchShortcut(event, 'general.escape', { anyModifiers: true })) {
         /* Esc drops the transient selection; the drafts themselves stay. */
@@ -4686,11 +4685,11 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         }
         return;
       }
+      /* While typing in a field no shortcut fires (Esc, handled above, is the only exception):
+         Shift+V types a V, Ctrl+Z undoes the text, and so on. */
+      if (writing) return;
       var id = matchShortcut(event);
       if (!id || id === 'general.tab') return;
-      var bound = parseBinding(getBinding(id));
-      /* Keys without Ctrl or Alt never fire while typing in a field. */
-      if (writing && !bound.Ctrl && !bound.Alt) return;
       if (id === 'tool.hand') {
         /* A focused button keeps Space for itself (press), so Hand never steals it. */
         if (event.target && event.target.closest && event.target.closest('button, [role="button"], a, summary')) return;
@@ -5520,6 +5519,16 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     var parts = MOD_ORDER.filter(function (m) { return b[m]; });
     if (b.key) parts.push(b.key);
     return parts.join('+');
+  }
+  /* Fields where keys type text: text inputs, textarea, select, contenteditable.
+     Buttons, checkboxes, radios, sliders and file pickers are not typing targets. */
+  var NON_TYPING_INPUTS = ['button', 'submit', 'reset', 'checkbox', 'radio', 'range', 'color', 'file', 'image'];
+  function isTypingTarget(node) {
+    if (!node || node.nodeType !== 1) return false;
+    if (node.isContentEditable) return true;
+    var tag = node.tagName;
+    if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    return tag === 'INPUT' && NON_TYPING_INPUTS.indexOf(String(node.type).toLowerCase()) === -1;
   }
   /* Which modifiers are held right now (keyboard or pointer event). */
   function heldModifiers(event) {

@@ -12,6 +12,7 @@ Branch: `feat/lumen-sample` (from `feat/verify-loop` at 68d04c5). Files: `engine
 ### Status
 - Step 1 done: `samples/lumen/` brought in from f2e09b7. Try sample embeds both as lossless WebP (Pillow `lossless=True, method=6`): before 209,403 → 83,212 bytes, after 207,967 → 82,652 bytes. Decoded pixels are identical to the PNGs: Python RGBA bytes equal (sha256 before 7d4a7e4b…, after 5acbc8f3…), and in Chrome canvas RGBA of PNG vs embedded WebP differ in 0 of 5,184,000 bytes for each image. Tidyday data and names removed (0 matches for "tidyday" in report.html); sample files are named lumen-before.webp / lumen.webp, page name "lumen". report.html 527,765 → 724,883 bytes.
 - In-app diff on Lumen: exactly 6 areas — Top left 126×55 (headline word), Top right 50×12 (About → Journal), Middle left 160×44 (CTA teal → terracotta), Middle right 70×24 (badge moved), Bottom center 99×62 (card icon + title, one cluster), Bottom right 60×11 (Contact missing). Status "Check changes".
+- Step 2 done: one rule in the app keydown handler — while focus is in a text input, textarea, select or contenteditable (`isTypingTarget`), no shortcut fires; only Esc keeps working (it is handled before). Buttons, checkboxes, radios, range sliders and file pickers are not typing targets, so shortcuts still work after clicking them. Typing "Very Valid 123 V" in the Move note types it (no Verify, no mode switch, Ctrl+Z / Ctrl+B left to the field); Shift+V outside fields still opens Verify.
 
 ## Previous task: Verify loop (Round 2 check)
 
