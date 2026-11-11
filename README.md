@@ -1,399 +1,150 @@
-<p align="center">
-  <img src="assets/orphic-eyes-logo-final.svg" width="120" alt="Orphic Eyes logo">
-</p>
-
 # Orphic Eyes
 
-*See it. Point at it. Tell the agent.*
+**Give Hermes eyes: compare screenshots, point at what needs changing, and turn pixels into precise requests for any AI coding agent.**
 
-Orphic Eyes verifies UI edits from before/after screenshots using pixels, with no
-DOM, CSS or page-code inspection. Each requested change gets its own verdict,
-kept separate from the visual status. The default offline HTML report lets you
-review differences and prepare instructions to copy back to Hermes.
+## Why
 
-Tested with Python 3.12 and 3.14; `/orphic doctor` checks for 3.12 or newer.
-Pillow is the only Python dependency, and an installed Edge, Chrome or Chromium
-browser is required. Only Windows 11 with headless Edge is verified.
+Telling an AI what looks wrong is slow and vague. Orphic Eyes gives Hermes a visual review loop: show the difference, mark the area, describe the intended change, and check the next screenshot.
 
-## At a glance
+Built for the Nous Research Hermes Agent Plugin Hackathon. This is a submission candidate, not an approved catalog listing.
 
-| Result | Meaning |
+> **Branch status:** this README includes the engine from `feat/auto-loop`. UI features marked **release UI** were inspected on `release/hackathon` at `aa8f14c2308aeaacab825ba8ec139ba4ee97bb54`; they are not all included in this branch's template. A final combined release and validation are still required.
+
+**TODO — demo video:** add a public video link, under 90 seconds.  
+**TODO — screenshots:** add captures of the final combined release; no current screenshot is presented as that release.
+
+## Compare → point → request → verify
+
+1. **Compare:** load Before/After images, or let the engine capture two URLs. Review changed zones.
+2. **Point:** mark the area and its intended destination or placement.
+3. **Request:** create Move/Add instructions, choose Exact/Approx precision, and copy a plain prompt into your coding agent.
+4. **Verify:** capture the edited page again. Review request verdicts and unexpected changes, then use a follow-up prompt for the next edit.
+
+## Features
+
+| Feature | Availability |
 | --- | --- |
-| Visual `pass` | No unexpected, unapproved change boxes remain. Expected or approved changes may still exist. |
-| Visual `check` | Unexpected, unapproved boxes remain, below the 5% changed-pixel fail threshold. |
-| Visual `fail` | Unexpected, unapproved changed pixels reach 5% of the image, or before/after dimensions differ. |
-| Request `done` | Move/revert: a unique grayscale crop match scores at least 0.92 and both position offsets are within precision tolerance. Hide: the crop scores below 0.92 throughout the completed bounded search. |
-| Request `not_done` | Move/revert: a unique high-scoring crop is found outside tolerance. Hide: a matching crop remains, even if its location is ambiguous. |
-| Request `unknown` | Move/revert: low or ambiguous match. Any non-comment request: changed viewport or exhausted search budget. |
-| Request `skipped` | Comment requests have no pixel test. |
+| Before/After pixel diff, changed boxes and 3×3 zones | Engine and report UI |
+| Move requests, Add instructions, Exact/Approx placement | Report UI; engine precision is 2/8 px per axis for supported crop requests |
+| Copy Prompt for any AI coding agent | Report UI; copying does not send anything |
+| Verify: next-round pass/fail/unclear checks, unexpected changes, follow-up prompt | **Release UI** |
+| Content check | **TODO: implementation not found at the inspected release commit; confirm before advertising** |
+| URL capture with fixed viewport, DPR 1 and bounded waits | Engine |
+| `orphic_loop_step`: capture, review fixed goals, return a follow-up prompt and stop condition | Engine/Hermes adapter |
+| Local read-only HTTP report server so image pixels share the report origin | Engine |
+| Settings, light/dark themes and shortcuts | Report UI; shortcut **rebinding is release UI** |
+| Embedded Lumen sample | **Release UI**; distinct from the engine demo below |
+| Offline report with embedded fonts, CSS, JavaScript and report data | Report UI; generated reports keep PNGs/crops beside report.html |
 
-Precision: Exact = 2 px, Approx = 8 px per axis. A request verdict does not prove
-semantic identity or DOM removal; matching is local and image-only.
-
-## How it works
-
-```mermaid
-flowchart LR
-    baseline --> edit[edit UI] --> compare --> report --> verdict[verdict per request]
-```
-
-The visual status describes unexpected changes; request verdicts describe whether
-the requested edits can be verified. Read both before deciding what to fix.
-
-## See it
-
-![Review report with three request verdicts](docs/images/review-verdicts.png)
-
-All pages shown here are from the synthetic Lumen Demo scenario.
-
-<!-- TODO: add move-guides.png / add-mode.png -->
-
-## Demo
-
-`demo/` contains synthetic **Lumen Demo** before/after pages, three request
-definitions, and a script that captures them with the real engine. The scenario
-produces one `done`, one `not_done`, one `unknown`, plus an unexpected subline
-color change. These are demonstration pages, not a customer website.
-
-Use Python 3.12 or newer, matching the doctor check, with Pillow installed in
-that same interpreter. Run these commands from the repository root:
-
-```powershell
-python -m pip install -r requirements.txt
-python -B demo/run_demo.py --repeat 2
-```
-
-The script regenerates `demo/output/` twice and checks that metrics, boxes and
-verdicts agree. Open [demo/output/report.html](demo/output/report.html); the
-folder also contains screenshots, crops, report.json and repeatability evidence.
-Use `python` for the interpreter containing Pillow; an installed Edge, Chrome or
-Chromium is also required. On Windows with several Pythons, the launcher can
-select one explicitly: `py -3.12 -B demo/run_demo.py --repeat 2`.
-
-## Point & Tell in the report UI
-
-- **Review:** inspect visual changes, request verdicts and before/after images.
-- **Move:** select an image area and describe its intended destination.
-- **Add:** describe new content and where it should go. Add instructions are
-  not engine requests and are not verified by the engine.
-- **Copy for Hermes:** copy the instructions, paste them into Hermes and press
-  Enter. Nothing is sent automatically.
-- **Text size S/M/L:** adjust report text size.
-
-Motion and animation cannot be verified from screenshots.
-
-## Why not X?
-
-- Agent self-checks based on tool-call logs can show that an operation ran;
-  those logs alone do not establish how the screen changed.
-- DOM or selector tests inspect page structure through browser or test APIs.
-  Orphic Eyes compares captured pixels.
-- Whole-screenshot visual-regression checks describe visual differences.
-  Orphic Eyes also checks each supplied request and returns `unknown` when
-  its bounded pixel matching cannot establish completion.
-
-## Data access and disclosure
-
-- **Network:** The Python code has no third-party service client or upload
-  implementation. It starts no web server. Captured pages may load remote
-  resources or redirect. Initial URLs must be `http://localhost`,
-  `http://127.0.0.1` or local `file://` pages; this validation does not isolate
-  the browser from the network.
-- **Reads/writes:** Tools store artifacts locally; doctor also probes the parent
-  directory. Runtime, packages, browser and supplied pages are read outside the
-  store. For Hermes tools, the store is `<home>/orphic-eyes/<target>/`; home
-  uses Hermes' resolver, then `HERMES_HOME`, then `~/.hermes`. Standalone
-  callers choose their store; the repository demo uses `demo/output/`.
-- **Subprocess/shell:** Capture uses a browser argument list without a shell;
-  doctor may run --version on non-Windows.
-- **Background processes:** Capture waits up to 45 seconds, then kills and waits
-  for its browser if needed. Profile deletion is attempted; descendant cleanup
-  is not established. Fresh profiles are created beside the output PNG; browser
-  temporary-directory variables point into the profile. The code starts no
-  threads, daemons or schedulers.
-- **Credentials:** The code reads no credential store. Saved URLs may contain
-  query secrets; pages may store cookies in temporary profiles.
-- **Telemetry:** The code contains no telemetry or usage reporting.
-
-Captured URLs and temporary browser profiles are stored locally and may contain secrets, such as query tokens, so do not capture URLs containing secrets.
-
-Hermes surfaces: `orphic_baseline`, `orphic_compare`, `orphic_approve`,
-`orphic_accept` and `orphic_ignore` in toolset `orphic`; `/orphic` supports
-`help`, `doctor` and `demo`. No hooks, middleware, custom Hermes CLI subcommands,
-skills, dashboard or Desktop pages are registered.
-
-The default report uses inline CSS/JavaScript, embedded JSON and adjacent local
-images for offline review. Copy for Hermes writes instructions to the clipboard;
-pasting them into Hermes remains manual.
+The engine accepts move, revert, hide and comment intents. Add instructions are copied for a coding agent and are not an engine request type. UI Verify verdicts and engine `done`/`not_done`/`unknown` verdicts are separate systems. Neither establishes semantic identity or code correctness.
 
 ## Install
 
-Until the repository URL and release commit are confirmed, these are placeholders:
+Requirements: Python 3.12+, Pillow (`Pillow>=10,<14`) and an installed Edge, Chrome or Chromium browser. The engine can select a browser with `ORPHIC_BROWSER`. No model API key is required by Orphic Eyes.
 
-```text
-hermes plugins install <GITHUB-OWNER/REPO> --ref <FULL-40-CHAR-SHA>
+With Hermes installed, this command pins the **engine feature commit**, not the final hackathon submission:
+
+```sh
+hermes plugins install Ilham-Musyafa/orphic-eyes --ref ab5f9e3e836e6a49786e2920fea30ce14edfb36e
 ```
 
-Only after a catalog entry is merged, installation by catalog name becomes
-available. The draft catalog entry is marked Windows-only:
+Installation by catalog name becomes available only after maintainer admission. Do not install from the draft's zero SHA. **TODO — final release pin:** combine the intended engine/UI release, validate it, and replace the draft pin with its full 40-character SHA.
 
-```text
-hermes plugins install orphic-eyes
+From an existing repository checkout, install the Python dependency:
+
+```sh
+python -m pip install -r requirements.txt
 ```
 
-Users on other systems can try the direct pinned-repository install above; only
-Windows 11 with Edge has been verified, and operation elsewhere is unverified.
+## Quick start
 
-<details>
-<summary>Hermes tools and engine reference</summary>
+From the repository root, run the included synthetic **Lumen Demo** engine scenario:
 
-### Hermes plugin
-
-#### Point & Tell round trip
-
-Pass up to eight `requests` to `orphic_compare` to verify `move`, `hide` or
-`revert` intents from baseline/after pixels; `comment` is skipped.
-A search time budget can produce `unknown`. IDs are `PT-1` through `PT-999`.
-Boxes are user-drawn hints, not DOM
-elements. Read `request_results` and `requests_ok` separately from visual
-`status`: an unmet request can coexist with `pass`, and a completed request can
-coexist with unexpected side effects (`check`/`fail`). Matching is grayscale,
-local and conservative; repeated/flat content, changed appearance and moves
-outside the bounded search cannot establish a unique location. Hide proves only
-absence of a matching crop inside the search window, not DOM removal. Focus PNGs
-live in `crops_dir`; a default HTML report template is included at
-`engine/templates/report.html`. HTML generation remains optional. See
-[the report contract](docs/report-contract.md) for shapes, thresholds and examples.
-
-Baseline additionally accepts `viewport="desktop"` (1280x720), `"mobile"`
-(390x844), or `"tablet"` (768x1024), mutually exclusive with width/height.
-Actual PNG dimensions are checked. Explicit presets are returned as
-`viewport.preset` and retained by accept. Omitted preset preserves legacy output.
-
-Standalone Python callers can pass `requests=[...]` to `engine.compare`;
-`focus=True` enables box crops without requests and `shift_hints=True` enables
-shift hints. Omitting all three leaves out Point & Tell fields; successful HTML
-generation may still add `paths.html` to the returned result.
-After creating the baseline, use actual local page URLs, for example:
-`python -m engine.cli compare demo file:///path/to/after.html --store ./store --requests demo/requests.json`.
-Request-enabled CLI calls generate focus crops and shift hints; exit codes still
-follow visual status, so always inspect the independent request verdicts.
-
-`plugin.yaml` declares the five tools registered by `register(ctx)`, in toolset
-`orphic`. No hooks are registered. The only declared dependency is
-`Pillow>=10,<14`. This stage does not install or enable the plugin automatically.
-
-| Tool | When to call / arguments |
-| --- | --- |
-| `orphic_baseline` | Before editing UI: required `url`; optional `name="default"`, `width=1280`, `height=720`. Replaces that target's baseline and clears its previous comparison and approvals; ignore regions remain. |
-| `orphic_compare` | After UI edits: optional `name`, `url` (defaults to the baseline URL), `expect=[{x,y,w,h}]`. Uses the baseline browser and viewport. A URL override affects this capture only until accepted. |
-| `orphic_approve` | After reviewing changes: `name`, either `boxes=[1,2]` or `all=true`. Approves content fingerprints; does not replace the baseline. |
-| `orphic_accept` | After reviewing the latest capture: `name`. Replaces the baseline with that capture, adopts its URL as the baseline URL and clears approvals. |
-| `orphic_ignore` | After baseline creation: `name`, `action="add"` or `"remove"`, `region={x,y,w,h}`. Remove matches one stored rectangle (including engine clipping); compare again to recalculate. |
-
-Use `/orphic help` for commands, `/orphic doctor` for Python/Pillow,
-browser path and version, data-directory write access and engine imports, or
-`/orphic demo` for two offline embedded-CSS pages whose **Start trial** button
-moves 40 px right. Demo replaces only target `demo` and returns image paths/status.
-It creates HTML **input pages**. `paths.report` is the absolute report.json path
-when that file exists, otherwise null (such as immediately after baseline).
-
-Successful tool calls return JSON with `success`, engine `status`, `message`,
-`target`, `changed_percent`, up to 20 numbered `boxes`, `boxes_omitted`,
-`paths`, `viewport` (DPR 1), and a next-step `hint`. Existing engine field names
-(`name`, `summary`, flat box coordinates, `label`, `approved`, etc.) remain;
-`bbox` and `kind` are additive conveniences. Request input and detailed crop
-metadata remain in report.json; tool output carries verdicts and one crops_dir.
-The byte budget first clears request why strings, then omits found rectangles,
-then removes boxes, retaining every request ID and status. Fewer boxes may be returned to keep
-the encoded result below 4,000 bytes; `boxes_omitted` counts every omitted box.
-If necessary, `ignore_regions_omitted` counts omitted region entries. Full engine
-comparison data remains in the target's `report.json`. Baseline/accept/ignore
-responses have zero comparison metrics because they do not perform a comparison.
-`success=true` means the tool ran without error. Incomplete requests are named
-first in `message`; always read `requests_ok` independently of visual status.
-Failures return only `success=false`, `error` and actionable `fix`. No image data
-is embedded in tool results.
-
-Storage resolves via `hermes_constants.get_hermes_home()` when importable,
-otherwise `HERMES_HOME`, otherwise `~/.hermes`. Target artifacts are written
-under `<home>/orphic-eyes/<target>/`; doctor may also create and probe the parent
-`orphic-eyes` directory. Demo pages go under target `demo/`. Target names are
-validated rather than silently renamed: 1–40 ASCII letters/digits/dash/
-underscore, starting with a letter or digit, excluding Windows device names.
-Linked/redirected output files and target directories are rejected. Do not
-concurrently mutate or replace the same target's storage while a call is running.
-The plugin stores the baseline URL in `plugin-state.json` so compare can reuse it.
-
-**DISCLOSURES**
-
-- Capture calls (`baseline`, `compare`, and the two captures in `demo`) start a
-  headless local browser subprocess (Edge/Chrome/Chromium) per capture. Other
-  tools do not capture. Commands use argument lists, never a shell or `shell=True`.
-- Plugin data reads and writes stay under `HERMES_HOME/orphic-eyes` (or the
-  home fallback above). Browser profiles and child-process temporary files are
-  created there and cleaned up after capture. Runtime code, installed packages
-  and browser executables are necessarily read outside it; explicitly supplied
-  local `file://` input pages may also be read outside it.
-- No network calls are made by the adapter. Initial page URLs are limited to
-  `http://localhost`, `http://127.0.0.1` and local `file://` pages. The browser may
-  load their resources or follow redirects: URL validation is **not** network
-  isolation. The included demo has no external resources and works offline.
-- No telemetry, persistent background processes, background threads, credentials
-  or compiled binaries are supplied by this plugin. Capture waits for the local
-  browser and cleans up its profile; a browser installation is required separately.
-- Dependency: Pillow. No other new Python dependencies. Hermes provides its own
-  plugin loader. Recreate baselines on each machine: browser, fonts and OS
-  rendering can change pixels.
-- Screenshots, source URLs, ignore regions and approvals are stored locally.
-  Baseline, compare and accept operations can replace or clear artifacts.
-  Input pages may themselves contain private data.
-
-The examples below require your own page or running local server. Replace the
-example URL and box IDs with values from your page and latest report. Run compare
-before approving or accepting its capture. Use the Python containing Pillow.
-
-```powershell
-python -m engine.cli baseline demo file:///C:/path/to/page.html --store ./store
-python -m engine.cli compare demo http://localhost:8000/ --store ./store --tolerance 0
-python -m engine.cli ignore add demo --store ./store --region 30,150,330,190 --label button
-python -m engine.cli ignore list demo --store ./store
-python -m engine.cli ignore remove demo --store ./store --label button
-python -m engine.cli compare demo http://localhost:8000/ --store ./store --expect 30,150,330,190 --expect 900,0,100,100
-python -m engine.cli approve demo --store ./store --box 1 --box 2
-python -m engine.cli approve demo --store ./store --all
-python -m engine.cli accept demo --store ./store
-python -B -m unittest discover -q
+```sh
+python -B demo/run_demo.py --repeat 2
+python -m engine.cli serve --store demo/output --timeout 600
 ```
 
-CLI exit codes are 0 (pass), 1 (check), 2 (fail), and 3 (error). Successful
-commands print JSON; errors print one line on stderr. Baseline creation returns
-pass. Reports always follow schema version 1 in `engine/report_json.py`.
+The demo regenerates tracked `demo/output/` artifacts; run it in a disposable checkout or preserve existing outputs first. It expects one done, one not_done and one unknown verdict. The server prints an HTTP report URL. Open that URL for pixel-based Verify rather than opening report.html from disk; stop the server with Ctrl+C or let the timeout expire. A generated report is an offline folder bundle, not a standalone HTML file containing every PNG.
 
-The package exports `capture`, `baseline`, and `compare`. Capture returns a bool;
-baseline and compare return dictionaries, with `{"status": "error", "error":
-"reason"}` on failure. Pixel comparison is also available as
-`engine.compare.compare_images(before_png, after_png, diff_png, tolerance=0)`.
+To capture the existing local fixtures, use two terminals from the repository root:
 
-The Python `baseline` API additionally accepts keyword-only `width` and `height`;
-its defaults remain 1280x800. The CLI defaults and exit codes are unchanged.
+```sh
+# Terminal 1: serve the test pages.
+python -m http.server 8000 --bind 127.0.0.1 --directory tests/fixtures
+```
 
-Each case is stored in `<store>/<name>/`. Names contain ASCII letters, digits,
-underscores, and hyphens, start with a letter or digit, and cannot be Windows
-device names. Store outputs cannot be symbolic links, external junction targets,
-or hard links. The store root is resolved before checking case paths. Callers
-must not concurrently modify or replace store paths during an operation.
+```sh
+# Terminal 2: capture and compare; use a fresh target name on each run.
+python -m engine.cli capture-pair http://127.0.0.1:8000/page_a.html http://127.0.0.1:8000/page_b.html --store ./review-store --name first-review --allow-local
+python -m engine.cli serve --store ./review-store --name first-review --timeout 600
+```
 
-Implementation choices where the brief left details open:
+`--allow-local` explicitly permits trusted private/loopback HTTP(S) destinations. Omit it for public sites. CLI visual exit codes are pass=0, check=1, fail=2 and error=3; a check result is a successful comparison that needs review. Both URLs use the same viewport. Existing targets are preserved: capture-pair requires a fresh name.
 
-- Default baseline `viewport` is `{"width": 1280, "height": 800}`; explicit
-  sizes or Hermes viewport presets override it. `browser` is the executable path
-  and `os` is `platform.system()`. Baselines use tolerance 0. Comparisons reuse
-  the recorded browser and viewport and record their own time/tolerance.
-- Tolerance is an integer from 0 to 255. PNG inputs are converted to RGB, as in
-  the reference. Status uses the unrounded pixel percentage; reported page and
-  box percentages are rounded to three decimals.
-- The unchanged background of a diff is the after image at 35 percent brightness.
-  Changed pixels are solid red.
-- A size mismatch reports the after-image size, zero counted pixels, zero percent,
-  no boxes, and `note: "size_mismatch"`. Its diff is the dimmed after image.
-- For low-level output APIs, the supplied output parent is the caller-designated
-  store location. Capture creates its isolated profile there and gives the browser
-  that same directory for TEMP/TMP/TMPDIR. It removes stale screenshots before
-  launching and verifies a resulting PNG before returning true. Browser command
-  flags and timeout/kill behavior are unchanged from the reference.
+## Hermes tools
 
-HTML fixtures include the reference-derived page_a/page_b/page_real pages,
-move and pattern pairs, and a report embedding fixture; page_a/page_b differ by
-an 8 pixel shift. Real-browser tests require an installed browser: some fail if
-one is unavailable, while others explicitly skip. Automated test outputs use
-temporary directories under this project or in system temporary storage and
-are removed after testing; capture profiles stay beside their output PNGs and
-are cleaned up after capture. On environments that restrict browser child
-processes, run tests with permission to launch the installed browser normally.
+The plugin registers `orphic_baseline`, `orphic_compare`, `orphic_loop_step`, `orphic_approve`, `orphic_accept` and `orphic_ignore` in the `orphic` toolset. `/orphic doctor` checks the local runtime; `/orphic demo` exercises the adapter's offline demo. These are Hermes chat commands, not shell commands.
 
-Stage 3 adds `ignore_add(name, store_dir, region, label=None)`, `ignore_list`,
-`ignore_remove(name, store_dir, label)`, `approve(name, store_dir, boxes=None,
-all_boxes=False)`, and `accept(name, store_dir)` to the public package. Like the
-existing APIs, these return dictionaries and never raise on bad input.
-`compare(..., expected_regions=[(x, y, w, h), ...])` accepts per-run expected
-regions; rectangle dictionaries are also accepted. Low-level `compare_images`
-also accepts `ignore_regions`, `expected_regions`, and `approvals` keyword lists.
+Capture two local pages without a prior baseline:
 
-Ignore configuration is a JSON list of `{name, x, y, w, h}` in `config.json`.
-Coordinates must be nonnegative integers and sizes positive integers. Ignore
-regions are clipped to the baseline when added; a wholly outside region is an
-error. Omitted labels use the first available `region-N`; labels are unique and
-case-sensitive. Missing labels on removal are errors. At most 50 ignores are
-allowed. Comparisons clip all regions to the after image and omit regions with
-no intersection. Expected regions have no persistence or count limit.
+```json
+{"name":"orphic_compare","arguments":{"name":"preview","before_url":"http://127.0.0.1:8000/page_a.html","after_url":"http://127.0.0.1:8000/page_b.html","width":1440,"height":900,"allow_local":true}}
+```
 
-Approvals are a JSON list of `{x, y, w, h, sha256}` in `approvals.json`; hashes
-are lowercase hexadecimal SHA-256 of the entire RGB crop, including unchanged
-pixels inside its bounds. Repeating an identical approval does not duplicate it;
-different crop hashes at the same coordinates can coexist. Both JSON files use
-a same-directory temporary file and atomic replacement. Commands require an
-existing case. Invalid inputs are rejected before any output is changed.
+The response includes `paths.report`, optional `paths.html`, `summary.box_count`, and `report_url` when a report server is running; otherwise `serve_hint` gives its startup command.
 
-Approval uses the last report's tolerance and retains expected labels for boxes
-with matching geometry during that report regeneration. If the box layout has
-changed, run compare again before approving IDs. Subsequent compare calls need
-their own expected regions. Accept preserves ignore configuration, copies the
-current PNG exactly, clears approvals, and updates baseline time and viewport to
-the accepted image. It clears the old diff and crops and writes a passing,
-zero-change report with `note="baseline_accepted"` and `images.diff=null`.
-Individual file replacements are atomic; a command updating several files is
-not a multi-file transaction.
+After the coding agent edits the page, review one round:
 
-Only unexpected, unapproved tile-cluster pixels contribute to the 5 percent fail
-threshold; this avoids counting pixels twice when box bounds overlap. Any
-remaining unexpected, unapproved box gives check. Otherwise status is pass,
-with `only_expected_changes` when boxes remain (including approved boxes).
-Changed-pixel summaries still include expected and approved changes. The core
-report schema remains version 1; optional Point & Tell fields may be added.
-Approval CLI exit codes reflect the regenerated report status; ignore and accept
-commands return 0 on success.
+```json
+{"name":"orphic_loop_step","arguments":{"name":"preview","after_url":"http://127.0.0.1:8000/page_b.html","allow_local":true,"max_rounds":3}}
+```
 
-</details>
+The engine returns per-zone verdicts, unexpected zones, `follow_up_prompt`, `should_stop` and `stop_condition`: continue, done, max_rounds or needs_human. Hermes performs any authorized code edits; the engine never executes the prompt. With requests omitted, the goal is restoration of the original reference appearance. Supply baseline-relative Point & Tell requests on the first call for supported explicit changes. Goals stay fixed throughout the session. Do not use restoration mode to undo an intentional redesign accidentally.
 
-## Limitations
+See [AUTO-LOOP.md](docs/AUTO-LOOP.md) for request-mode examples, the full argument table, stored evidence and stop semantics. See [the report contract](docs/report-contract.md) for pixel/report details.
 
-- Verified on Windows 11 with Microsoft Edge (headless). Browser discovery
-  paths alone do not establish platform or browser support.
-- Linux is unverified; an earlier cloud sandbox run was reported to fail during
-  browser capture. macOS is untested.
-- Capture is viewport-only, with DPR 1; full-page capture is not implemented.
-- Initial URLs must be local `file://`, `http://localhost`, or
-  `http://127.0.0.1`. As disclosed above, this is not browser network isolation.
-- Pillow is the only Python dependency; an installed browser is also required.
-- Analysis is image-only: pixels, with no DOM, CSS or page-code inspection.
-  Motion and animation cannot be verified from screenshots.
-- Precision: Exact = 2 px, Approx = 8 px per axis. Bounded grayscale crop
-  matching cannot reliably locate flat, repeated, altered or off-window content.
-- The HTML report is optional. HTML generation failure never fails compare:
-  the JSON comparison remains available and the response includes `html_error`.
+## Limits
 
-## Roadmap
+- Pixels only: no OCR, page-source reading, DOM-content inspection or text understanding. The browser applies rendering overrides, such as disabling motion; comparison uses screenshots.
+- Crop matching is grayscale, local and bounded. Flat/repeated content, changed appearance or exhausted search time can produce unknown/needs_human. Hide means a crop was not found in the searched area, not proof of DOM removal.
+- Add requests, animations, video/canvas content and semantic correctness are not fully verifiable from still pixels. Login walls, cookie banners, headless blocking, fonts and dynamic content can alter captures.
+- Linux Chrome has automated coverage. Windows/Edge, macOS and a live Hermes host have not been verified by this project's automated tests. Recreate baselines across browsers or operating systems.
+- Public DNS and outbound access must work. Private destinations are blocked by default, including redirects/resources; public-IP pinning can conflict with hostname-only proxy policies.
+- **TODO — admission validation:** `hermes plugins validate . --install-deps` must pass on the final pinned release. The Hermes executable was unavailable in this development environment; repository tests are not a substitute for that gate.
 
-Plans, not current features:
+## Privacy and runtime disclosures
 
-- Multi-frame capture for animation.
-- An `add` request kind in the engine.
-- Attempt history for the fix loop.
-- Save-report export.
-- CI on Linux and macOS.
-- Chrome/Chromium support, including real-browser validation of the existing
-  discovery and launch paths.
+The report UI performs its review locally and has no automatic network-service client or upload path. Fonts/sample assets are embedded; images selected by the user or served next to a report are read locally. Copy Prompt writes to the clipboard only when requested. Opening the HTTP report naturally requests its HTML and PNGs from the local server.
 
-## License
+URL capture navigates to the URLs the user supplies; those pages may load subresources, follow redirects or make their own network requests. It is not an arbitrary crawler, and there is no Orphic-hosted screenshot service. The guarded capture path accepts HTTP/HTTPS only, blocks private addresses unless `allow_local` is explicit, and never permits file/javascript/data input URLs. The legacy local baseline API separately supports local file pages; it is not the guarded public-URL API.
 
-Apache License 2.0. See [LICENSE](LICENSE). Copyright 2026 Ilham Musyafa.
+- **Reads/writes:** screenshots, reports, requests, approvals and loop history are stored locally. Hermes storage is under its resolved home's `orphic-eyes/`; standalone callers choose a store. Explicit input images/pages, Python packages, browser executables and system fonts can be read outside that store. Doctor probes storage write access.
+- **Processes:** captures launch an installed headless browser with argument lists, not a shell. URL capture uses a temporary loopback guard proxy and browser profiles. The optional report server is a long-running loopback process until Ctrl+C/timeout; it serves only report HTML/JSON and PNGs. Temporary profiles are cleaned up, but captured content may itself contain sensitive information.
+- **Credentials:** no credential store or .env files are read, no model credentials are required, and no source URL is saved by the new capture/loop path. Legacy baseline state can save URLs. Avoid credential-bearing URLs. Pages can create temporary cookies; existing proxy/CA configuration is inherited.
+- **Telemetry:** no plugin telemetry or usage reporting is implemented. Browser behavior and resources loaded by captured pages remain outside this claim.
 
-### Fonts
+These runtime disclosures must also accompany the future catalog PR. **TODO — PR disclosures:** copy and review them against the final pinned code before submission; no PR has been created by this documentation task.
 
-The report UI embeds two fonts inside `engine/templates/report.html`, so it works offline:
+## Authorship, assets and affiliation
 
-- **Montserrat** (UI text) by The Montserrat Project Authors, SIL Open Font License 1.1. See [licenses/Montserrat-OFL.txt](licenses/Montserrat-OFL.txt).
-- **JetBrains Mono** (numbers, coordinates, code) by The JetBrains Mono Project Authors, SIL Open Font License 1.1. See [licenses/JetBrainsMono-OFL.txt](licenses/JetBrainsMono-OFL.txt).
+Built by **Ilham Musyafa** with AI coding assistants: **Claude Code, OpenAI Codex and Cursor**.
 
-Both are subset to Latin, Latin-1 and common punctuation. The font license applies to the font data only; the rest of the project stays Apache 2.0.
+- Project code: [Apache License 2.0](LICENSE).
+- Montserrat: The Montserrat Project Authors, [SIL Open Font License 1.1](licenses/Montserrat-OFL.txt).
+- JetBrains Mono: The JetBrains Mono Project Authors, [SIL Open Font License 1.1](licenses/JetBrainsMono-OFL.txt).
+- Lumen and other sample/mockup images were created for this project; they are synthetic examples, not customer screenshots. No third-party stock-photo attribution is claimed.
+
+Orphic Eyes is an independent community project and is **not affiliated with or endorsed by Nous Research**.
+
+## Submission draft and development
+
+[Draft catalog entry](docs/catalog/orphic-eyes.yaml) — the zero SHA is deliberately unusable until the final release is selected. The draft follows the [upstream catalog schema](https://github.com/NousResearch/hermes-agent/blob/main/plugin-catalog/README.md), using these real examples: [Accent Picker](https://github.com/NousResearch/hermes-agent/blob/main/plugin-catalog/accent-picker.yaml) and [Accessible Session List](https://github.com/NousResearch/hermes-agent/blob/main/plugin-catalog/accessible-session-list.yaml).
+
+Run the existing tests from the repository root:
+
+```sh
+python -B -m unittest discover -v
+```
+
+Browser tests skip when no browser is installed; launch failures with an installed browser are errors to investigate. In restricted CI environments, use supported browser launch permissions rather than disabling browser sandboxing or TLS verification. [HANDOFF.md](docs/HANDOFF.md) records this branch's command verification and test evidence.
