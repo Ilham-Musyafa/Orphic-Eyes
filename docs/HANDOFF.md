@@ -1,6 +1,18 @@
 # HANDOFF
 
-## Current task: Details panel always reachable + snap to element
+## Current task: Guide labels always visible + zoom control
+
+Branch: `release/hackathon` (pulled, at effa230). Only engine/templates/report.html + this file.
+
+### Plan
+1. Guide labels (Move): after each overlay paint, and on stage scroll/resize, a layout pass `fitTags()` measures every `.move-tag`/`.add-tag`. The visible area is the move frame ∩ the scroller's client box, so ruler size, zoom and scroll are all respected; the rulers sit outside the frame. A label that leaves that area first flips to the other side of its guide line (above ↔ below, right ↔ left); if it still does not fit, it is clamped. Then labels are pushed apart so they overlap neither each other nor the "Selected area" chip (or the snap chip). Only a CSS `translate` offset changes; text, values and the existing placement code stay as they are.
+2. Zoom control: keep Fit/50/100/200. Add − and + buttons stepping through 10, 25, 50, 75, 100, 125, 150, 200, 300, 400 % (from the current effective scale, Fit included). The zoom value becomes a button that opens a small popover with a range slider (10–400) and a number input: Enter applies, Esc closes, out-of-range values clamp, and Tab is trapped like other menus. Same pill style; light/dark; 390 px.
+   - Finding: Ctrl/Cmd + scroll zoom did not exist yet (no wheel handler; the only zoom shortcut is `0` = Fit). I am adding it on the stage (×1.1 per notch, clamped 10–400 %, page zoom not hijacked elsewhere), so the request's "keeps working" holds. The `0` shortcut, palette entries and status bar stay in sync through the same `setZoom`.
+
+### Status
+- Plan written.
+
+## Previous task: Details panel always reachable + snap to element
 
 Branch: `feat/panel-snap` from origin/release/hackathon at 283e7cd. It merges back into release/hackathon with a merge commit. Codex branches and docs/submit-prep are not touched.
 
