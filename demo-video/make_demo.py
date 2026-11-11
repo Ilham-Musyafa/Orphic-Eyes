@@ -44,14 +44,16 @@ CAPTIONS = {
     "c3": "*Flip* Before and After.",
     "c4": "Drag a box. It *snaps* to the element.",
     "c5": "Move it. Exact to *2 px.*",
-    "c6": "One click. A *precise* prompt for Hermes.",
+    "c6": "One click. A *precise* prompt for any AI.",
 }
 
 # ---------------------------------------------------------------------------
 # Shot list. Hard cuts between every entry.
 #   clip/start/end: source range in seconds
 #   speed: playback speed (1.5-2 for slow parts)
-#   zoom: 1.0 = full window; 1.4-1.6 = punch-in. fx/fy = focus point (0..1 of the frame)
+#   zoom: 1.0 = full window; 1.4-1.6 = punch-in.
+#   fx/fy: point the zoom centres on (0..1 of the frame; 0.5/0.5 = middle).
+#          --probe draws a crosshair there on the contact sheets. Unused when zoom is 1.0.
 #   ramp: True = ease in from 1.0 over 0.7 s; False = start already zoomed
 #   hold: seconds to freeze the last frame
 # Times come from the brief; check them with --probe.
@@ -60,22 +62,22 @@ SHOTS = [
     dict(card="intro1", dur=1.8),
     dict(card="intro2", dur=2.3),
     # 2. Try a sample -> side by side with change boxes
-    dict(clip="clip1.mp4", start=12.4, end=15.4, speed=1.0, cap="c2"),
-    dict(clip="clip1.mp4", start=15.4, end=21.4, speed=1.5, cap="c2"),
-    dict(clip="clip1.mp4", start=21.4, end=28.4, speed=1.75, zoom=1.4, fx=0.5, fy=0.45, cap="c2"),
+    dict(clip="clip1.mp4", start=12.4, end=15.4, speed=1.0, fx=0.5, fy=0.5, cap="c2"),  # "Try a sample" button
+    dict(clip="clip1.mp4", start=15.4, end=21.4, speed=1.5, fx=0.5, fy=0.5, cap="c2"),  # full side-by-side view
+    dict(clip="clip1.mp4", start=21.4, end=28.4, speed=1.75, zoom=1.4, fx=0.5, fy=0.45, cap="c2"),  # change boxes on the After side
     # 3. Overlay view, flipping Before/After
-    dict(clip="clip1.mp4", start=34.0, end=41.0, speed=1.75, cap="c3"),
-    dict(clip="clip1.mp4", start=41.0, end=49.0, speed=1.75, zoom=1.4, fx=0.5, fy=0.5, cap="c3"),
+    dict(clip="clip1.mp4", start=34.0, end=41.0, speed=1.75, fx=0.5, fy=0.5, cap="c3"),  # full Overlay view
+    dict(clip="clip1.mp4", start=41.0, end=49.0, speed=1.75, zoom=1.4, fx=0.5, fy=0.5, cap="c3"),  # Before/After toggle + changed area
     # 4. Drag + snap
-    dict(clip="clip1.mp4", start=52.6, end=57.4, speed=1.0, zoom=1.4, fx=0.5, fy=0.5, cap="c4"),
-    dict(clip="clip1.mp4", start=75.6, end=81.4, speed=1.25, zoom=1.5, fx=0.5, fy=0.5, cap="c4"),
+    dict(clip="clip1.mp4", start=52.6, end=57.4, speed=1.0, zoom=1.4, fx=0.5, fy=0.5, cap="c4"),  # box being dragged + snap
+    dict(clip="clip1.mp4", start=75.6, end=81.4, speed=1.25, zoom=1.5, fx=0.5, fy=0.5, cap="c4"),  # "Start free" button
     # 5. Move + Confirm
-    dict(clip="clip2.mp4", start=15.6, end=23.4, speed=1.4, zoom=1.4, fx=0.5, fy=0.5, cap="c5"),
-    dict(clip="clip2.mp4", start=23.6, end=28.2, speed=1.0, cap="c5", hold=0.6),
+    dict(clip="clip2.mp4", start=15.6, end=23.4, speed=1.4, zoom=1.4, fx=0.5, fy=0.5, cap="c5"),  # dragged box snapping
+    dict(clip="clip2.mp4", start=23.6, end=28.2, speed=1.0, fx=0.5, fy=0.5, cap="c5", hold=0.6),  # Confirm button / "Requests (1)"
     # 6. Verify - Round 2 modal + Copy prompt, zoomed and held so the prompt reads
-    dict(clip="clip2.mp4", start=49.6, end=55.6, speed=1.5, cap="c6"),
-    dict(clip="clip2.mp4", start=55.6, end=59.6, speed=1.0, zoom=1.6, fx=0.5, fy=0.5, ramp=True, cap="c6"),
-    dict(clip="clip2.mp4", start=59.6, end=62.0, speed=1.0, zoom=1.6, fx=0.5, fy=0.5, ramp=False, cap="c6", hold=1.0),
+    dict(clip="clip2.mp4", start=49.6, end=55.6, speed=1.5, fx=0.5, fy=0.5, cap="c6"),  # "Verify - Round 2" modal opening
+    dict(clip="clip2.mp4", start=55.6, end=59.6, speed=1.0, zoom=1.6, fx=0.5, fy=0.5, ramp=True, cap="c6"),  # prompt text in modal
+    dict(clip="clip2.mp4", start=59.6, end=62.0, speed=1.0, zoom=1.6, fx=0.5, fy=0.5, ramp=False, cap="c6", hold=1.0),  # prompt text + "Copy prompt to clipboard"
     # 7. Principle card
     dict(card="pixels", dur=3.6),
     # 8. Dark outro
@@ -173,7 +175,7 @@ def make_card(name):
         d = ImageDraw.Draw(img)
         d.text((W / 2, 452), "Orphic Eyes", font=font(132), fill=(255, 255, 255), anchor="mm")
         d.rounded_rectangle((W / 2 - 40, 548, W / 2 + 40, 556), 4, fill=ORANGE)
-        d.text((W / 2, 620), "Visual review plugin for Hermes Agent", font=font(46, False), fill=(200, 204, 212), anchor="mm")
+        d.text((W / 2, 620), "Visual review for AI-built UI", font=font(46, False), fill=(200, 204, 212), anchor="mm")
         d.text((W / 2, 700), "Built by Ilham Musyafa", font=font(36, False), fill=(140, 146, 158), anchor="mm")
     else:
         img = Image.new("RGB", (W, H), BG)
@@ -223,7 +225,7 @@ def render_clip(i, s, clip_len):
             zexpr = str(z)
         # 2x upscale first so zoompan's integer crop offsets don't cause visible jitter
         chain += (f",scale=3840:2160:flags=bicubic,zoompan=z='{zexpr}'"
-                  f":x='(iw-iw/zoom)*{fx}':y='(ih-ih/zoom)*{fy}':d=1:s={VW}x{VH}:fps={FPS}")
+                  f":x='max(0,min(iw-iw/zoom,iw*{fx}-iw/zoom/2))':y='max(0,min(ih-ih/zoom,ih*{fy}-ih/zoom/2))':d=1:s={VW}x{VH}:fps={FPS}")
     else:
         chain += f",scale={VW}:{VH}:flags=lanczos"
     fg = (f"[1:v]{chain},format=rgba[v];[2:v]format=gray[m];[v][m]alphamerge[vm];"
@@ -328,6 +330,19 @@ def probe():
                 sheet.paste(Image.open(fp), (x, y + 28))
                 sec = page + j  # frame k is at ~k s
                 d.text((x + 6, y + 4), f"{c} {sec // 60:02d}:{sec % 60:02d}", font=font(20), fill=(0, 0, 0))
+                for si, s in enumerate(SHOTS):
+                    if s.get("clip") != c or not (s["start"] - 0.5 <= sec <= s["end"]):
+                        continue
+                    cx, cy = x + s["fx"] * tw, y + 28 + s["fy"] * 216
+                    z = s.get("zoom", 1.0)
+                    if z > 1.0:  # area the zoom will show
+                        zw, zh = tw / z, 216 / z
+                        zx = x + max(0, min(tw - zw, s["fx"] * tw - zw / 2))
+                        zy = y + 28 + max(0, min(216 - zh, s["fy"] * 216 - zh / 2))
+                        d.rectangle((zx, zy, zx + zw, zy + zh), outline=ORANGE, width=2)
+                    d.line((cx - 12, cy, cx + 12, cy), fill=(230, 30, 30), width=2)
+                    d.line((cx, cy - 12, cx, cy + 12), fill=(230, 30, 30), width=2)
+                    d.text((cx + 6, cy + 4), f"shot {si}" + (f" {z}x" if z > 1 else ""), font=font(14), fill=(230, 30, 30))
             sheet.save(pdir / f"{c[:-4]}_sheet_{page // 36}.jpg", quality=88)
         shutil.rmtree(tmp)
     print(f"contact sheets in {pdir}")
