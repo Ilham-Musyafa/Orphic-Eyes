@@ -44,7 +44,10 @@ class ReportServerTests(unittest.TestCase):
             self.assertGreater(server.httpd.server_port, 0)
             self.assertEqual(server.url("sample"), server.base_url + "/sample/report.html")
             self.assertEqual(latest_report(self.root), self.case / "report.html")
-            for path in ("/", "/sample/report.html", "/sample/report.json", "/sample/baseline.png"):
+            status, headers, _ = self.request(server, "/")
+            self.assertEqual(status, 302)
+            self.assertEqual(headers["Location"], "/sample/report.html")
+            for path in ("/sample/report.html", "/sample/report.json", "/sample/baseline.png"):
                 status, headers, content = self.request(server, path)
                 self.assertEqual(status, 200, path)
                 self.assertTrue(content)

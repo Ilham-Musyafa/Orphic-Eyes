@@ -171,6 +171,14 @@ class _Handler(BaseHTTPRequestHandler):
                 report = latest_report(self.server.root)
                 if report is None:
                     raise ValueError
+                # Keep relative PNG URLs beside the selected report, including
+                # when a server was started before the first capture existed.
+                self.send_response(302)
+                self.send_header("Location", "/" + quote(report.relative_to(self.server.root).as_posix()))
+                self.send_header("Content-Length", "0")
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                return
             else:
                 report = _artifact(self.server.root, path.lstrip("/"))
             # Validate immediately before opening, and reject final symlinks on

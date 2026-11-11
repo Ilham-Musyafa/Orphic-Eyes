@@ -21,7 +21,8 @@ The command prints the latest report's `http://127.0.0.1:PORT/.../report.html`
 URL, or the latest report inside `--name`. Without `--store`, it uses Hermes'
 home resolver, then HERMES_HOME, then `~/.hermes`, with `/orphic-eyes` appended.
 An empty existing store can be served before the first capture; its root URL
-finds the latest report when artifacts become available.
+redirects to the latest report when artifacts become available, keeping adjacent
+PNG paths relative to the selected report folder.
 
 The server binds only to 127.0.0.1. It serves report.html, report.json and PNGs,
 with no directory listings or arbitrary-file access. Traversal, hidden files,

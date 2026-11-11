@@ -13,17 +13,62 @@ Branch: `feat/auto-loop`, from pushed `feat/url-capture` at `d92bbaa83782cbbc830
 
 ### Progress
 - Report-serving core implemented in engine/serve.py: loopback/random port, read-only artifact allowlist, no directory listings, traversal/symlink/hard-link refusal, Host/Origin defenses, private registry discovery and bounded shutdown. Nine server tests passed, including cross-process discovery, timeout cleanup and capture-pair report_url behavior. Output metadata stays outside persisted report.json.
-- Eleven loop unit tests passed: unchanged-but-wrong stays unresolved, round 2 can finish, immutable anchors survive original target changes, persistent unexpected zones remain visible, explicit move requests reuse existing matching, max_rounds/needs_human stop paths, link/lock protection and failed-round cleanup. Integration and final regression verification are ongoing.
+- Eleven loop unit tests passed: unchanged-but-wrong stays unresolved, round 2 can finish, immutable anchors survive original target changes, persistent unexpected zones remain visible, explicit move requests reuse existing matching, max_rounds/needs_human stop paths, link/lock protection and failed-round cleanup. Integration and regression verification are complete; final evidence is below.
 
 - Engine loop implemented in engine/loop.py with fixed baseline/initial snapshots, immutable session goals, consecutive per-round folders, an exclusive session lock, transactional round publication and persisted stop results. The session never saves after_url or executes/sends prompt text. Existing compare_images, 32px clustering, 3x3 zone names, 5% threshold and bounded request matcher are reused unchanged.
-- Eleven loop unit tests pass after reducing one explicit-move test fixture's dimensions to fit comfortably within the existing matcher budget on shared CI. The combined browser integration run passed HTTP same-origin canvas access and the real two-round Hermes path; final suite verification remains pending.
+- Eleven loop unit tests pass after reducing one explicit-move test fixture's dimensions to fit comfortably within the existing matcher budget on shared CI. The combined browser integration run passed HTTP same-origin canvas access and the real two-round Hermes path; final verification is recorded below.
 - Added a bounded browser-startup readiness fix after an intermittent capture error: DevToolsActivePort can be partial and /json/list can initially contain no page. Discovery now waits under the existing timeout rather than raising from incomplete state; a regression test covers both conditions. No timeout/matching budgets or screenshot thresholds changed.
 - CLI integration implemented: `serve --store/--name/--port/--timeout` and `loop-step NAME AFTER_URL --store/--requests/--max-rounds/--allow-local`. Server URLs point to the latest/named report. Ctrl+C and timeout paths close the server and remove its discovery registry.
 - Hermes integration implemented: orphic_loop_step is registered in Python and declared in plugin.yaml (the minimal manifest change required for the requested new tool). orphic_compare returns report_url/serve_hint. Loop responses preserve full counts and explicitly flag omitted entries/truncated prompts under the existing 4KB response budget; full results/prompt remain in round.json/prompt.txt.
-- docs/AUTO-LOOP.md now describes choosing goals, initialization, serving, schemas, tool/CLI examples, stop semantics, evidence, URL restrictions and pixel-only/Windows limits. Targeted startup/adapter/CLI unit checks passed; final full-suite and recorded example runs follow.
+- docs/AUTO-LOOP.md now describes choosing goals, initialization, serving, schemas, tool/CLI examples, stop semantics, evidence, URL restrictions and pixel-only/Windows limits. Targeted startup/adapter/CLI unit checks passed; final full-suite and recorded example evidence is below.
 - Shared-runner regression checks exposed pre-existing timing sensitivity in crop matching. Kept every matcher threshold, search limit and deadline unchanged; optimized the identical grayscale MAE/block-bound arithmetic and reused completed identical region searches only within one verify_requests call. Reference-statistics and cache-isolation tests were added. All 29 locate/request checks now pass with the original assertions, including all-eight-intent output and shift hints.
 - Browser lifecycle now requests graceful DevTools Browser.close before bounded terminate/kill fallback and profile cleanup. The existing overall capture deadline and two-second cleanup wait bound are retained. Safe generic capture failures identify their phase without exposing URLs/logs; adapter guidance distinguishes launch issues from storage permission denial. Twelve targeted startup/capture/CLI/Hermes checks passed.
-- Recorded cross-process example: initial CLI capture-pair, CLI report server, failing CLI round 1, fixture fix, Hermes adapter round 2 done. Both served HTML/PNG returned HTTP 200; SIGINT (Ctrl+C) exited the server with code 0 and removed its registry. Artifacts are under /workspace/.orphic-eyes/auto-loop-example; final complete suite and browserless validation are pending.
+- Recorded cross-process example: initial CLI capture-pair, CLI report server, failing CLI round 1, fixture fix, Hermes adapter round 2 done. Both served HTML/PNG returned HTTP 200; SIGINT (Ctrl+C) exited the server with code 0 and removed its registry. Artifacts are under /workspace/.orphic-eyes/auto-loop-example; the completed regression/browserless results are below.
+### Final verification and handoff
+- Full regression suite: **182 passed, 0 skipped, 0 failures/errors**, 167.661 seconds. Command from repository root: `/workspace/.orphic-eyes/run /workspace/.venvs/orphic-eyes/bin/python -B -m unittest discover -v`. Log: `/workspace/.orphic-eyes/auto-loop-example/full-tests-final.log`.
+- Final root-URL correction: redirect `/` to the selected report's actual path so nested PNG references stay correct, including when serving starts before capture. All **11 server/CLI/browser tests passed** afterward, including real canvas pixel reads through that redirect. Log: `server-final-tests.log` in the same artifact directory.
+- Browserless simulation on the final source: **161 passed**, 9 skip records (6 class-setup skips and 3 test-method skips), 0 failures/errors; unittest reports 164 methods run. Patched browser discovery in engine.capture, engine.url_capture and engine.store to return None before discovery; did not disable assertions or alter runtime code. Log: `browserless-tests.log`.
+- `hermes` is not installed, so native `hermes plugins validate` was unavailable. Repository manifest/registration, isolated package import, schemas/response budget, legacy tools and real Hermes-adapter HTTP round-trip checks passed.
+- No dependency added. Linux/Python 3.12.14/Pillow 13/Chrome 157 were used; Windows/Edge and a live Hermes host remain untested. Public-site DNS/proxy restrictions and pixel-only limits are documented in docs/AUTO-LOOP.md. No changes to diff thresholds, limits, matching budgets or report schema.
+
+Verified example driver (run from the repository root, uses generated pages outside the checkout):
+
+```sh
+PYTHONPATH=/workspace/Orphic-Eyes /workspace/.orphic-eyes/run /workspace/.venvs/orphic-eyes/bin/python -B /workspace/.orphic-eyes/auto-loop-example/run_example.py
+```
+
+The example is already retained; preserve its existing target before rerunning with a fresh output folder/name. Actual commands, call schemas, responses and evidence are in `/workspace/.orphic-eyes/auto-loop-example/`: `commands.json`, `tool-call.json`, `tool-schemas.json`, `initial.json`, `round1.json`, `round2.json`, `serve.json`, `example.log`.
+
+Command sequence used (runtime launcher inherited by the child commands):
+
+```sh
+python -B -m engine.cli capture-pair http://127.0.0.1:43903/reference.html http://127.0.0.1:43903/current.html --store /workspace/.orphic-eyes/auto-loop-example/hermes/orphic-eyes --name review --width 400 --height 300 --allow-local
+python -B -m engine.cli serve --store /workspace/.orphic-eyes/auto-loop-example/hermes/orphic-eyes --name review --timeout 180
+python -B -m engine.cli loop-step review http://127.0.0.1:43903/current.html --store /workspace/.orphic-eyes/auto-loop-example/hermes/orphic-eyes --allow-local --max-rounds 3
+# Generated fixture is corrected from blue to red, then round 2 is called through the Hermes adapter:
+```
+
+```json
+{"name":"orphic_loop_step","arguments":{"name":"review","after_url":"http://127.0.0.1:43903/current.html","allow_local":true}}
+```
+
+Observed response excerpts:
+
+```json
+{"round":1,"stop_condition":"continue","failing_count":1,"unexpected_count":0,"per_zone":[{"id":"Z1","status":"not_done","still_changed":true}],"follow_up_prompt":"Fix only the unresolved items below... Z1 (x=40,y=70,w=48,h=32): restore reference pixels."}
+{"round":2,"stop_condition":"done","should_stop":true,"failing_count":0,"unexpected_count":0}
+```
+
+The full first prompt is plain text in round1.json and `hermes/orphic-eyes/review/loop/round-001/prompt.txt`. Original files and both round reports remain available under that example store.
+
+Serve example printed `http://127.0.0.1:36527/review/report.html`; the final URL was `/review/loop/round-002/report.html` on that origin. Both HTML and adjacent PNG returned HTTP 200. Ctrl+C/SIGINT exited the CLI server with code 0 and removed its registry. Temporary page/report servers were stopped; restart `engine.cli serve` to obtain a live URL (the recorded ports are historical).
+
+### Publication and protected files
+- `feat/url-capture` was pushed first and confirmed by `git ls-remote`: `d92bbaa83782cbbc8300ee54bde7dbe427c38e93 refs/heads/feat/url-capture`.
+- The only additional publication target is `feat/auto-loop`. Its final commit and both feature refs are confirmed by the final push/ls-remote step and retained in `/workspace/.orphic-eyes/auto-loop-example/remote-after.txt`; use `git log --oneline feat/url-capture..feat/auto-loop` for the implementation commits. No force push is needed.
+- `stage-5e` was observed at `6bde560c28f05d7d50d66e69fb1a47849be4612a` before publication and is not a push target. No PRs, merges, deployments or pushes to main/stage-5e/release branches.
+- `engine/templates/report.html` and README.md remain byte-for-byte unchanged from the start; their hashes below still match. Generated test/example HTML lives only in temporary/output stores, not UI source files. HANDOFF.md and docs/AUTO-LOOP.md are updated.
+
 ### Constraints and starting state
 - Never edit/stage engine/templates/report.html, README.md or any UI file; Claude owns report.html on release/hackathon.
 - Source template starting SHA-256: e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2. README starting SHA-256: c1cb30ccf91990d01faea7ac4ed989d2154150ef3f4a809329ee04036d9ae0ae.

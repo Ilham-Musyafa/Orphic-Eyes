@@ -40,10 +40,12 @@ class ServeBrowserTests(unittest.TestCase):
     def test_http_report_can_read_adjacent_image_pixels(self):
         with tempfile.TemporaryDirectory(prefix="oe_http_") as temporary:
             root = Path(temporary)
-            Image.new("RGB", (4, 4), "red").save(root / "baseline.png")
+            case = root / "nested"
+            case.mkdir()
+            Image.new("RGB", (4, 4), "red").save(case / "baseline.png")
             # A test-owned report fixture exercises the precise browser-origin
             # capability Verify needs, without modifying the application UI.
-            (root / "report.html").write_text('''<!doctype html><body><script>
+            (case / "report.html").write_text('''<!doctype html><body><script>
 const image = new Image();
 image.onload = () => {
   const canvas = document.createElement('canvas');
@@ -59,7 +61,7 @@ image.src = 'baseline.png';
                 completed = subprocess.run([self.browser, "--headless=new", "--disable-gpu", "--no-first-run",
                                              "--disable-extensions", "--disable-background-networking",
                                              "--virtual-time-budget=2000", "--user-data-dir=" + profile,
-                                             "--dump-dom", server.url()],
+                                             "--dump-dom", server.base_url + "/"],
                                             capture_output=True, text=True, timeout=20)
                 self.assertEqual(completed.returncode, 0)
                 self.assertIn("</script>PIXELS_OK:255", completed.stdout)
