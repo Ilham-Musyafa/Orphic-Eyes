@@ -20,7 +20,7 @@ Branch: `feat/verify-loop` (from `feat/shortcut-rebind` at a5fe92b). Only `engin
 - Rounds: counter + in-memory history; "Use Round 2 as new After" rebuilds the comparison Before vs Round 2 and archives this round's requests.
 
 ### Status
-- Step 1 done: Verify dialog (Requests panel "Verify fixes" link, phone sheet "Verify" button), Round 2 by drop / choose / paste with the Load images rules, size check (clear message, no results), per-request checks (Move / Revert / Hide / Comment / Add) with After vs Round 2 crops and one reason each. Unexpected changes, follow-up prompt, rounds and the shortcut come next.
+- Step 1 done: Verify dialog (Requests panel "Verify fixes" link, phone sheet "Verify" button), Round 2 by drop / choose / paste with the Load images rules, size check (clear message, no results), per-request checks (Move / Revert / Hide / Comment / Add) with After vs Round 2 crops and one reason each. - Step 2 done: unexpected changes. After vs Round 2 with the existing exact-pixel rule, outside every request area (padded 16 px; moves block both old and target places), counted per 3×3 zone; a zone at 5%+ is listed as "Unexpected change" with a crop; smaller changes are summed in one note. Follow-up prompt, rounds and the shortcut come next.
 
 ## Previous task: Rebindable keyboard shortcuts
 

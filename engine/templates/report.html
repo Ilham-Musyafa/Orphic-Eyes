@@ -7188,8 +7188,52 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     state.verify.urls = [];
   }
 
-  /* Unexpected changes: filled in by findUnexpected() below. */
-  function findUnexpected(px, items) { return Promise.resolve({ zones: [], smallPercent: 0 }); }
+  /* Unexpected changes: After vs Round 2 with the existing rule (any channel = changed),
+     outside every request area (padded), counted per 3x3 zone; a zone at 5%+ is listed. */
+  function findUnexpected(px, items) {
+    var W = px.w, H = px.h, A = px.after.data, R = px.round.data;
+    var skip = new Uint8Array(W * H);
+    var pad = CROP_PAD + 8;
+    function block(rect) {
+      var r = clipRect({ x: rect.x - pad, y: rect.y - pad, w: rect.w + pad * 2, h: rect.h + pad * 2 }, W, H);
+      if (!r) return;
+      for (var y = r.y; y < r.y + r.h; y++) skip.fill(1, y * W + r.x, y * W + r.x + r.w);
+    }
+    items.forEach(function (item) {
+      if (!item.rect) return;
+      block(item.rect);
+      if (item.type === 'move') block({ x: item.rect.x + item.dx, y: item.rect.y + item.dy, w: item.rect.w, h: item.rect.h });
+    });
+    var zones = ZONES.map(function (zone, i) {
+      var col = i % 3, row = Math.floor(i / 3);
+      var x0 = Math.ceil(col * W / 3), x1 = Math.ceil((col + 1) * W / 3), y0 = Math.ceil(row * H / 3), y1 = Math.ceil((row + 1) * H / 3);
+      return { zone: zone, area: (x1 - x0) * (y1 - y0), count: 0, l: W, t: H, r: -1, b: -1 };
+    });
+    var changed = 0;
+    for (var y = 0; y < H; y++) {
+      var zr = Math.min(2, Math.floor(y * 3 / H));
+      for (var x = 0; x < W; x++) {
+        var i = y * W + x;
+        if (skip[i]) continue;
+        var p = i * 4;
+        if (A[p] === R[p] && A[p + 1] === R[p + 1] && A[p + 2] === R[p + 2] && A[p + 3] === R[p + 3]) continue;
+        changed++;
+        var z = zones[zr * 3 + Math.min(2, Math.floor(x * 3 / W))];
+        z.count++;
+        if (x < z.l) z.l = x; if (x > z.r) z.r = x; if (y < z.t) z.t = y; if (y > z.b) z.b = y;
+      }
+    }
+    var listed = zones.filter(function (z) { return z.count && z.count / z.area * 100 >= DIFF_FAIL_PERCENT; });
+    var listedCount = listed.reduce(function (sum, z) { return sum + z.count; }, 0);
+    return Promise.all(listed.map(function (z) {
+      var rect = { x: z.l, y: z.t, w: z.r - z.l + 1, h: z.b - z.t + 1 };
+      return verifyCrop(px, rect).then(function (crop) {
+        return { zone: z.zone, percent: Math.round(z.count / z.area * 1000) / 10, rect: rect, crop: crop };
+      });
+    })).then(function (list) {
+      return { zones: list, smallPercent: Math.round((changed - listedCount) / (W * H) * 1000) / 10 };
+    });
+  }
 
   function runVerify() {
     var v = state.verify;
@@ -7348,7 +7392,29 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     renderVerifyHistory(body);
     renderVerifyActions();
   }
-  function renderUnexpected(body) { /* filled in with unexpected changes */ }
+  function renderUnexpected(body) {
+    var v = state.verify;
+    body.appendChild(el('h3', 'vf-section', 'Outside your requests'));
+    if (!v.unexpected.length) {
+      body.appendChild(el('p', 'vf-note', 'No unexpected changes outside the requested areas.' +
+        (v.smallPercent > 0 ? ' Smaller changes cover ' + pctText(v.smallPercent) + ' of the page.' : '')));
+      return;
+    }
+    var list = el('ul', 'vf-list');
+    list.setAttribute('aria-label', 'Unexpected changes');
+    v.unexpected.forEach(function (u) {
+      var li = el('li', 'vf-item');
+      var head = el('div', 'vf-head');
+      head.appendChild(el('span', 'vf-chip fail', 'Unexpected change'));
+      head.appendChild(el('span', 'vf-name', zoneLabel(u.zone)));
+      li.appendChild(head);
+      li.appendChild(el('p', 'vf-reason', pctText(u.percent) + ' of this zone changed outside your requests (limit ' + DIFF_FAIL_PERCENT + '%), at ' +
+        u.rect.x + ', ' + u.rect.y + ' \u00b7 ' + u.rect.w + '\u00d7' + u.rect.h + ' px.'));
+      if (u.crop) li.appendChild(verifyCropFigure(u.crop));
+      list.appendChild(li);
+    });
+    body.appendChild(list);
+  }
   function renderVerifyHistory(body) { /* filled in with rounds */ }
   function renderVerifyActions() {
     var bar = document.querySelector('#layer #vfActions');
