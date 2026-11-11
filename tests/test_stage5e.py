@@ -32,7 +32,7 @@ class NamingTests(unittest.TestCase):
         self.assertEqual(manifest.splitlines()[0], "name: orphic-eyes")
         block = manifest.split("provides_tools:\n", 1)[1].split("provides_hooks:", 1)[0]
         names = [line.strip()[2:] for line in block.splitlines() if line.strip().startswith("- ")]
-        expected = ["orphic_" + action for action in ("baseline", "compare", "approve", "accept", "ignore")]
+        expected = ["orphic_" + action for action in ("baseline", "compare", "loop_step", "approve", "accept", "ignore")]
         self.assertCountEqual(names, expected)
         package = "_orphic_naming_test"
         self.addCleanup(lambda: [sys.modules.pop(key, None) for key in list(sys.modules)
