@@ -1,15 +1,18 @@
 """Local screenshot capture using the reference script's browser flags."""
 
 import os
+import base64
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+import time
 from urllib.parse import unquote, urlsplit
 
 from PIL import Image
 
 from ._browser_process import launch_options, remove_profile, stop_browser
+from ._devtools import DevTools
 
 
 def validate_url(url):
@@ -76,6 +79,7 @@ def capture(url, out_png, browser=None, width=1280, height=800):
     """
     profile = None
     proc = None
+    client = None
     try:
         if validate_url(url) is not None:
             return False
@@ -93,6 +97,7 @@ def capture(url, out_png, browser=None, width=1280, height=800):
         if output.exists():
             output.unlink()
         profile = tempfile.mkdtemp(prefix="oe_")
+        deadline = time.monotonic() + 45
         cmd = [
             executable,
             "--headless=new",
@@ -101,26 +106,49 @@ def capture(url, out_png, browser=None, width=1280, height=800):
             "--force-device-scale-factor=1",
             "--force-prefers-reduced-motion",
             "--run-all-compositor-stages-before-draw",
-            "--virtual-time-budget=2000",
+            "--remote-debugging-port=0",
             f"--window-size={width},{height}",
             f"--user-data-dir={profile}",
-            f"--screenshot={output}",
-            url,
+            "about:blank",
         ]
         environment = os.environ.copy()
         environment.update(TMP=profile, TEMP=profile, TMPDIR=profile)
         proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL,
                                 stderr=subprocess.DEVNULL, env=environment, **launch_options())
-        try:
-            proc.wait(timeout=45)
-        except subprocess.TimeoutExpired:
-            return False  # A partial PNG is not a completed capture.
-        if proc.returncode != 0:
+        # The screenshot CLI can produce a PNG and then stall during shutdown.
+        # Read completion from the rendering protocol, not browser process exit.
+        from .url_capture import _endpoint
+        client = DevTools(_endpoint(Path(profile), proc, deadline), deadline)
+        client.call("Page.enable")
+        client.call("Page.setLifecycleEventsEnabled", {"enabled": True})
+        client.call("Emulation.setDeviceMetricsOverride", {
+            "width": width, "height": height, "deviceScaleFactor": 1, "mobile": False})
+        # Preserve the reference capture's 2000ms virtual rendering budget.
+        # Real startup/navigation/rendering/screenshot work still has 45s total.
+        navigation = client.call("Page.navigate", {"url": url})
+        if navigation.get("errorText"):
             return False
+        while not any(event.get("method") == "Page.lifecycleEvent" and
+                      event.get("params", {}).get("loaderId") == navigation.get("loaderId") and
+                      event["params"].get("name") == "networkIdle" for event in client.events):
+            event = client.receive()
+            if "method" in event:
+                client.events.append(event)
+        client.call("Emulation.setVirtualTimePolicy", {"policy": "advance", "budget": 2000})
+        while not any(event.get("method") == "Emulation.virtualTimeBudgetExpired" for event in client.events):
+            event = client.receive()
+            if "method" in event:
+                client.events.append(event)
+        png = client.call("Page.captureScreenshot", {
+            "format": "png", "fromSurface": True, "captureBeyondViewport": False,
+            "clip": {"x": 0, "y": 0, "width": width, "height": height, "scale": 1}})
+        output.write_bytes(base64.b64decode(png["data"], validate=True))
         if not output.is_file() or output.stat().st_size == 0:
             return False
         with Image.open(output) as screenshot:
             if screenshot.format != "PNG":
+                return False
+            if screenshot.size != (width, height):
                 return False
             screenshot.verify()
         return True
@@ -129,7 +157,7 @@ def capture(url, out_png, browser=None, width=1280, height=800):
     finally:
         try:
             if proc is not None:
-                stop_browser(proc)
+                stop_browser(proc, client)
         except (OSError, subprocess.TimeoutExpired):
             return False
         finally:
