@@ -171,7 +171,11 @@ body.insp-closed{--inspector-cur:0px}
 .step.current{color:var(--ink)}
 .step.current .step-dot{background:#2F80FF;color:#fff}
 .stepper-short{display:none;font-size:var(--fs-sec);color:var(--muted);white-space:nowrap}
-@media (max-width:1439px){.step-label{display:none}.step+.step::before{width:8px}}
+@media (max-width:1599px){.step-label{display:none}.step+.step::before{width:8px}}
+@media (max-width:1279px){.capture-chip{display:none}.header{grid-template-columns:auto minmax(0,1fr) auto}.header .hd-center{justify-self:center}}
+@media (min-width:640px) and (max-width:1279px){.brand-name{display:none}}
+@media (min-width:640px) and (max-width:899px){.status-chip,.hd-divider{display:none}}
+@media (min-width:640px) and (max-width:1099px){.stepper{display:none}.stepper-short{display:inline}}
 @media (max-width:639px){.stepper{display:none}.stepper-short{display:inline}}
 .page-tabs{display:flex;align-items:stretch;height:var(--header-h);gap:var(--s1);min-width:0;overflow:hidden}
 .page-tab{position:relative;display:flex;align-items:center;padding:0 var(--s3);font-size:var(--fs-body);color:var(--muted);white-space:nowrap;font-weight:var(--w-medium)}
