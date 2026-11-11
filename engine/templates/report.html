@@ -953,7 +953,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
 
     <aside class="sidebar" id="sidebar" aria-label="Pages, changes and requests">
       <div class="sb-tabs" role="tablist" aria-label="Sidebar sections">
-        <button type="button" class="icon-btn sb-toggle" id="sbToggle" aria-label="Collapse sidebar" data-tip="Collapse sidebar" data-sc="panel.sidebar"><svg class="ic"><use href="#i-panel-left"/></svg></button>
+        <button type="button" class="icon-btn sb-toggle" id="sbToggle" aria-label="Collapse sidebar" aria-expanded="true" data-tip="Collapse sidebar" data-sc="panel.sidebar"><svg class="ic"><use href="#i-panel-left"/></svg></button>
         <button type="button" class="sb-tab" role="tab" data-tab="pages" id="tabPages" aria-label="Pages" data-tip="Pages"><svg class="ic"><use href="#i-pages"/></svg><span class="lbl">Pages</span></button>
         <button type="button" class="sb-tab on" role="tab" data-tab="changes" id="tabChanges" aria-label="Changes" data-tip="Changes"><svg class="ic"><use href="#i-changes"/></svg><span class="lbl">Changes</span><span class="badge" id="listCount">0</span><span class="dot-badge" id="changesDot"></span></button>
         <button type="button" class="sb-tab" role="tab" data-tab="requests" id="tabRequests" aria-label="Requests" data-tip="Requests"><svg class="ic"><use href="#i-requests"/></svg><span class="lbl">Requests</span><span class="badge" id="requestCount">0</span></button>
@@ -4956,11 +4956,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     state.sbCollapsed = collapsedNow;
     state.panelsInit = true;
     body.classList.toggle('insp-closed', closed);
-    var toggle = $('#sbToggle');
-    var label = sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar';
-    toggle.setAttribute('aria-label', label);
-    toggle.setAttribute('data-tip', label);
-    toggle.setAttribute('aria-expanded', sidebarCollapsed() ? 'false' : 'true');
+    renderSidebarToggle();
     if (kind === 'mobile' && isPhone()) {
       if (!state.sheetPos) state.sheetPos = 'peek';
       state.sheetH = Math.max(0, phoneSheetTotal(state.sheetPos) - sheetBarH());
@@ -4987,6 +4983,15 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       body.removeAttribute('data-sheet');
       document.documentElement.style.removeProperty('--sheet-h');
     }
+  }
+  /* One button in both states; its label names the current Toggle sidebar keys. */
+  function renderSidebarToggle() {
+    var toggle = $('#sbToggle');
+    var label = sidebarCollapsed() ? 'Expand sidebar' : 'Collapse sidebar';
+    var keys = formatKeys('panel.sidebar');
+    toggle.setAttribute('aria-label', keys ? label + ' \u00b7 ' + keys : label);
+    toggle.setAttribute('data-tip', label);
+    toggle.setAttribute('aria-expanded', sidebarCollapsed() ? 'false' : 'true');
   }
   function toggleSidebar() {
     if (viewportKind() === 'mobile') { setSheet(state.sheet === 'inspector' ? 'changes' : state.sheet); return; }
@@ -6371,6 +6376,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     }, 1200);
   }
   function refreshSettings(noFlash) {
+    renderSidebarToggle();
     var modal = document.querySelector('#layer .st-modal');
     if (!modal) return;
     if (noFlash !== true) flashSaved(modal);
@@ -6597,9 +6603,11 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
 
   function initShell() {
     document.querySelector('.sb-tabs').addEventListener('click', function (event) {
-      var tab = event.target.closest('[data-tab]');
-      if (tab) { setSidebarTab(tab.getAttribute('data-tab')); return; }
-      if (event.target.closest('#sbToggle')) toggleSidebar();
+      /* The toggle is checked first and tabs are matched by their own class:
+         #sidebar itself carries data-tab, so a bare [data-tab] lookup caught the toggle too. */
+      if (event.target.closest('#sbToggle')) { toggleSidebar(); return; }
+      var tab = event.target.closest('.sb-tab[data-tab]');
+      if (tab) setSidebarTab(tab.getAttribute('data-tab'));
     });
     document.querySelector('.sb-tabs').addEventListener('keydown', function (event) {
       var key = matchShortcut(event, ['w.left', 'w.right', 'w.up', 'w.down'], { anyModifiers: true });
