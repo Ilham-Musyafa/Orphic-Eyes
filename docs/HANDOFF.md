@@ -8,7 +8,7 @@ Branch: `fix/test-reliability`, from `origin/docs/submit-prep` 1048073; merged `
 1. Reproduce browser startup/CLI shutdown and inspect retained failure logs; fix bounded process/profile cleanup without changing capture or matcher limits.
 2. Probe installed browser usability once per suite; mark only real-browser tests and skip with actionable diagnostics when unavailable. Keep genuine capture/matching regressions failing after the probe succeeds.
 3. Audit manifest/version, tool schemas/handlers, catalog and README; correct only mismatches.
-4. Run three consecutive full pytest suites, record summaries/skips, and finish this handoff plus SUBMIT gates. Commit small changes and push only this branch; confirm remote SHA. No PR/release merge/deploy.
+4. Run three consecutive full pytest suites, record summaries/skips, and finish this handoff plus SUBMIT gates. Commit small changes and push only this branch; confirm remote SHA. No PR, merge into release/hackathon, or deployment.
 
 
 ### Changes and root-cause assessment
@@ -46,12 +46,55 @@ Mismatches corrected only: (1) Python `/orphic help` omitted loop_step and incor
 
 ### Verification and remaining owner actions
 
-Final repeated-run results and default-browser skip inventory are recorded below after verification. Do not substitute the earlier exploratory runs for those results.
+Final code is based on release/hackathon `effa23060a0f689bd41efa2df3322aa69204da10` (merged as `706d668`), with local-capture fix `b5f629f`. The imported template is byte-identical to effa230. The 189 cases retain the original 182 tests and add seven regressions; matcher/time-budget assertions remain intact.
+
+Verified runtime: Python 3.12.14, Pillow 13.0.0, pytest 9.2.0 and real Google Chrome 157.0.8103.50. Container browser testing uses an explicitly selected external `/tmp/orphic-chrome-test-launcher` containing `exec /tmp/orphic-browser-audit/opt/google/chrome/chrome --no-sandbox "$@"`, because native browser sandbox startup is unavailable here. This is test-environment configuration only, never a production default or a claim of native Windows/browser-sandbox validation. The launcher and downloaded/extracted browser are outside Git. No TLS override is used.
+
+Three full suites run sequentially without concurrent demos or browser work, via the existing development venv: `ORPHIC_BROWSER=/tmp/orphic-chrome-test-launcher /workspace/.venvs/orphic-eyes/bin/python -B -m pytest -q -ra`. Per-run JUnit XML and complete stdout are under `/tmp/orphic-reliability-cdp/`. The earlier 188-case exploratory sequence contained a genuine demo capture failure; it is recorded above and is not counted among the final runs.
+
+```text
+Run 1: 189 passed, 204 subtests passed in 86.07s (0:01:26)
+Run 2: 189 passed, 204 subtests passed in 87.59s (0:01:27)
+Run 3: 189 passed, 204 subtests passed in 85.83s (0:01:25)
+```
+
+Each run exited 0; JUnit confirms 189 cases, zero failures, zero errors and zero skips. All 22 real-browser tests ran and passed in every acceptance run.
+
+Default browser verification, with ORPHIC_BROWSER unset:
+
+`167 passed, 22 skipped, 202 subtests passed in 8.69s`
+
+All 22 skips have this exact reason: **No usable system browser: /usr/bin/chromium exited -6 during headless startup; check sandbox/launch permissions**. These are skips, not xfails or passes; the 167 remaining tests actually ran. Missing-browser and installed-but-unusable class skip behavior are also tested through unittest.TestResult.
+
+- `tests.test_browser.BrowserTests.test_button_shift`
+- `tests.test_browser.BrowserTests.test_capture_in_long_store_path`
+- `tests.test_browser.BrowserTests.test_different_viewports`
+- `tests.test_browser.BrowserTests.test_real_store_workflow`
+- `tests.test_browser.BrowserTests.test_realistic_page_twice`
+- `tests.test_browser.BrowserTests.test_same_page_twice`
+- `tests.test_browser.BrowserTests.test_stage3_shifted_button_workflow`
+- `tests.test_browser.BrowserTests.test_very_different_pages`
+- `tests.test_loop_plugin.LoopBrowserTests.test_two_real_http_rounds_via_hermes_then_done`
+- `tests.test_plugin.PluginBrowserTests.test_real_handler_workflow`
+- `tests.test_plugin.PluginBrowserTests.test_real_slash_doctor_and_offline_demo`
+- `tests.test_roundtrip.MoveBoxRegressionTests.test_flat_button_horizontal_move_changed_pixel_bounds`
+- `tests.test_roundtrip.ViewportTests.test_real_mobile_png_width_390`
+- `tests.test_roundtrip.RealRequestTests.test_file_pages_move_done_wrong_target_and_flat_unknown`
+- `tests.test_serve_cli.ServeBrowserTests.test_http_report_can_read_adjacent_image_pixels`
+- `tests.test_url_capture.URLBrowserTests.test_cli_pair_uses_existing_status_exit_code_and_writes_report`
+- `tests.test_url_capture.URLBrowserTests.test_default_viewport_repeated_pixels_and_motion_disabled`
+- `tests.test_url_capture.URLBrowserTests.test_full_page_and_custom_viewport`
+- `tests.test_url_capture.URLBrowserTests.test_navigation_timeout_does_not_hang_or_publish_screenshot`
+- `tests.test_url_capture.URLBrowserTests.test_pair_report_from_two_local_pages`
+- `tests.test_url_capture.URLBrowserTests.test_public_page_cannot_redirect_or_load_resource_from_private_network`
+- `tests.test_url_plugin.URLPluginBrowserTests.test_pair_report_and_real_hermes_call`
+
+Final checks: schema/handler/manifest/catalog/README/help audit passed; git diff --check passed; plugin.yaml, requirements.txt and all matcher source files are unchanged. report.html is byte-identical to the audited release effa230. No source changes followed the final three runs; this commit records documentation only.
 
 Ilham/Claude must integrate the desired fixes into release/hackathon themselves, freeze a new pushed final commit, then recheck the audit on that exact commit. Ilham must run WINDOWS-TEST.md on Windows/Edge or Chrome: capture and long-store paths, timeout/cleanup (including Task Manager process/profile checks), real request/shift budgets, same-origin canvas Verify/Content check and two loop rounds. Also verify public-site/DNS/proxy access and a live Hermes host, run `hermes plugins validate PATH --install-deps`, retain its log, and replace the catalog's zero pin only with the validated final SHA. Keep Windows out of catalog platforms until those checks pass. No new minimum Hermes version is guessed.
 
 
-## Current task: Submission-night artifacts
+## Previous task: Submission-night artifacts
 
 Branch: docs/submit-prep from origin/docs/windows-test. README and catalog draft are already present and origin/docs/readme is an ancestor; no merge is necessary.
 
@@ -106,8 +149,7 @@ Branch: docs/windows-test from docs/readme at 9e5bf71bec8514de09c4dd5e937fa86845
 - Reviewed every fenced block as PowerShell (PowerShell itself unavailable here), balanced all code fences, and checked relative links. Repo commands/options verified against engine/cli.py, commands.py, requirements.txt and existing schemas/tests; official native installer/local-file Git plugin source linked in the guide. Added explicit Start-Process working directories and standard per-user Chrome path as well as system Chrome/Edge paths. No dependency was added.
 - Final scope is docs/WINDOWS-TEST.md and this handoff only. README, engine (including report.html), test settings, dependencies and release/hackathon are untouched. Push only docs/windows-test; no protected-branch push, PR, merge or deployment. Final pushed SHA is reported by git ls-remote in the chat.
 
-## Previous task: Hackathon README and draft catalog
-## Current task: Details panel always reachable + snap to element
+## Previous task: Details panel always reachable + snap to element
 
 Branch: `feat/panel-snap` from origin/release/hackathon at 283e7cd. It merges back into release/hackathon with a merge commit. Codex branches and docs/submit-prep are not touched.
 

@@ -245,7 +245,7 @@ This inventory includes README placeholders, YAML comments/known-issue condition
 | Final approved engine/UI integration on release/hackathon; final branch pushed and frozen | Claude | Yes |
 | Confirm Content check exists in final code or remove its advertised claim | Claude | Yes |
 | Final README branch-status/feature accuracy and disclosure review before freezing | Claude | Yes |
-| Resolve/investigate existing matcher, browser timeout/cleanup issues; achieve truthful release test evidence | Codex | Fixes committed on fix/test-reliability; final three-run results in HANDOFF.md. Claude/Ilham must integrate and retest the frozen release. Historical trace limitations are explicit, not claimed solved by widening limits. |
+| Resolve/investigate existing matcher, browser timeout/cleanup issues; achieve truthful release test evidence | Codex | Done on fix/test-reliability: three full runs each 189 passed, zero failures/errors/skips; native-unusable check 167 passed/22 clearly skipped. Full evidence in HANDOFF.md. Claude/Ilham must integrate and retest the frozen release. Historical trace limitations are explicit, not claimed solved by widening limits. |
 | Complete WINDOWS-TEST.md: Windows/browser/public-site/live Hermes results | Ilham | Yes for those claims; keep Windows out of platforms until passed |
 | Final version and six-tool capability audit at the selected pin | Codex | Done for the combined tested branch: orphic-eyes 0.3.0, six schema/handler/README/catalog tool sets agree (HANDOFF.md). Final submission SHA is still unselected; recheck that exact frozen pin after integration. |
 | Establish minimum Hermes version if required; otherwise leave optional requires_hermes absent | Codex | No, unless final API usage needs a floor |
