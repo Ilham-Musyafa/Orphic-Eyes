@@ -172,6 +172,7 @@ body.insp-closed{--inspector-cur:0px}
 .step.current .step-dot{background:#2F80FF;color:#fff}
 .header .m-page,.header .m-more{display:none}
 .sheet-grip{display:none}
+.req-sheet-foot,.modal-head .m-close{display:none}
 .stepper-short{display:none;font-size:var(--fs-sec);color:var(--muted);white-space:nowrap}
 @media (max-width:1599px){.step-label{display:none}.step+.step::before{width:8px}}
 @media (max-width:1279px){.capture-chip{display:none}.header{grid-template-columns:auto minmax(0,1fr) auto}.header .hd-center{justify-self:center}}
@@ -713,6 +714,24 @@ body.insp-closed .inspector{border-left:0}
   body:not(.mode-review) .zoom-pill{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 82px)}
   .toast{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 86px)}
 }
+/* phone: Requests sheet footer + full-screen prompt preview */
+@media (max-width:639px){
+  #sidebar[data-tab="requests"]{--sheet-foot-h:calc(61px + env(safe-area-inset-bottom,0px))}
+  body[data-sheet-pos="peek"] #sidebar[data-tab="requests"]{--sheet-foot-h:0px}
+  #sidebar[data-tab="requests"] .req-sheet-foot{display:flex;position:absolute;left:0;right:0;bottom:0;z-index:3;align-items:center;justify-content:space-between;gap:var(--s2);padding:var(--s2) var(--s4) calc(var(--s2) + env(safe-area-inset-bottom,0px));background:var(--panel);border-top:1px solid var(--line)}
+  body[data-sheet-pos="peek"] #sidebar .req-sheet-foot{display:none}
+  .req-sheet-foot .btn{min-height:44px;padding:0 var(--s4)}
+  body:not([data-sheet-pos="peek"]) #reqCounter{display:none}
+  .sidebar .req-foot{display:none}
+  .scrim-full{padding:0;align-items:stretch}
+  .scrim-full .modal-prompt{width:100%;max-height:none;height:100%;border-radius:0;box-shadow:none}
+  .modal-prompt .modal-head{padding:calc(var(--s2) + env(safe-area-inset-top,0px)) var(--s3) var(--s2) var(--s2)}
+  .modal-prompt .modal-head .m-close{display:inline-flex;min-height:44px;padding:0 var(--s3)}
+  .modal-prompt .modal-head .icon-btn{display:none}
+  .modal-prompt .modal-actions{padding:var(--s3) var(--s4) calc(var(--s3) + env(safe-area-inset-bottom,0px))}
+  .modal-prompt .modal-actions .btn:not(.primary){display:none}
+  .modal-prompt #previewCopy{flex:1;min-height:44px;justify-content:center}
+}
 @media (max-width:639px) and (prefers-reduced-motion:reduce){.sidebar,.inspector{transition:none}}
 </style>
 </head>
@@ -808,6 +827,10 @@ body.insp-closed .inspector{border-left:0}
           <p class="req-limit" id="reqLimit" hidden>Limit reached. Copy this batch, then start a new one.</p>
           <div id="requestList"></div>
         </section>
+      </div>
+      <div class="req-sheet-foot" id="reqSheetFoot">
+        <span class="req-counter num" id="reqSheetCount">0 of 8 requests</span>
+        <button type="button" class="btn" id="reqSheetPreview" data-preview-prompt>Preview prompt</button>
       </div>
       <div class="sb-foot">
         <button type="button" class="btn ghost" id="helpBtn" aria-label="Help" data-tip="Help" data-kbd="?"><svg class="ic"><use href="#i-help"/></svg><span class="lbl">Help</span></button>
@@ -2624,6 +2647,10 @@ body.insp-closed .inspector{border-left:0}
     var made = requestCount();
     var counter = $('#reqCounter');
     counter.textContent = made + ' of ' + MAX_REQUESTS + ' requests';
+    var sheetCount = $('#reqSheetCount');
+    sheetCount.textContent = counter.textContent;
+    sheetCount.classList.toggle('warn', made === MAX_REQUESTS - 1);
+    sheetCount.classList.toggle('full', made >= MAX_REQUESTS);
     counter.classList.toggle('warn', made === MAX_REQUESTS - 1);
     counter.classList.toggle('full', made >= MAX_REQUESTS);
     $('#reqLimit').hidden = made < MAX_REQUESTS;
@@ -4668,11 +4695,16 @@ body.insp-closed .inspector{border-left:0}
     });
   }
   function openPromptPreview() {
-    var modal = el('div', 'modal');
+    var modal = el('div', 'modal modal-prompt');
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
     modal.setAttribute('aria-label', 'Preview prompt');
     var head = el('div', 'modal-head');
+    /* Phones show a text Close at the top left instead of the icon. */
+    var mClose = el('button', 'btn ghost m-close', 'Close');
+    mClose.type = 'button';
+    mClose.addEventListener('click', function () { closeLayer(); });
+    head.appendChild(mClose);
     head.appendChild(el('h2', null, 'Preview prompt'));
     var x = el('button', 'icon-btn');
     x.type = 'button';
@@ -4703,7 +4735,9 @@ body.insp-closed .inspector{border-left:0}
     actions.appendChild(close);
     actions.appendChild(copyBtn);
     modal.appendChild(actions);
-    openLayer(scrim(modal), { focus: count ? '#previewCopy' : '.modal-actions .btn' });
+    var wrap = scrim(modal);
+    wrap.classList.add('scrim-full');
+    openLayer(wrap, { focus: count ? '#previewCopy' : (isPhone() ? '.m-close' : '.modal-actions .btn') });
   }
 
     function setZoom(value) {
@@ -4830,6 +4864,7 @@ body.insp-closed .inspector{border-left:0}
     renderSidebarTabs();
   }
   function renderSidebarTabs() {
+    $('#sidebar').setAttribute('data-tab', state.sidebarTab);
     ['pages', 'changes', 'requests'].forEach(function (tab) {
       var name = tab.charAt(0).toUpperCase() + tab.slice(1);
       var button = $('#tab' + name);
