@@ -4900,18 +4900,21 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       }, 1500 + 300);
     });
   }
-  function openPromptPreview() {
+  /* custom (optional): { title, text, copyLabel, onCopy } for other prompts (Verify follow-up).
+     Without it this is the normal Copy prompt preview, unchanged. */
+  function openPromptPreview(custom) {
+    if (!custom || typeof custom.text !== 'string') custom = null;
     var modal = el('div', 'modal modal-prompt');
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-label', 'Preview prompt');
+    modal.setAttribute('aria-label', custom ? custom.title : 'Preview prompt');
     var head = el('div', 'modal-head');
     /* Phones show a text Close at the top left instead of the icon. */
     var mClose = el('button', 'btn ghost m-close', 'Close');
     mClose.type = 'button';
     mClose.addEventListener('click', function () { closeLayer(); });
     head.appendChild(mClose);
-    head.appendChild(el('h2', null, 'Preview prompt'));
+    head.appendChild(el('h2', null, custom ? custom.title : 'Preview prompt'));
     var x = el('button', 'icon-btn');
     x.type = 'button';
     x.setAttribute('aria-label', 'Close');
@@ -4919,25 +4922,25 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     x.addEventListener('click', function () { closeLayer(); });
     head.appendChild(x);
     modal.appendChild(head);
-    var count = requestCount();
-    var pre = el('pre', 'prompt-text', count ? promptText() : 'Add a request first. The prompt lists every Move and Add request you create.');
+    var count = custom ? 1 : requestCount();
+    var pre = el('pre', 'prompt-text', custom ? custom.text : count ? promptText() : 'Add a request first. The prompt lists every Move and Add request you create.');
     pre.id = 'promptPreview';
     pre.tabIndex = 0;
     pre.setAttribute('aria-label', 'Prompt text');
     modal.appendChild(pre);
-    if (promptRequests().some(function (r) { return r.refName; })) {
+    if (!custom && promptRequests().some(function (r) { return r.refName; })) {
       modal.appendChild(el('p', 'prompt-hint', "Images can't be copied as text. Attach the files listed under Attachments in your AI chat."));
     }
     var actions = el('div', 'modal-actions');
     var close = el('button', 'btn', 'Close');
     close.type = 'button';
     close.addEventListener('click', function () { closeLayer(); });
-    var copyBtn = el('button', 'btn primary', 'Copy prompt');
+    var copyBtn = el('button', 'btn primary', custom ? custom.copyLabel : 'Copy prompt');
     copyBtn.type = 'button';
     copyBtn.id = 'previewCopy';
     copyBtn.id = 'previewCopy';
     explainDisabled(copyBtn, count ? '' : 'Add a request first');
-    copyBtn.addEventListener('click', function () { copyPrompt(); });
+    copyBtn.addEventListener('click', function () { if (custom) custom.onCopy(); else copyPrompt(); });
     actions.appendChild(close);
     actions.appendChild(copyBtn);
     modal.appendChild(actions);
@@ -7416,14 +7419,78 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     body.appendChild(list);
   }
   function renderVerifyHistory(body) { /* filled in with rounds */ }
+  /* Follow-up prompt: same general format as Copy prompt, only what is still wrong. */
+  function followUpItems() {
+    return (state.verify.results || []).filter(function (r) { return r.status === 'fail' || r.status === 'unclear'; });
+  }
+  function followUpText() {
+    var opt = promptOptions();
+    var todo = followUpItems();
+    var restore = state.verify.unexpected;
+    var lines = ['Please fix what is still wrong after the last round.'];
+    if (opt.page) {
+      var size = stageSize();
+      lines.push('Page: ' + ((state.report && state.report.name) || 'page') + ' \u00b7 Viewport: ' + size.w + '\u00d7' + size.h);
+    }
+    lines.push('');
+    if (todo.length) {
+      lines.push('Still to do (' + todo.length + '):');
+      todo.forEach(function (res, i) {
+        var r = res.item.prompt;
+        var head = (i + 1) + '. [' + (PROMPT_TYPE[r.type] || word(r.type)) + (r.type === 'add' && r.kind ? ' \u00b7 ' + kindLabel(r.kind) : '') + '] ' + r.name;
+        if (opt.coords && r.rect) head += ' \u2014 at x ' + r.rect.x + ', y ' + r.rect.y + ', ' + r.rect.w + '\u00d7' + r.rect.h + 'px';
+        lines.push(head);
+        promptDetails(r, opt).forEach(function (line) { lines.push('   ' + line); });
+        var note = String(r.note || '').replace(/\s+/g, ' ').trim();
+        if (note) lines.push('   Note: ' + note);
+        lines.push('   Last check: ' + VERIFY_STATUS[res.status].label + '. ' + res.reason);
+      });
+      lines.push('');
+    }
+    if (restore.length) {
+      lines.push('Please restore (' + restore.length + '):');
+      restore.forEach(function (u) {
+        lines.push('- ' + zoneLabel(u.zone) + (opt.coords ? ' \u2014 at x ' + u.rect.x + ', y ' + u.rect.y + ', ' + u.rect.w + '\u00d7' + u.rect.h + 'px' : '') +
+          ': this changed although no request asked for it. Make it look like it did before this round.');
+      });
+      lines.push('');
+    }
+    var reply = 'Reply with a short list of what you changed.';
+    if (opt.ruleScope || opt.ruleAsk) {
+      lines.push('Rules:');
+      if (opt.ruleScope) lines.push('- Change only what is listed above. Keep everything else as it is.');
+      if (opt.ruleAsk) lines.push('- If a request is unclear, ask before changing code.');
+      lines.push('- ' + reply);
+    } else {
+      lines.push(reply);
+    }
+    return lines.join('\n');
+  }
+  function hasFollowUp() { return !!(followUpItems().length || state.verify.unexpected.length); }
+  function copyFollowUp(text) {
+    var n = followUpItems().length + state.verify.unexpected.length;
+    writeClipboard(text, 'Follow-up prompt copied \u00b7 ' + n + ' item' + (n === 1 ? '' : 's'));
+  }
+  function openFollowUpPreview() {
+    if (!hasFollowUp()) { toast('Nothing to fix'); return; }
+    var text = followUpText();
+    openPromptPreview({ title: 'Follow-up prompt', text: text, copyLabel: 'Copy follow-up prompt', onCopy: function () { copyFollowUp(text); } });
+  }
   function renderVerifyActions() {
     var bar = document.querySelector('#layer #vfActions');
     if (!bar) return;
     bar.innerHTML = '';
+    var v = state.verify;
     var close = el('button', 'btn', 'Close');
     close.type = 'button';
     close.addEventListener('click', function () { closeLayer(); });
     bar.appendChild(close);
+    var follow = el('button', 'btn primary', 'Copy follow-up prompt');
+    follow.type = 'button';
+    follow.id = 'vfFollowUp';
+    explainDisabled(follow, !v.results ? 'Load the next screenshot first' : hasFollowUp() ? '' : 'Nothing to fix: no failed or unclear checks and no unexpected changes');
+    follow.addEventListener('click', function () { if (follow.getAttribute('aria-disabled') !== 'true') openFollowUpPreview(); });
+    bar.appendChild(follow);
   }
   function openVerify() {
     if (!verifyCount()) { toast('Add a request first'); return; }
