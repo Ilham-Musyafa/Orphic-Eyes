@@ -3825,6 +3825,14 @@ body.insp-closed .inspector{border-left:0}
   }
 
   /* Basenames only: the status bar never shows a full path. */
+  /* A file name to show for the After image. Embedded data:/blob: images never
+     leak their contents into the UI. */
+  function afterFileName(report) {
+    if (report && typeof report.after_name === 'string' && report.after_name) return report.after_name;
+    var images = report && report.images ? report.images : {};
+    var shown = typeof images.after === 'string' && !/^(data|blob):/i.test(images.after) ? baseName(images.after) : '';
+    return shown && shown !== '\u2014' ? shown : 'current.png';
+  }
   function baseName(path) {
     if (typeof path !== 'string' || !path) return '';
     var parts = path.replace(/\\/g, '/').split('/');
@@ -3857,7 +3865,7 @@ body.insp-closed .inspector{border-left:0}
       var parts = [];
       var name = typeof report.name === 'string' && report.name ? report.name : '';
       if (name) parts.push(name);
-      var afterName = typeof report.after_name === 'string' ? report.after_name : baseName(images.after);
+      var afterName = afterFileName(report);
       if (afterName) parts.push(afterName);
       parts.push(label);
       var dpr = dprText(report);
