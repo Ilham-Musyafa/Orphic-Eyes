@@ -17,9 +17,11 @@ HELP = """/orphic help    Show commands
 /orphic doctor  Check Python, Pillow, browser, data directory and engine
 /orphic demo    Capture two offline demo pages and compare a 40 px button move
 
-Tools: orphic_baseline, orphic_compare, orphic_approve,
-orphic_accept, orphic_ignore. Only local http://localhost,
-http://127.0.0.1 and local file:// input URLs. HTML requires an optional template.
+Tools: orphic_baseline, orphic_compare, orphic_loop_step,
+orphic_approve, orphic_accept, orphic_ignore.
+Baseline/legacy compare: local http://localhost, http://127.0.0.1 or file://.
+Compare URL pairs and loop steps: HTTP/HTTPS; private destinations require allow_local=true.
+HTML requires an optional template.
 Demo replaces only the target named demo; its files live under the data directory.
 """
 
