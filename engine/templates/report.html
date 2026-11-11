@@ -60,6 +60,7 @@
   --bronze:#C58B3E;--bronze-hover:#B67C30;--on-bronze:#1B1B19;--logo-box:#1B1B19;
   --blue:#2F80FF;--blue-ink:#1D63D3;--blue-bg:#EEF4FF;--blue-line:#C5DAFB;--focus:#2F80FF;
   --guide:#E5359B;
+  --grid-line:rgba(15,23,42,.06);   /* neutral grid over screenshots; change boxes stay dominant */
   --add:#7A4FE0;--add-bg:#F2ECFE;--add-fill:rgba(122,79,224,.08);
   --green:#188951;--green-bg:#E5F5EC;--amber:#A84F07;--amber-dot:#D99A2B;--amber-bg:#FDF1DE;--red:#C2383D;--red-bg:#FDECEC;
   --chip-gray:#5F636A;--chip-gray-bg:#EEEEF0;
@@ -77,6 +78,7 @@
   --bronze:#C58B3E;--bronze-hover:#D29A4E;--on-bronze:#1B1B19;--logo-box:#1B1B19;
   --blue:#4C8DFF;--blue-ink:#9BC0FF;--blue-bg:rgba(76,141,255,.16);--blue-line:rgba(76,141,255,.42);--focus:#6EA4FF;
   --add:#B59CFF;--add-bg:rgba(181,156,255,.16);--add-fill:rgba(181,156,255,.12);
+  --grid-line:rgba(255,255,255,.10);
   --green:#5BC992;--green-bg:rgba(91,201,146,.15);--amber:#F2B55E;--amber-dot:#F2B55E;--amber-bg:rgba(242,181,94,.15);--red:#FF8589;--red-bg:rgba(255,133,137,.15);
   --chip-gray:#B9BCC2;--chip-gray-bg:#2E2E34;
   --ruler-bg:#202024;--ruler-line:#36363C;--ruler-ink:#A0A3AA;
@@ -491,7 +493,7 @@ body.no-report .stage-scroller,body.no-report.mode-review .stage-scroller{--stag
 .draft-area.hl{box-shadow:inset 0 0 0 2px #2F80FF;background:rgba(47,128,255,.12)}
 .row-item.hl{background:var(--blue-bg)}
 .mark-box.hl{box-shadow:0 0 0 1px rgba(255,255,255,.75),0 0 0 4px rgba(47,128,255,.4)}
-.rv-grid{position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(to right,rgba(47,128,255,.13) 1px,transparent 1px),linear-gradient(to bottom,rgba(47,128,255,.13) 1px,transparent 1px)}
+.rv-grid{position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(to right,var(--grid-line) 1px,transparent 1px),linear-gradient(to bottom,var(--grid-line) 1px,transparent 1px)}
 .mark-box{position:absolute;border:2px solid #D99A2B;border-radius:3px;pointer-events:auto;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.75)}
 .mark-box.expected,.mark-box.approved{border-color:#188951}
 .mark-box:hover{box-shadow:0 0 0 1px rgba(255,255,255,.75),0 0 0 4px rgba(47,128,255,.22)}
@@ -4110,8 +4112,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     var wantGrid = state.grid;
     if (wantGrid) {
       var step = Math.max(4, (state.gridSize || 8) * frameW / size.w);
-      grid.style.backgroundImage = 'linear-gradient(to right,rgba(47,128,255,.13) 1px,transparent 1px),' +
-        'linear-gradient(to bottom,rgba(47,128,255,.13) 1px,transparent 1px)';
+      grid.style.backgroundImage = 'linear-gradient(to right,var(--grid-line) 1px,transparent 1px),' +
+        'linear-gradient(to bottom,var(--grid-line) 1px,transparent 1px)';
       grid.style.backgroundSize = step + 'px ' + step + 'px';
     }
     frame.appendChild(grid);
