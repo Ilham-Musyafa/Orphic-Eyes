@@ -1,5 +1,16 @@
 # HANDOFF
 
+## Current task: Test reliability and submit audit (Codex)
+
+Branch: `fix/test-reliability`, from `origin/docs/submit-prep` 1048073; merged `origin/release/hackathon` 283e7cd. One HANDOFF conflict resolved by retaining both sides. Imported report.html is byte-identical to the release ref; no template edits.
+
+### Plan
+1. Reproduce browser startup/CLI shutdown and inspect retained failure logs; fix bounded process/profile cleanup without changing capture or matcher limits.
+2. Probe installed browser usability once per suite; mark only real-browser tests and skip with actionable diagnostics when unavailable. Keep genuine capture/matching regressions failing after the probe succeeds.
+3. Audit manifest/version, tool schemas/handlers, catalog and README; correct only mismatches.
+4. Run three consecutive full pytest suites, record summaries/skips, and finish this handoff plus SUBMIT gates. Commit small changes and push only this branch; confirm remote SHA. No PR/release merge/deploy.
+
+
 ## Current task: Submission-night artifacts
 
 Branch: docs/submit-prep from origin/docs/windows-test. README and catalog draft are already present and origin/docs/readme is an ancestor; no merge is necessary.
