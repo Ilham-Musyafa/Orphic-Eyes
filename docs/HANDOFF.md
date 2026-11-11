@@ -1,6 +1,15 @@
 # HANDOFF
 
-## Current task: Local report server and Hermes-driven auto loop
+## Current task: Hackathon README and draft catalog
+
+Branch: docs/readme from feat/auto-loop at ab5f9e3e836e6a49786e2920fea30ce14edfb36e.
+
+### Plan
+1. Read current public Hermes catalog examples and validation/install implementation; inspect release/hackathon UI features without checking it out or modifying it.
+2. Rewrite README with verified commands, accurate branch-specific features, privacy/limits, disclosures and explicit submission TODOs. Add docs/catalog/orphic-eyes.yaml using the upstream catalog schema with a zero SHA placeholder.
+3. Check Markdown links/catalog structure, run the full existing tests, record command verification and limitations, then push only docs/readme. No screenshots unless needed; do not modify engine, template, dependencies or other branches. No PRs or merges.
+
+## Previous task: Local report server and Hermes-driven auto loop
 
 Branch: `feat/auto-loop`, from pushed `feat/url-capture` at `d92bbaa83782cbbc8300ee54bde7dbe427c38e93`.
 
