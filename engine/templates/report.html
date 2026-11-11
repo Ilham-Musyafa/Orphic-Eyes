@@ -489,6 +489,33 @@ body.no-rulers .ruler-top,body.no-rulers .ruler-left,body.no-rulers .ruler-corne
 .add-ghost{position:absolute;z-index:2;border:1px dashed var(--add);opacity:.6;background:var(--add-fill);pointer-events:none}
 body.mode-add .tool.on{background:var(--add-bg);color:var(--add)}
 .chip.add{background:var(--add-bg);color:var(--add)}
+/* Content check: removed / added / changed areas, pixel-only */
+.cc-toggle{display:inline-flex;align-items:center;min-height:var(--hit-dense);padding:0 var(--s2);border-radius:var(--r-pill);border:1px solid var(--line2);background:var(--panel);color:var(--muted);font-size:var(--fs-sec);font-weight:var(--w-medium);letter-spacing:0;text-transform:none;transition:background var(--t) var(--ease),color var(--t) var(--ease),border-color var(--t) var(--ease)}
+.cc-toggle:hover{background:var(--hover);color:var(--ink)}
+.cc-toggle[aria-pressed="true"]{background:var(--blue-bg);border-color:var(--blue-line);color:var(--blue-ink)}
+.cc-toggle[aria-disabled="true"]{opacity:.5;cursor:default}
+.cc-summary{margin:0 0 var(--s1);padding:0 var(--s2);font-size:var(--fs-body);font-weight:var(--w-strong);line-height:var(--lh-tight);color:var(--ink)}
+.cc-hint{margin:0 0 var(--s3);padding:0 var(--s2);font-size:var(--fs-sec);line-height:var(--lh-body);color:var(--muted)}
+.cc-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--s2)}
+.cc-item{display:flex;flex-direction:column;gap:var(--s2);padding:var(--s3);border:1px solid var(--line);border-radius:var(--r-panel);background:var(--panel);animation:oe-row-in var(--dur) var(--ease-out);min-width:0}
+.cc-head{display:flex;flex-wrap:wrap;align-items:center;gap:var(--s1) var(--s2);min-width:0}
+.cc-name{flex:1 1 auto;min-width:0;font-size:var(--fs-body);font-weight:var(--w-medium);overflow-wrap:anywhere}
+.cc-size{font-family:var(--font-mono);font-size:var(--fs-sec);color:var(--muted);white-space:nowrap}
+.cc-chip{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:var(--r-pill);font-size:var(--fs-cap);font-weight:var(--w-strong);white-space:nowrap;flex:none;background:var(--chip-gray-bg);color:var(--chip-gray)}
+.cc-chip.removed{background:var(--red-bg);color:var(--red)}
+.cc-chip.added{background:var(--add-bg);color:var(--add)}
+.cc-crops{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);padding:0;border:0;background:none;text-align:left;border-radius:var(--r-btn);cursor:zoom-in}
+.cc-crops:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.cc-crop{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cc-crop img{display:block;width:100%;height:auto;max-height:96px;object-fit:contain;background:var(--canvas);border:1px solid var(--line);border-radius:var(--r-input);image-rendering:auto}
+.cc-cap{font-size:var(--fs-cap);color:var(--faint);text-transform:uppercase;letter-spacing:.04em}
+.cc-reason{margin:0;font-size:var(--fs-sec);line-height:var(--lh-body);color:var(--muted)}
+.cc-act{align-self:flex-start;min-height:var(--hit-dense);font-size:var(--fs-sec)}
+.cc-act[aria-disabled="true"]{opacity:.6;cursor:default}
+@media (max-width:639px){
+  .cc-crop img{max-height:120px}
+  .cc-act{align-self:stretch;min-height:var(--hit)}
+}
 .add-desc{min-height:72px;padding:var(--s2);line-height:var(--lh-body);resize:vertical}
 .add-desc[aria-invalid="true"]{border-color:var(--red);box-shadow:0 0 0 1px var(--red)}
 .chip-help{display:flex;flex-direction:column;gap:6px;margin-top:var(--s2)}
@@ -1016,7 +1043,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
           <div class="group-label">Area map</div>
           <div class="mini-map" id="zoneGrid" role="group" aria-label="Area map"></div>
           <div class="map-legend"><span id="zoneNote">Pick an area to filter</span><button type="button" id="zoneClear" hidden>Clear</button></div>
-          <div class="group-label" id="changesHead"><span>Changes</span></div>
+          <div class="group-label" id="changesHead"><span>Changes</span><button type="button" class="cc-toggle" id="contentToggle" aria-pressed="false">Content check</button></div>
           <div id="leftList"></div>
         </section>
         <section class="sb-pane" id="paneRequests" role="tabpanel" aria-labelledby="tabRequests" hidden>
@@ -2842,6 +2869,212 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       if (full) n.setAttribute('data-tip', full);
     });
   }
+  /* =================================================================
+     Content check: does each changed area look removed, added or changed?
+     Pixel-only. It never reads text: a "detail" score says how much of the
+     area stands out from the background around it, nothing more.
+     ================================================================= */
+  var CONTENT_RING = 6;          /* px band just outside the area = local background */
+  var CONTENT_INK_DIFF = 32;     /* a pixel is "detail" when a channel differs from that background by more */
+  var CONTENT_DETAIL = 0.06;     /* at least 6% detail pixels: the area has content */
+  var CONTENT_PLAIN = 0.015;     /* at most 1.5% detail pixels: the area is close to its background */
+  var CONTENT_KIND = {
+    removed: { label: 'Looks removed', cls: 'removed' },
+    added: { label: 'Looks added', cls: 'added' },
+    changed: { label: 'Changed', cls: 'changed' }
+  };
+  var CONTENT_ORDER = { removed: 0, added: 1, changed: 2 };
+  state.content = { on: false, key: null, busy: false, error: '', items: null, urls: [] };
+
+  /* Per-channel median of the ring around r (inside the image). */
+  function ringBackground(data, W, H, r) {
+    var hist = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)];
+    var n = 0;
+    var x0 = Math.max(0, r.x - CONTENT_RING), y0 = Math.max(0, r.y - CONTENT_RING);
+    var x1 = Math.min(W, r.x + r.w + CONTENT_RING), y1 = Math.min(H, r.y + r.h + CONTENT_RING);
+    for (var y = y0; y < y1; y++) {
+      for (var x = x0; x < x1; x++) {
+        if (x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h) continue;
+        var p = (y * W + x) * 4;
+        hist[0][data[p]]++; hist[1][data[p + 1]]++; hist[2][data[p + 2]]++;
+        n++;
+      }
+    }
+    if (!n) return null;
+    return hist.map(function (h) {
+      var half = n / 2, acc = 0;
+      for (var v = 0; v < 256; v++) { acc += h[v]; if (acc >= half) return v; }
+      return 255;
+    });
+  }
+  /* Share of the area's pixels that stand out from the background (0..1). */
+  function detailShare(data, W, r, bg) {
+    var hit = 0;
+    for (var y = r.y; y < r.y + r.h; y++) {
+      for (var x = r.x; x < r.x + r.w; x++) {
+        var p = (y * W + x) * 4;
+        if (Math.abs(data[p] - bg[0]) > CONTENT_INK_DIFF || Math.abs(data[p + 1] - bg[1]) > CONTENT_INK_DIFF ||
+            Math.abs(data[p + 2] - bg[2]) > CONTENT_INK_DIFF) hit++;
+      }
+    }
+    return hit / (r.w * r.h);
+  }
+  function classifyContent(px, box) {
+    var r = clipRect(box, px.w, px.h);
+    if (!r) return { kind: 'changed', before: 0, after: 0, reason: 'The area is outside the screenshot.' };
+    var bgB = ringBackground(px.before.data, px.w, px.h, r), bgA = ringBackground(px.after.data, px.w, px.h, r);
+    if (!bgB || !bgA) return { kind: 'changed', before: 0, after: 0, reason: 'No background around this area to compare with.' };
+    var b = detailShare(px.before.data, px.w, r, bgB), a = detailShare(px.after.data, px.w, r, bgA);
+    var bp = Math.round(b * 100), ap = Math.round(a * 100);
+    if (b >= CONTENT_DETAIL && a <= CONTENT_PLAIN) {
+      return { kind: 'removed', before: bp, after: ap, reason: 'After is close to the surrounding background here, while Before had detail (' + bp + '% vs ' + ap + '% of the area).' };
+    }
+    if (a >= CONTENT_DETAIL && b <= CONTENT_PLAIN) {
+      return { kind: 'added', before: bp, after: ap, reason: 'Before was close to the surrounding background here, while After has detail (' + bp + '% vs ' + ap + '% of the area).' };
+    }
+    return { kind: 'changed', before: bp, after: ap,
+      reason: b >= CONTENT_DETAIL && a >= CONTENT_DETAIL ? 'Both have detail here, but the pixels differ (' + bp + '% vs ' + ap + '% of the area).'
+        : 'The pixels differ, but not clearly enough to say content was added or removed (' + bp + '% vs ' + ap + '%).' };
+  }
+  function contentCropUrls(px, box) {
+    var r = clipRect({ x: box.x - CROP_PAD, y: box.y - CROP_PAD, w: box.w + CROP_PAD * 2, h: box.h + CROP_PAD * 2 }, px.w, px.h);
+    if (!r) return Promise.resolve(null);
+    return Promise.all([px.before.canvas, px.after.canvas].map(function (src) {
+      var c = canvasOf(r.w, r.h);
+      c.getContext('2d').drawImage(src, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+      return new Promise(function (resolve) {
+        c.toBlob(function (blob) {
+          if (!blob) { resolve(null); return; }
+          var url = localUrl(blob);
+          state.content.urls.push(url);
+          resolve(url);
+        }, 'image/png');
+      });
+    })).then(function (urls) { return { before: urls[0], after: urls[1] }; });
+  }
+  function contentKey() {
+    var images = (state.report && state.report.images) || {};
+    return images.before + '|' + images.after + '|' + state.boxes.length;
+  }
+  /* Run once per report; results stay until the report changes. */
+  function runContentCheck() {
+    var c = state.content;
+    var key = contentKey();
+    if (c.key === key && (c.items || c.busy || c.error)) return;
+    c.key = key;
+    c.busy = true;
+    c.error = '';
+    c.items = null;
+    c.urls.forEach(dropUrl);
+    c.urls = [];
+    var images = (state.report && state.report.images) || {};
+    var boxes = state.boxes.slice();
+    Promise.all([verifyPixels(images.before), verifyPixels(images.after)]).then(function (ps) {
+      if (ps[0].w !== ps[1].w || ps[0].h !== ps[1].h) throw new Error('Before and After have different sizes, so areas can’t be compared.');
+      var px = { w: ps[1].w, h: ps[1].h, before: ps[0], after: ps[1] };
+      var items = boxes.map(function (box, i) { var r = classifyContent(px, box); r.box = box; r.index = i; return r; });
+      items.sort(function (x, y) { return CONTENT_ORDER[x.kind] - CONTENT_ORDER[y.kind] || x.index - y.index; });
+      return Promise.all(items.map(function (it) {
+        return contentCropUrls(px, it.box).then(function (crop) { it.crop = crop; return it; });
+      }));
+    }).then(function (items) {
+      if (c.key !== key) return;
+      c.items = items;
+    }).catch(function (err) {
+      if (c.key !== key) return;
+      c.error = (err && err.message ? err.message : MSG_READ).replace(', then verify again.', ' to run Content check.');
+    }).then(function () {
+      if (c.key !== key) return;
+      c.busy = false;
+      renderLeft();
+    });
+  }
+  function contentSummary(items) {
+    var n = { removed: 0, added: 0, changed: 0 };
+    items.forEach(function (it) { n[it.kind] += 1; });
+    return items.length + ' content change' + (items.length === 1 ? '' : 's') + ': ' + n.removed + ' looks removed, ' + n.added + ' looks added, ' + n.changed + ' changed.';
+  }
+  function contentNote(it) {
+    var b = it.box;
+    var what = it.kind === 'removed' ? 'content looks removed compared with Before' : it.kind === 'added' ? 'content looks added compared with Before' : 'content looks changed compared with Before';
+    return zoneLabel(b.zone) + ' (' + b.w + '×' + b.h + ' px at x ' + b.x + ', y ' + b.y + '): ' + what + '. Please check this area and restore it if the change was not intended.';
+  }
+  function revertFor(box) {
+    for (var i = 0; i < state.revertDrafts.length; i++) if (String(state.revertDrafts[i].boxId) === String(box.id)) return state.revertDrafts[i];
+    return null;
+  }
+  function renderContentCheck(holder) {
+    var c = state.content;
+    runContentCheck();
+    if (c.error) { holder.appendChild(el('p', 'empty-note', c.error)); return; }
+    if (c.busy || !c.items) { holder.appendChild(el('p', 'empty-note', 'Checking the changed areas…')); return; }
+    var sum = el('p', 'cc-summary', contentSummary(c.items));
+    sum.setAttribute('role', 'status');
+    holder.appendChild(sum);
+    holder.appendChild(el('p', 'cc-hint', 'From pixels only: Orphic doesn’t read text. Missing content is listed first.'));
+    var list = el('ul', 'cc-list');
+    list.setAttribute('aria-label', 'Content check');
+    c.items.forEach(function (it) {
+      var box = it.box;
+      var li = el('li', 'cc-item');
+      var head = el('div', 'cc-head');
+      head.appendChild(el('span', 'cc-chip ' + CONTENT_KIND[it.kind].cls, CONTENT_KIND[it.kind].label));
+      head.appendChild(el('span', 'cc-name', zoneLabel(box.zone)));
+      head.appendChild(el('span', 'cc-size num', box.w + '×' + box.h + ' px'));
+      li.appendChild(head);
+      if (it.crop) {
+        var crops = el('button', 'cc-crops');
+        crops.type = 'button';
+        crops.setAttribute('data-box', String(box.id));
+        crops.setAttribute('aria-label', 'Show change ' + box.id + ' on the picture');
+        [['Before', it.crop.before], ['After', it.crop.after]].forEach(function (pair) {
+          var f = el('span', 'cc-crop');
+          var img = el('img');
+          img.src = pair[1];
+          img.alt = pair[0] + ' crop of ' + zoneLabel(box.zone);
+          f.appendChild(img);
+          f.appendChild(el('span', 'cc-cap', pair[0]));
+          crops.appendChild(f);
+        });
+        li.appendChild(crops);
+      }
+      li.appendChild(el('p', 'cc-reason', it.reason));
+      var existing = revertFor(box);
+      var btn;
+      var actId = 'ccAct' + String(box.id).replace(/[^\w-]/g, '');
+      if (existing) {
+        btn = el('button', 'btn cc-act', 'Revert request added · ' + existing.id);
+        btn.type = 'button';
+        btn.id = actId;
+        explainDisabled(btn, 'Already in the requests as ' + existing.id);
+      } else if (requestCount() >= MAX_REQUESTS) {
+        btn = el('button', 'btn cc-act', 'Copy note');
+        btn.type = 'button';
+        btn.setAttribute('data-tip', LIMIT_MSG + ' Copy a note instead.');
+        btn.addEventListener('click', function () { writeClipboard(contentNote(it), 'Note copied'); });
+      } else {
+        btn = el('button', 'btn cc-act', 'Create Revert request');
+        btn.type = 'button';
+        btn.setAttribute('data-tip', 'Ask the AI to make this area look like Before again');
+        btn.addEventListener('click', function () { addRevertDraft(box); });
+      }
+      li.appendChild(btn);
+      list.appendChild(li);
+    });
+    holder.appendChild(list);
+  }
+  function renderContentToggle() {
+    var t = $('#contentToggle');
+    if (!t) return;
+    t.setAttribute('aria-pressed', state.content.on ? 'true' : 'false');
+    explainDisabled(t, state.boxes.length ? '' : 'No changed areas to check', 'Show which content looks removed, added or changed');
+  }
+  function setContentMode(on) {
+    state.content.on = !!on;
+    var t = $('#contentToggle');
+    if (t) t.setAttribute('aria-pressed', state.content.on ? 'true' : 'false');
+    renderLeft();
+  }
   function renderLeft() {
     var holder = $('#leftList');
     $('#listCount').textContent = String(state.boxes.length);
@@ -2851,8 +3084,11 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     var draftCount = state.drafts.length;
     var addCount = state.addDrafts.length + state.revertDrafts.length;
 
+    renderContentToggle();
     if (!state.boxes.length) {
       holder.appendChild(el('p', 'empty-note', state.report ? 'No changed areas. Both pictures look the same.' : 'Load images to start'));
+    } else if (state.content.on) {
+      renderContentCheck(holder);
     } else {
       state.boxes.forEach(function (box) {
         var status = boxStatus(box);
@@ -6751,6 +6987,10 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       $('#tab' + next.charAt(0).toUpperCase() + next.slice(1)).focus();
     });
     $('#zoneClear').addEventListener('click', function () { state.zone = null; render(); });
+    $('#contentToggle').addEventListener('click', function () {
+      if (this.getAttribute('aria-disabled') === 'true') return;
+      setContentMode(!state.content.on);
+    });
     $('#inspectorClose').addEventListener('click', toggleInspector);
     $('#settingsBtn').addEventListener('click', function () { openSettings(); });
     $('#moreBtn').addEventListener('click', function () {

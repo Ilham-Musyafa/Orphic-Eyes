@@ -16,6 +16,7 @@ Branch: `release/hackathon` (pulled, at aa8f14c). Only `engine/templates/report.
 ### Status
 - Plan written.
 - Step 1 done: revert requests. `state.revertDrafts` (RV-n) count toward the 8-request limit (`requestCount()`), Copy prompt lists them after Moves and Adds as `[Revert] <zone> area — … Make it look like the Before screenshot again.`, Requests shows them with delete + Undo, undo/redo snapshots include them, Verify checks them with the existing revert check (Round 2 vs Before). Copy prompt with no reverts: byte-identical. Rebinding 92/92, Verify 86/86.
+- Step 2 done: Content check view. Toggle "Content check" (aria-pressed) in the Changes heading; the Changes list then shows the summary, a one-line "pixels only, no text reading" hint and one card per area (chip, zone, size, Before/After crops — clicking them selects the change on the picture — the reason with both detail percentages, and the action). Thresholds as in the plan (ring 6 px, channel difference > 32, detail ≥ 6 %, plain ≤ 1.5 %). Action: "Create Revert request"; "Revert request added · RV-n" (disabled, says why) when one exists for that area; "Copy note" when 8 requests are reached. Results are computed once per report (crops are blob URLs, revoked when recomputed). A report opened from disk that cannot read its own pixels shows that message instead of results. Lumen: Bottom right (Contact) = Looks removed, listed first; the other 5 = Changed.
 
 ## Previous task: Merge feat/url-capture + Content check view — STOPPED
 
