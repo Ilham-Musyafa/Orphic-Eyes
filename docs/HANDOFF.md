@@ -1,5 +1,20 @@
 # HANDOFF
 
+## Current task: URL capture engine
+
+Branch: `feat/url-capture`, from `origin/stage-5e` at `6bde560c28f05d7d50d66e69fb1a47849be4612a`.
+
+### Plan
+1. Add a strict HTTP/HTTPS capture API in `engine/url_capture.py`, retaining the existing local-file capture API for compatibility. Use installed Edge/Chrome/Chromium via DevTools with the Python standard library: no new dependency. Fix viewport/DPR, disable motion, wait for network idle with bounded timeouts, and support full-page PNGs. Guard all outbound requests against private destinations unless explicitly allowed; never include source URLs in errors/logs.
+2. Add `capture_pair` using the existing pixel diff and JSON/HTML report builders without threshold, schema, or template changes. Extend the existing `orphic_compare` schema/adapter for before_url/after_url, preserving the five registered tools and the manifest. This requires the existing Python Hermes adapter `orphic_tools.py`; no UI or manifest edits.
+3. Add unit/security tests and local HTTP browser integration tests; skip when no browser exists. Update the old browser class to skip on absence. Run the complete suite, plugin contract validation, and a real paired-URL example. Record evidence and limitations here.
+
+### Status
+- Inspected capture, baseline store, compare_images, build_report/write_report, Hermes handlers/schema/registration, and existing browser tests.
+- Existing browser launcher: `/workspace/.orphic-eyes/run`; Python: `/workspace/.venvs/orphic-eyes/bin/python`. It maps a working official Chrome build without changing repository files and keeps temporary socket paths short. Browser sandbox remains enabled.
+- `engine/templates/report.html` is owned by another agent: do not edit or stage it. Initial SHA-256: e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2.
+- No implementation changes yet. No push, merge, or deployment authorized.
+
 ## Current task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
 
 Branch: `feat/settings-redesign` (from `feat/mobile-fixes` at 0fbfaec). One commit per step. Only Settings changed; prefs stay in `orphic-eyes.prefs.v1` with the same keys.
