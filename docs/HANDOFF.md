@@ -1,6 +1,28 @@
 # HANDOFF
 
-## Current task: Rebindable keyboard shortcuts
+## Current task: Verify loop (Round 2 check)
+
+Branch: `feat/verify-loop` (from `feat/shortcut-rebind` at a5fe92b). Only `engine/templates/report.html` + this file. No engine changes.
+
+### Plan
+- What gets verified: the requests Copy prompt sends (Move and Add drafts, drawn on the After image) plus requests that came with an engine report (move / revert / hide / comment, `from`/`to` drawn against Before).
+- Entry: "Verify" button in the Requests panel (desktop list footer, phone sheet footer), a command palette item and a new editable shortcut `verify.open` (Shift+V, no overlap with existing bindings). Disabled with a reason until a request exists.
+- Round 2 loads in the Verify dialog with the same rules as Load images (drop, choose, paste; PNG/JPG/WebP, 20 MB, 8000 px). Size must equal the After image, otherwise a clear message and no results.
+- Pixels come from the report's own Before/After (blob or relative paths). If the browser blocks reading them (file:// pages from the engine), Verify says so and shows no results — never guesses.
+- Checks (pixel-only):
+  - Move: template-match the element (After crop for drafts, Before crop for engine moves) in Round 2 around the target, within the request's precision (2 / 8 px). Pass when found at the target and not still at the old place; Fail when still at the old place or found off-target within 48 px; Unclear when not found, ambiguous, or the area is too plain.
+  - Revert: exact pixel diff of the area, Round 2 vs Before, under 5% → Pass, else Fail.
+  - Hide: area vs the image it was drawn on: under 5% different → Fail (still there); 30%+ and the element not found nearby → Pass; otherwise Unclear.
+  - Comment / Add: "Needs your eyes", never Pass.
+  - Each result: After vs Round 2 crop + one plain reason.
+- Unexpected: exact diff After vs Round 2 outside every request area; 3×3 zones with 5%+ changed are listed with a crop.
+- Follow-up prompt: same general format; only Fail/Unclear requests + unexpected zones ("Please restore"); shown in the existing preview dialog (parametrised; the normal Copy prompt text stays byte-identical).
+- Rounds: counter + in-memory history; "Use Round 2 as new After" rebuilds the comparison Before vs Round 2 and archives this round's requests.
+
+### Status
+- Plan written.
+
+## Previous task: Rebindable keyboard shortcuts
 
 Branch: `feat/shortcut-rebind` (from `feat/settings-redesign` at 61327c5). Only `engine/templates/report.html` + this file. Note: the sidebar-toggle click fix lives on `fix/sidebar-toggle` and is not in this branch.
 
