@@ -1,6 +1,16 @@
 # HANDOFF
 
-## Current task: Hackathon README and draft catalog
+## Current task: Beginner Windows guide and timeout investigation
+
+Branch: docs/windows-test from docs/readme at 9e5bf71bec8514de09c4dd5e937fa86845b1fdc2.
+
+### Plan
+1. Verify Windows-facing repository commands and official Hermes installation/local-plugin syntax. Write a PowerShell-only beginner guide with expected results, failure evidence and separate terminal instructions.
+2. Cover public capture, same-origin HTTP reports, branch-specific UI availability, a deterministic local two-round loop, optional Hermes host validation and a results checklist. Do not claim Content check exists on this engine branch.
+3. Investigate the previous 30-second browser capture and 5-second child-process timeouts. Run three sequential full suites without competing demo work. Change test-only timeout settings only with clear evidence of harmless environment slowness; never relax capture/matcher checks or alter feature code.
+4. Record evidence, commit small documentation steps and push only docs/windows-test. No README/template/engine edits, protected-branch pushes, PRs or merges. Never read .env.
+
+## Previous task: Hackathon README and draft catalog
 
 Branch: docs/readme from feat/auto-loop at ab5f9e3e836e6a49786e2920fea30ce14edfb36e.
 
