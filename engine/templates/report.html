@@ -265,8 +265,14 @@ body.sb-collapsed .sidebar{align-items:center}
 .dot.pass{background:var(--green)}.dot.check{background:var(--amber-dot)}.dot.fail{background:var(--red)}
 
 /* area map: a 3x3 grid drawn over a tiny page thumbnail */
-.mini-map{position:relative;margin:0 var(--s2) var(--s1);aspect-ratio:16/9;border-radius:var(--r-btn);background:var(--surface) center/100% 100% no-repeat;box-shadow:inset 0 0 0 1px var(--line);overflow:hidden;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
-.zone-cell{position:relative;border-right:1px dashed rgba(127,127,127,.35);border-bottom:1px dashed rgba(127,127,127,.35);transition:background var(--t) var(--ease)}
+.mini-map{position:relative;margin:0 var(--s1) var(--s1);aspect-ratio:16/9;border-radius:var(--r-btn);background:var(--surface) center/100% 100% no-repeat;box-shadow:0 0 0 1px var(--line2);overflow:hidden;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr)}
+/* The thumbnail sits on its own layer so it can be toned without dimming the grid and dots. */
+.mini-map::before{content:"";position:absolute;inset:0;background:inherit;filter:contrast(1.12) saturate(1.15);pointer-events:none}
+:root[data-theme="dark"] .mini-map::before{filter:brightness(.62) contrast(1.05)}
+:root[data-theme="dark"] .mini-map{box-shadow:0 0 0 1px var(--line2),inset 0 0 0 1px rgba(0,0,0,.4)}
+.zone-cell{z-index:1}
+.zone-cell{position:relative;border-right:1px solid rgba(31,31,34,.32);border-bottom:1px solid rgba(31,31,34,.32);transition:background var(--t) var(--ease)}
+:root[data-theme="dark"] .zone-cell{border-color:rgba(255,255,255,.28)}
 .zone-cell:nth-child(3n){border-right:0}.zone-cell:nth-child(n+7){border-bottom:0}
 .zone-cell:hover{background:rgba(47,128,255,.10)}
 .zone-cell.selected{background:rgba(47,128,255,.16);box-shadow:inset 0 0 0 2px var(--blue)}
