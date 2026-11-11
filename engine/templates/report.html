@@ -171,6 +171,7 @@ body.insp-closed{--inspector-cur:0px}
 .step.current{color:var(--ink)}
 .step.current .step-dot{background:#2F80FF;color:#fff}
 .header .m-page,.header .m-more{display:none}
+.sheet-grip{display:none}
 .stepper-short{display:none;font-size:var(--fs-sec);color:var(--muted);white-space:nowrap}
 @media (max-width:1599px){.step-label{display:none}.step+.step::before{width:8px}}
 @media (max-width:1279px){.capture-chip{display:none}.header{grid-template-columns:auto minmax(0,1fr) auto}.header .hd-center{justify-self:center}}
@@ -691,7 +692,28 @@ body.insp-closed .inspector{border-left:0}
   .m-theme .seg{flex:1;display:flex}
   .m-theme .seg button{flex:1;justify-content:center;min-height:44px;padding:0 var(--s2)}
   .m-sep{height:1px;background:var(--line);margin:var(--s1) 0}
+  /* bottom sheet: Peek 120px / Half 50vh / Full 88vh (JS sets --sheet-h = sheet minus tab bar) */
+  :root{--sheet-bar-h:68px}
+  .sheet-bar{align-items:flex-end;padding:24px var(--s2) 0}
+  .sheet-bar .sheet-handle{display:none}
+  .sheet-grip{display:block;position:absolute;left:50%;top:-20px;width:96px;height:44px;margin-left:-48px;border-radius:var(--r-btn);touch-action:none;cursor:grab}
+  .sheet-grip::after{content:"";position:absolute;left:30px;top:30px;width:36px;height:4px;border-radius:2px;background:var(--line2)}
+  .sheet-grip:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+  .sheet-bar button.sheet-tab{min-height:44px;margin-top:0}
+  .sidebar,.inspector{transition:height var(--dur) var(--ease-out)}
+  body.sheet-dragging .sidebar,body.sheet-dragging .inspector{transition:none}
+  .sidebar .sb-body,.inspector .inspector-body{overscroll-behavior:contain;padding-bottom:calc(var(--sheet-foot-h,0px) + env(safe-area-inset-bottom,0px) + 16px)}
+  .sidebar .sb-body{padding-top:0}
+  #paneChanges>.group-label:first-child,#zoneGrid,#paneChanges .map-legend{display:none}
+  #panePages>.group-label:first-child,#changesHead,#paneRequests>.group-label:first-child{position:sticky;top:0;z-index:2;background:var(--panel);margin:0 calc(-1 * var(--s2));padding:var(--s3) var(--s4) var(--s2)}
+  /* Half: a soft fade says the list goes on; it goes once the list is scrolled to the end. */
+  body[data-sheet-pos="half"] .sidebar::after,body[data-sheet-pos="half"] .inspector::after{content:"";position:absolute;left:0;right:0;bottom:var(--sheet-foot-h,0px);height:24px;background:linear-gradient(to bottom,transparent,var(--panel));pointer-events:none;transition:opacity var(--dur-fast) var(--ease-out)}
+  body[data-sheet-pos="half"] .sidebar.at-end::after,body[data-sheet-pos="half"] .inspector.at-end::after{opacity:0}
+  .dock,.zoom-pill{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 26px)}
+  body:not(.mode-review) .zoom-pill{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 82px)}
+  .toast{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 86px)}
 }
+@media (max-width:639px) and (prefers-reduced-motion:reduce){.sidebar,.inspector{transition:none}}
 </style>
 </head>
 <body>
@@ -778,7 +800,7 @@ body.insp-closed .inspector{border-left:0}
           <div class="group-label">Area map</div>
           <div class="mini-map" id="zoneGrid" role="group" aria-label="Area map"></div>
           <div class="map-legend"><span id="zoneNote">Pick an area to filter</span><button type="button" id="zoneClear" hidden>Clear</button></div>
-          <div class="group-label"><span>Changes</span></div>
+          <div class="group-label" id="changesHead"><span>Changes</span></div>
           <div id="leftList"></div>
         </section>
         <section class="sb-pane" id="paneRequests" role="tabpanel" aria-labelledby="tabRequests" hidden>
@@ -867,6 +889,7 @@ body.insp-closed .inspector{border-left:0}
 
 <div class="sheet-bar" id="sheetBar" role="tablist" aria-label="Panels">
   <span class="sheet-handle" aria-hidden="true"></span>
+  <button type="button" class="sheet-grip" id="sheetHandle" aria-label="Expand panel" aria-expanded="false" data-tip="Drag or tap to resize"></button>
   <button type="button" class="sheet-tab" data-sheet="pages">Pages</button>
   <button type="button" class="sheet-tab" data-sheet="changes">Changes</button>
   <button type="button" class="sheet-tab" data-sheet="requests">Requests</button>
@@ -2422,6 +2445,7 @@ body.insp-closed .inspector{border-left:0}
   function render() {
     renderStatus();
     renderPhoneHeader();
+    setTimeout(updateSheetFade, 0);
     setTimeout(function () { ['#leftList', '#requestList', '#pageList'].forEach(function (sel) { var n = $(sel); if (n) tipLabels(n); }); }, 0);
     renderCopyButton();
     renderStepper();
@@ -2803,6 +2827,7 @@ body.insp-closed .inspector{border-left:0}
     var cs = window.getComputedStyle(scroller);
     var padX = (parseFloat(cs.paddingLeft) || 0) + (parseFloat(cs.paddingRight) || 0);
     var padY = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+    if (isPhone() && state.sheetPos) padY -= Math.max(0, state.sheetH + sheetBarH() - PHONE_PEEK);
     return { w: scroller.clientWidth - padX, h: scroller.clientHeight - padY };
   }
 
@@ -4749,6 +4774,19 @@ body.insp-closed .inspector{border-left:0}
     toggle.setAttribute('aria-label', label);
     toggle.setAttribute('data-tip', label);
     toggle.setAttribute('aria-expanded', sidebarCollapsed() ? 'false' : 'true');
+    if (kind === 'mobile' && isPhone()) {
+      if (!state.sheetPos) state.sheetPos = 'peek';
+      state.sheetH = Math.max(0, phoneSheetTotal(state.sheetPos) - sheetBarH());
+      body.setAttribute('data-sheet-pos', state.sheetPos);
+      var grip = $('#sheetHandle');
+      var collapsed = state.sheetPos === 'peek';
+      grip.setAttribute('aria-label', collapsed ? 'Expand panel' : 'Collapse panel');
+      grip.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    } else if (state.sheetPos) {
+      state.sheetPos = null;
+      state.sheetH = 0;
+      body.removeAttribute('data-sheet-pos');
+    }
     if (kind === 'mobile') {
       body.setAttribute('data-sheet', state.sheet === 'inspector' ? 'inspector' : 'sidebar');
       var tabs = document.querySelectorAll('#sheetBar [data-sheet]');
@@ -4806,6 +4844,12 @@ body.insp-closed .inspector{border-left:0}
   /* mobile bottom sheet: tabs choose the panel, the bar drags the height */
   var SHEET_STOPS = [0, 0.42, 0.72];
   function setSheet(name) {
+    if (isPhone()) {
+      /* Tapping the open tab again lets the sheet rest at Peek. */
+      if (state.sheet === name && state.sheetPos && state.sheetPos !== 'peek') { setSheetPos('peek'); return; }
+      openPhoneSheet(name);
+      return;
+    }
     var open = state.sheetH > 0;
     if (open && state.sheet === name) {
       state.sheetH = 0;
@@ -4818,9 +4862,34 @@ body.insp-closed .inspector{border-left:0}
     applyPanels();
     renderStage();
   }
+  /* Phone (<640px): the sheet never closes; it rests at Peek, Half or Full. */
+  var PHONE_PEEK = 120;
+  var PHONE_POS = ['peek', 'half', 'full'];
+  function phoneSheetTotal(pos) {
+    var h = window.innerHeight;
+    return pos === 'full' ? Math.round(h * 0.88) : pos === 'half' ? Math.round(h * 0.5) : PHONE_PEEK;
+  }
+  function sheetBarH() { var bar = $('#sheetBar'); return (bar && bar.offsetHeight) || 68; }
+  function setSheetPos(pos) {
+    state.sheetPos = PHONE_POS.indexOf(pos) === -1 ? 'peek' : pos;
+    state.sheetH = Math.max(0, phoneSheetTotal(state.sheetPos) - sheetBarH());
+    applyPanels();
+    setTimeout(updateSheetFade, 0);
+  }
   function openPhoneSheet(name) {
-    if (state.sheetH > 0 && state.sheet === name) return;
-    setSheet(name);
+    if (!isPhone()) { if (!(state.sheetH > 0 && state.sheet === name)) setSheet(name); return; }
+    state.sheet = name;
+    if (name !== 'inspector') state.sidebarTab = name;
+    renderSidebarTabs();
+    setSheetPos(state.sheetPos === 'full' ? 'full' : 'half');
+  }
+  function updateSheetFade() {
+    ['#sidebar .sb-body', '#inspector .inspector-body'].forEach(function (sel) {
+      var node = document.querySelector(sel);
+      if (!node) return;
+      var end = node.scrollTop + node.clientHeight >= node.scrollHeight - 2;
+      node.closest('aside').classList.toggle('at-end', end);
+    });
   }
   function bindSheet() {
     var bar = $('#sheetBar');
@@ -4828,11 +4897,33 @@ body.insp-closed .inspector{border-left:0}
     bar.addEventListener('pointerdown', function (event) {
       drag = { y: event.clientY, h: state.sheetH || 0, moved: false, id: event.pointerId };
     });
+    var grip = $('#sheetHandle');
+    grip.addEventListener('keydown', function (event) {
+      if (!isPhone() || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+      event.preventDefault();
+      var i = PHONE_POS.indexOf(state.sheetPos || 'peek') + (event.key === 'ArrowUp' ? 1 : -1);
+      setSheetPos(PHONE_POS[clamp(i, 0, PHONE_POS.length - 1)]);
+    });
+    /* A tap on the picture lets the sheet rest at Peek again. */
+    $('#stageScroller').addEventListener('pointerdown', function () {
+      if (isPhone() && state.sheetPos && state.sheetPos !== 'peek') setSheetPos('peek');
+    });
+    ['#sidebar .sb-body', '#inspector .inspector-body'].forEach(function (sel) {
+      var node = document.querySelector(sel);
+      if (node) node.addEventListener('scroll', updateSheetFade, { passive: true });
+    });
     window.addEventListener('pointermove', function (event) {
       if (!drag || event.pointerId !== drag.id) return;
       var dy = drag.y - event.clientY;
       if (Math.abs(dy) > 6) drag.moved = true;
       if (!drag.moved) return;
+      document.body.classList.add('sheet-dragging');
+      if (isPhone()) {
+        var barH = sheetBarH();
+        state.sheetH = clamp(drag.h + dy, phoneSheetTotal('peek') - barH, phoneSheetTotal('full') - barH);
+        document.documentElement.style.setProperty('--sheet-h', state.sheetH + 'px');
+        return;
+      }
       var max = Math.round(window.innerHeight * SHEET_STOPS[2]);
       state.sheetH = clamp(drag.h + dy, 0, max);
       document.documentElement.style.setProperty('--sheet-h', state.sheetH + 'px');
@@ -4841,7 +4932,18 @@ body.insp-closed .inspector{border-left:0}
       if (!drag) return;
       var wasDrag = drag.moved;
       drag = null;
+      document.body.classList.remove('sheet-dragging');
       if (!wasDrag) return;
+      if (isPhone()) {
+        var total = state.sheetH + sheetBarH();
+        var bestPos = 'peek';
+        PHONE_POS.forEach(function (pos) {
+          if (Math.abs(phoneSheetTotal(pos) - total) < Math.abs(phoneSheetTotal(bestPos) - total)) bestPos = pos;
+        });
+        state.sheetDragged = true;
+        setSheetPos(bestPos);
+        return;
+      }
       var h = window.innerHeight;
       var best = 0;
       SHEET_STOPS.forEach(function (stop) {
@@ -4854,6 +4956,10 @@ body.insp-closed .inspector{border-left:0}
     });
     bar.addEventListener('click', function (event) {
       if (state.sheetDragged) { state.sheetDragged = false; return; }
+      if (event.target.closest('#sheetHandle')) {
+        if (isPhone()) setSheetPos(state.sheetPos === 'peek' ? 'half' : 'peek');
+        return;
+      }
       var tab = event.target.closest('[data-sheet]');
       if (tab) setSheet(tab.getAttribute('data-sheet'));
     });
