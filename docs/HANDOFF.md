@@ -1,6 +1,22 @@
 # HANDOFF
 
-## Current task: Merge feat/url-capture + Content check view — STOPPED
+## Current task: Content check view
+
+Branch: `release/hackathon` (pulled, at aa8f14c). Only `engine/templates/report.html` + this file. No other branch merged.
+
+### Plan
+1. Revert requests (needed for "Create Revert request"): the prompt builder already knows `revert` ("Make it look like the Before screenshot again."), the UI did not create them. Add `state.revertDrafts` (ids RV-n): counted in `requestCount()` (8-request limit), sent by Copy prompt after Moves and Adds, listed in Requests with delete + Undo, part of undo snapshots, checked by Verify through the existing revert check. With no revert requests the Copy prompt text is unchanged.
+2. Content check: a "Content check" toggle in the Changes heading (there is no All/Unexpected/Approved filter in this build; the heading next to the area-map filter is the nearest place). For each changed area, pixel-only:
+   - local background = per-channel median of a 6 px ring just outside the box, per image;
+   - "detail" (ink) = share of box pixels whose largest channel difference from that background is > 32;
+   - Looks removed: Before ink ≥ 6% and After ink ≤ 1.5%; Looks added: the reverse; otherwise Changed.
+   Summary "N content changes: a looks removed, b looks added, c changed."; order removed → added → changed; each item has Before/After crops, zone, size, a short reason and "Create Revert request" (or "Copy note" when the 8-request limit is reached). No OCR, never names text.
+3. Shortcut `content.check` (Shift+C, editable, ignored while typing). Mobile: the list stacks in the sheet, crops share the width.
+
+### Status
+- Plan written.
+
+## Previous task: Merge feat/url-capture + Content check view — STOPPED
 
 Branch: `release/hackathon` (pulled; at 3800d4f, up to date with origin).
 
