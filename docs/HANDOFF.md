@@ -1,5 +1,17 @@
 # HANDOFF
 
+## Current task: Security review fixes (fix/review-security)
+
+Branch `fix/review-security` from a0411b9 for the 3 blocking items in the catalog PR review (NousResearch/hermes-agent#153695). The catalog yaml was NOT changed or re-pinned here.
+
+1. Browser env: new `engine/_browser_env.py` `browser_env(tmp)`; replaces `os.environ.copy()` in capture.py, url_capture.py, commands.py. Allowlist: PATH, HOME, USERPROFILE, SYSTEMROOT, WINDIR, COMSPEC, PATHEXT, LOCALAPPDATA, APPDATA, PROGRAMFILES*, DISPLAY, WAYLAND_DISPLAY, XDG_RUNTIME_DIR, XAUTHORITY, LANG, LC_*, TZ, HTTP(S)_PROXY, NO_PROXY, ALL_PROXY (any case); TMP/TEMP/TMPDIR = profile.
+2. file:// confinement: `engine.capture.confine_file_url()`, enforced in `orphic_tools._url` (baseline, compare, accept, stored URLs). Config `plugins.entries.orphic-eyes.settings.file_root` (default: working directory). Always refused: Hermes home, ~/.ssh, ~/.aws, ~/.config, ~/.gnupg, dot components, *.env, non-regular files. `/orphic demo` uses `trusted_file_dir()` for its own folder only; a later model compare of the demo target's stored file:// URL is refused (expected).
+3. allow_local: removed from all tool schemas; read from `plugins.entries.orphic-eyes.settings.allow_local` (default false, only literal true). Passing it returns an error. `destination()`/GuardedProxy always refuse 169.254.0.0/16, fe80::/10, fd00:ec2::254 (+ mapped/6to4/Teredo/NAT64); upstream CONNECT always pinned to the validated IP.
+
+Config: both keys live under `plugins.entries.orphic-eyes.settings` (the subtree `ctx.get_config` reads; legacy `.config` also read) and are declared in `plugin.yaml` `config_schema` (allow_local: bool, default false; file_root: str, default = working directory). Any config read error falls back to the safe defaults.
+
+Tests: new `tests/test_security_env.py`, `test_security_paths.py`, `test_security_network.py` (22 tests, one reads a real Hermes config.yaml in a subprocess). Existing tests that passed `allow_local` as a tool argument now set it via config; the metadata-host assertion now expects "always blocked". Full suite on Linux Chromium: 211 passed, 0 skipped. `hermes plugins validate . --install-deps` (hermes-agent main 565b04b): passed, config schema shape valid. Windows/Edge not re-run here.
+
 ## Current task: Final pre-demo audit (fix/final-audit)
 
 Branch: `fix/final-audit` from release/hackathon after merging origin/fix/test-reliability (5736938) → `9cb2ef8` and origin/docs/roadmap (cad0ea2) → `82f009e`. Both merge commits had a HANDOFF-only conflict; both sides were kept and no line from either side was lost.

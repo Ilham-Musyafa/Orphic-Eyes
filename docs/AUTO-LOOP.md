@@ -79,16 +79,16 @@ Example instruction to Hermes:
 > on needs_human; do not guess text, page structure or intent from pixels.
 
 Initialize using a fresh name (public URLs are accepted when DNS/network policy
-permit them; the local example needs explicit allow_local):
+permit them; the local example needs `plugins.entries.orphic-eyes.settings.allow_local: true` in Hermes config.yaml):
 
 ```json
-{"name":"orphic_compare","arguments":{"name":"preview","before_url":"http://127.0.0.1:8000/reference.html","after_url":"http://127.0.0.1:8000/current.html","width":1440,"height":900,"allow_local":true}}
+{"name":"orphic_compare","arguments":{"name":"preview","before_url":"http://127.0.0.1:8000/reference.html","after_url":"http://127.0.0.1:8000/current.html","width":1440,"height":900}}
 ```
 
 First round:
 
 ```json
-{"name":"orphic_loop_step","arguments":{"name":"preview","after_url":"http://127.0.0.1:8000/current.html","allow_local":true,"max_rounds":3}}
+{"name":"orphic_loop_step","arguments":{"name":"preview","after_url":"http://127.0.0.1:8000/current.html","max_rounds":3}}
 ```
 
 Example response excerpt for a still-incorrect page:
@@ -123,7 +123,7 @@ Use a fresh initialized target if switching modes or changing requests.
 | after_url | string, required | HTTP/HTTPS page to capture this round |
 | requests | array, optional | Existing Point & Tell schema, at most 8; fixed at first call |
 | max_rounds | positive integer, default 3 | Fixed at first call; omit later to reuse |
-| allow_local | boolean, default false | Explicit permission for trusted private/loopback destinations |
+| allow_local | user config only (`plugins.entries.orphic-eyes.settings.allow_local`), default false | Not a tool argument; link-local/metadata addresses stay blocked |
 | wait_ms | nonnegative integer, default 250 | Additional wait after network idle |
 | timeout_ms | positive integer, default 30000 | Capture deadline; greater than wait_ms |
 

@@ -91,18 +91,18 @@ The plugin registers `orphic_baseline`, `orphic_compare`, `orphic_loop_step`, `o
 | Tool | Required parameters | Optional parameters |
 | --- | --- | --- |
 | `orphic_baseline` | `url` | `name`, `viewport`, `width`, `height` |
-| `orphic_compare` | None; legacy mode needs an existing baseline | `name`, `url`, `expect`, `requests`, `before_url`, `after_url`, `width`, `height`, `wait_ms`, `timeout_ms`, `allow_local` |
-| `orphic_loop_step` | `name`, `after_url` | `requests`, `max_rounds`, `allow_local`, `wait_ms`, `timeout_ms` |
+| `orphic_compare` | None; legacy mode needs an existing baseline | `name`, `url`, `expect`, `requests`, `before_url`, `after_url`, `width`, `height`, `wait_ms`, `timeout_ms` |
+| `orphic_loop_step` | `name`, `after_url` | `requests`, `max_rounds`, `wait_ms`, `timeout_ms` |
 | `orphic_approve` | None; needs an existing comparison | `name`, `boxes`, `all` |
 | `orphic_accept` | None; needs an existing comparison | `name` |
 | `orphic_ignore` | `action`, `region` | `name` |
 
 `name` defaults to `default` except for loop steps. URL-pair compare requires both `before_url` and `after_url` and cannot combine them with `url`, `expect` or `requests`. Baseline accepts a viewport preset or explicit dimensions, never both. Approve selects `boxes` or `all=true`. Regions use integer `x,y,w,h`; requests require `id,type`, plus `from` for move/hide/revert and `to` for move. Supported request types are move/hide/revert/comment; precision defaults to approximate.
 
-Capture two local pages without a prior baseline:
+Capture two local pages without a prior baseline (local addresses need `allow_local: true` in the plugin config, see [Security](#security)):
 
 ```json
-{"name":"orphic_compare","arguments":{"name":"preview","before_url":"http://127.0.0.1:8000/page_a.html","after_url":"http://127.0.0.1:8000/page_b.html","width":1440,"height":900,"allow_local":true}}
+{"name":"orphic_compare","arguments":{"name":"preview","before_url":"http://127.0.0.1:8000/page_a.html","after_url":"http://127.0.0.1:8000/page_b.html","width":1440,"height":900}}
 ```
 
 The response includes `paths.report`, optional `paths.html`, `summary.box_count`, and `report_url` when a report server is running; otherwise `serve_hint` gives its startup command.
@@ -110,12 +110,29 @@ The response includes `paths.report`, optional `paths.html`, `summary.box_count`
 After the coding agent edits the page, review one round:
 
 ```json
-{"name":"orphic_loop_step","arguments":{"name":"preview","after_url":"http://127.0.0.1:8000/page_b.html","allow_local":true,"max_rounds":3}}
+{"name":"orphic_loop_step","arguments":{"name":"preview","after_url":"http://127.0.0.1:8000/page_b.html","max_rounds":3}}
 ```
 
 The engine returns per-zone verdicts, unexpected zones, `follow_up_prompt`, `should_stop` and `stop_condition`: continue, done, max_rounds or needs_human. Hermes performs any authorized code edits; the engine never executes the prompt. With requests omitted, the goal is restoration of the original reference appearance. Supply baseline-relative Point & Tell requests on the first call for supported explicit changes. Goals stay fixed throughout the session. Do not use restoration mode to undo an intentional redesign accidentally.
 
 See [AUTO-LOOP.md](docs/AUTO-LOOP.md) for request-mode examples, the full argument table, stored evidence and stop semantics. See [the report contract](docs/report-contract.md) for pixel/report details.
+
+## Security
+
+Local access is a user decision in Hermes `config.yaml`, never a model tool argument:
+
+```yaml
+plugins:
+  entries:
+    orphic-eyes:
+      settings:
+        allow_local: false           # true permits private/loopback HTTP(S) for URL pairs and loop steps
+        file_root: ~/projects/my-app # file:// pages must live here; default = Hermes' working directory
+```
+
+- **`allow_local`** (default `false`): only the literal `true` enables private/loopback destinations. It is not in any tool schema; a tool call that passes it gets an error and gains no access. Link-local/cloud-metadata addresses (`169.254.0.0/16`, `fe80::/10`, `fd00:ec2::254`, including IPv4-mapped/6to4/Teredo/NAT64 forms) are **always** refused, even with `allow_local: true`, for the first request, redirects and subresources. Upstream proxy CONNECT always uses the validated numeric address.
+- **`file_root`** (default: the working directory): baseline/compare `file://` pages are resolved to their real path (symlinks followed, case-normalised on Windows) and must be regular files inside this folder. The Hermes home (`HERMES_HOME` or `~/.hermes`), `~/.ssh`, `~/.aws`, `~/.config`, `~/.gnupg`, every dotfile/dot-directory and `*.env` file are refused even inside the root. Errors never echo the path. `/orphic demo` trusts only the folder it writes itself.
+- **Browser environment:** the headless browser gets an allowlisted environment only (system paths, display/locale, proxy variables and its own temp folder). API keys, tokens, secrets and provider variables are never passed.
 
 ## Limits
 
@@ -130,11 +147,11 @@ See [AUTO-LOOP.md](docs/AUTO-LOOP.md) for request-mode examples, the full argume
 
 The report UI performs its review locally and has no automatic network-service client or upload path. Fonts/sample assets are embedded; images selected by the user or served next to a report are read locally. Copy Prompt writes to the clipboard only when requested. Opening the HTTP report naturally requests its HTML and PNGs from the local server.
 
-URL capture navigates to the URLs the user supplies; those pages may load subresources, follow redirects or make their own network requests. It is not an arbitrary crawler, and there is no Orphic-hosted screenshot service. The guarded capture path accepts HTTP/HTTPS only, blocks private addresses unless `allow_local` is explicit, and never permits file/javascript/data input URLs. The legacy local baseline API separately supports local file pages; it is not the guarded public-URL API.
+URL capture navigates to the URLs the user supplies; those pages may load subresources, follow redirects or make their own network requests. It is not an arbitrary crawler, and there is no Orphic-hosted screenshot service. The guarded capture path accepts HTTP/HTTPS only, blocks private addresses unless the user sets `allow_local: true` in the plugin config, always blocks link-local/metadata addresses, and never permits file/javascript/data input URLs. The legacy local baseline API separately supports local file pages inside the configured `file_root`; it is not the guarded public-URL API.
 
 - **Reads/writes:** screenshots, reports, requests, approvals and loop history are stored locally. Hermes storage is under its resolved home's `orphic-eyes/`; standalone callers choose a store. Explicit input images/pages, Python packages, browser executables and system fonts can be read outside that store. Doctor probes storage write access.
 - **Processes:** captures launch an installed headless browser with argument lists, not a shell. Browser profiles use short system-temp paths, outside the report store, and cleanup stops the owned process tree before removing them. URL capture also uses a temporary loopback guard proxy. The optional report server is a long-running loopback process until Ctrl+C/timeout; it serves only report HTML/JSON and PNGs. Cleanup failures are capture failures and can leave local artifacts. Captured content may itself contain sensitive information.
-- **Credentials:** no credential store or .env files are read, no model credentials are required, and no source URL is saved by the new capture/loop path. Legacy baseline state can save URLs. Avoid credential-bearing URLs. Pages can create temporary cookies; existing proxy/CA configuration is inherited.
+- **Credentials:** no credential store or .env files are read, no model credentials are required, and no source URL is saved by the new capture/loop path. Legacy baseline state can save URLs. Avoid credential-bearing URLs. Pages can create temporary cookies; proxy variables and system CA configuration are inherited, other environment variables are not passed to the browser.
 - **Telemetry:** no plugin telemetry or usage reporting is implemented. Browser behavior and resources loaded by captured pages remain outside this claim.
 
 These runtime disclosures must also accompany the future catalog PR. **TODO — PR disclosures:** copy and review them against the final pinned code before submission; no PR has been created by this documentation task.
