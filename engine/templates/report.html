@@ -60,6 +60,8 @@
   --bronze:#C58B3E;--bronze-hover:#B67C30;--on-bronze:#1B1B19;--logo-box:#1B1B19;
   --blue:#2F80FF;--blue-ink:#1D63D3;--blue-bg:#EEF4FF;--blue-line:#C5DAFB;--focus:#2F80FF;
   --guide:#E5359B;
+  --grid-line:rgba(15,23,42,.06);   /* neutral grid over screenshots; change boxes stay dominant */
+  --unexp-bg:#FFF4E5;--unexp-ink:#B45309;
   --add:#7A4FE0;--add-bg:#F2ECFE;--add-fill:rgba(122,79,224,.08);
   --green:#188951;--green-bg:#E5F5EC;--amber:#A84F07;--amber-dot:#D99A2B;--amber-bg:#FDF1DE;--red:#C2383D;--red-bg:#FDECEC;
   --chip-gray:#5F636A;--chip-gray-bg:#EEEEF0;
@@ -77,6 +79,8 @@
   --bronze:#C58B3E;--bronze-hover:#D29A4E;--on-bronze:#1B1B19;--logo-box:#1B1B19;
   --blue:#4C8DFF;--blue-ink:#9BC0FF;--blue-bg:rgba(76,141,255,.16);--blue-line:rgba(76,141,255,.42);--focus:#6EA4FF;
   --add:#B59CFF;--add-bg:rgba(181,156,255,.16);--add-fill:rgba(181,156,255,.12);
+  --grid-line:rgba(255,255,255,.10);
+  --unexp-bg:rgba(242,181,94,.13);--unexp-ink:#F2B55E;
   --green:#5BC992;--green-bg:rgba(91,201,146,.15);--amber:#F2B55E;--amber-dot:#F2B55E;--amber-bg:rgba(242,181,94,.15);--red:#FF8589;--red-bg:rgba(255,133,137,.15);
   --chip-gray:#B9BCC2;--chip-gray-bg:#2E2E34;
   --ruler-bg:#202024;--ruler-line:#36363C;--ruler-ink:#A0A3AA;
@@ -164,7 +168,7 @@ body.insp-closed{--inspector-cur:0px}
 .new-review{gap:6px;padding:0 var(--s2)}
 .new-review[hidden]{display:none}
 .new-review .ic{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
-@media (max-width:1599px){.new-review .lbl{display:none}.new-review{width:var(--hit);padding:0;justify-content:center}}
+@media (max-width:1799px){.new-review .lbl{display:none}.new-review{width:var(--hit);padding:0;justify-content:center}}
 .modal.confirm-modal{display:block;max-height:none;width:min(420px,calc(100vw - 32px));padding:var(--s5);border-radius:var(--r-panel);background:var(--panel);box-shadow:var(--shadow-pop)}
 .cf-title{margin:0 0 var(--s2);font-size:var(--fs-section);font-weight:var(--w-strong);color:var(--ink)}
 .cf-body{margin:0 0 var(--s5);font-size:var(--fs-body);line-height:var(--lh-body);color:var(--muted)}
@@ -299,6 +303,8 @@ textarea[aria-disabled="true"],input[aria-disabled="true"],select[aria-disabled=
 .sb-tab .badge{min-width:18px;height:18px;padding:0 5px;border-radius:var(--r-pill);background:var(--surface);color:var(--muted);font-size:var(--fs-cap);display:inline-flex;align-items:center;justify-content:center;font-variant-numeric:tabular-nums;font-weight:var(--w-strong)}
 .sb-tab.on .badge{background:var(--panel)}
 .sb-toggle{flex:none}
+/* Same spot open or collapsed: the collapsed rail centres it at 11.5 px, so the open bar matches. */
+body:not(.sb-collapsed) .sb-toggle{margin-left:3.5px}
 .sb-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 var(--s2) var(--s2)}
 .sb-pane{display:flex;flex-direction:column;gap:var(--s1)}
 .group-label{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);padding:var(--s3) var(--s2) var(--s1);font-size:var(--fs-cap);font-weight:var(--w-strong);letter-spacing:.04em;text-transform:uppercase;color:var(--faint)}
@@ -365,7 +371,8 @@ body.sb-collapsed .sidebar{align-items:center}
 .chip{display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:var(--r-pill);font-size:var(--fs-cap);font-weight:var(--w-strong);white-space:nowrap;flex:none;background:var(--chip-gray-bg);color:var(--chip-gray)}
 .chip.approved,.chip.done,.chip.pass{background:var(--green-bg);color:var(--green)}
 .chip.expected{background:var(--blue-bg);color:var(--blue-ink)}
-.chip.unexpected,.chip.check{background:var(--amber-bg);color:var(--amber)}
+.chip.check{background:var(--amber-bg);color:var(--amber)}
+.chip.unexpected{background:var(--unexp-bg);color:var(--unexp-ink);font-size:11px;font-weight:var(--w-medium)}
 .chip.not_done,.chip.fail{background:var(--red-bg);color:var(--red)}
 .chip.skipped{background:transparent;color:var(--faint);box-shadow:inset 0 0 0 1px var(--line)}
 .chip.draft{background:var(--blue-bg);color:var(--blue-ink)}
@@ -491,7 +498,7 @@ body.no-report .stage-scroller,body.no-report.mode-review .stage-scroller{--stag
 .draft-area.hl{box-shadow:inset 0 0 0 2px #2F80FF;background:rgba(47,128,255,.12)}
 .row-item.hl{background:var(--blue-bg)}
 .mark-box.hl{box-shadow:0 0 0 1px rgba(255,255,255,.75),0 0 0 4px rgba(47,128,255,.4)}
-.rv-grid{position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(to right,rgba(47,128,255,.13) 1px,transparent 1px),linear-gradient(to bottom,rgba(47,128,255,.13) 1px,transparent 1px)}
+.rv-grid{position:absolute;inset:0;z-index:2;pointer-events:none;background-image:linear-gradient(to right,var(--grid-line) 1px,transparent 1px),linear-gradient(to bottom,var(--grid-line) 1px,transparent 1px)}
 .mark-box{position:absolute;border:2px solid #D99A2B;border-radius:3px;pointer-events:auto;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.75)}
 .mark-box.expected,.mark-box.approved{border-color:#188951}
 .mark-box:hover{box-shadow:0 0 0 1px rgba(255,255,255,.75),0 0 0 4px rgba(47,128,255,.22)}
@@ -4110,8 +4117,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     var wantGrid = state.grid;
     if (wantGrid) {
       var step = Math.max(4, (state.gridSize || 8) * frameW / size.w);
-      grid.style.backgroundImage = 'linear-gradient(to right,rgba(47,128,255,.13) 1px,transparent 1px),' +
-        'linear-gradient(to bottom,rgba(47,128,255,.13) 1px,transparent 1px)';
+      grid.style.backgroundImage = 'linear-gradient(to right,var(--grid-line) 1px,transparent 1px),' +
+        'linear-gradient(to bottom,var(--grid-line) 1px,transparent 1px)';
       grid.style.backgroundSize = step + 'px ' + step + 'px';
     }
     frame.appendChild(grid);
