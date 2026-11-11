@@ -56,6 +56,35 @@ Branch: docs/windows-test from docs/readme at 9e5bf71bec8514de09c4dd5e937fa86845
 - Final scope is docs/WINDOWS-TEST.md and this handoff only. README, engine (including report.html), test settings, dependencies and release/hackathon are untouched. Push only docs/windows-test; no protected-branch push, PR, merge or deployment. Final pushed SHA is reported by git ls-remote in the chat.
 
 ## Previous task: Hackathon README and draft catalog
+## Current task: Merge auto-loop + readme, header theme toggle, small UI fixes
+
+Branch: `release/hackathon` (pulled, at 5c573c2). `docs/windows-test` is not touched.
+
+### Investigation
+- Remote refs: `feat/url-capture` d92bbaa ⊂ `feat/auto-loop` ab5f9e3 ⊂ `docs/readme` 9e5bf71; all branch from `stage-5e` 6bde560. Neither touches `engine/templates/report.html`.
+- Dry run (`git merge-tree`): only `docs/HANDOFF.md` conflicts, for both merges. README.md is unchanged on release/hackathon since 6bde560, so docs/readme's README comes in cleanly.
+- URL labels: `engine/url_capture.capture_pair` deliberately never writes the source URLs. Its docstring says "Source URLs and queries are never persisted in report metadata or logs", and Codex's HANDOFF repeats this as a privacy rule. `metadata.json` comes from `_metadata(executable, width, height, 0)` and `report.json` from the unchanged `build_report`; neither has a URL field. Showing labels would need an engine/schema change, which this task does not cover. Engine files may only change through the merges.
+
+### Plan
+1. `git merge origin/feat/auto-loop`, then `git merge origin/docs/readme` (merge commits). On the HANDOFF conflict, keep every section in this order: this task, the engine/README sections, then the older UI sections. Run the full suite after each merge.
+2. URL labels: not built. The UI cannot show what the report does not contain, and inventing a field would be a fake feature. Proof: run a real capture-pair on two local pages and show that report.json/metadata.json contain no URL. Open question for Ilham: allow the engine to store the URLs (privacy trade-off), or leave labels out.
+3. Header: the gear next to Copy prompt becomes a light/dark toggle (sun in light, moon in dark, aria-pressed = dark, rotate/fade swap, off under reduced motion). It saves `prefs.theme`; "System" resolves to an explicit light/dark on the first click; Appearance stays in sync. Editable shortcut `theme.toggle`. Settings stays reachable through Ctrl+,, the palette, and a visible entry (the sidebar footer already has a "Settings" button on desktop; check the phone menu).
+4. About: remove the two credit lines. Data & privacy: reset description mentions the General settings.
+5. README: the Content check row becomes implemented (pixel-only, looks removed/added/changed, no OCR); font licenses stay.
+
+### Status
+- Plan written (286d2cb).
+- Step 1 done: two merge commits. `829de8f` merges origin/feat/auto-loop and `9e8c70c` merges origin/docs/readme. Each had one conflict, in docs/HANDOFF.md. I kept every section in order (this task, Codex docs/readme, Codex auto-loop, Codex URL capture, older UI sections) and checked that no line from either side was lost. `merge-base --is-ancestor`: feat/auto-loop, feat/url-capture and docs/readme are all ancestors of release/hackathon. engine/templates/report.html is unchanged by the merges. Full suite after each merge: 182 tests, 169 passed, 6 failed, 7 errors. All 13 are system-browser capture tests: the same 5 failures and 7 `tests/test_browser.py` errors as before, plus `test_serve_cli::test_http_report_can_read_adjacent_image_pixels`, where `google-chrome --headless --dump-dom` hangs in this container even on `data:` URLs.
+- Step 2 (URL labels): not built. Proof: I ran the real `engine.url_capture.capture_pair` on two local pages (`http://127.0.0.1:8766/a.html?token=secret123` and `/b.html`), replacing only the per-page `capture` with Playwright screenshots, because the engine's own Chromium launch keeps the browser sandbox and cannot start here. The report was a real one: status check, 3 boxes. report.json keys: boxes, ignore_regions, images, meta, name, schema_version, size, status, summary. metadata.json keys: browser, created_at, os, tolerance, viewport. Neither file, nor report.html, contains the host, the page names or the query. This matches Codex's privacy rule. To show labels, the engine must store the URLs; that is Ilham's decision, not part of this UI task.
+- Step 3 done: header theme toggle. `#themeBtn` replaces the gear next to Copy prompt. It shows a sun in light and a moon in dark (new `i-moon` sprite symbol), with `aria-label` "Dark mode", `aria-pressed` = dark, and a tooltip of "Switch to dark mode" or "Switch to light mode" plus the key. The swap rotates and fades both icons and is off under reduced motion. `toggleTheme()` calls the existing `setTheme`, so `prefs.theme` is saved and Appearance and the phone More menu stay in sync. From "System" the first click sets the opposite of what is showing, explicitly. `applyTheme` refreshes the icon, so Appearance changes and OS theme changes while on System update it too. Shortcut `theme.toggle` = Shift+D (General group, editable, no conflict, ignored while typing). Palette: "Switch to dark/light mode". Settings stays reachable: Ctrl+, ; palette "Open settings"; visible "Settings" button in the sidebar footer on desktop (`#settingsBtn2`, an icon button when collapsed); on phones the More (⋯) menu → Settings. Phone header: the toggle sits in its own 44 px column before Copy prompt and More.
+- Step 4 done: the About credits block is gone (both lines and its CSS); logo, tagline, version, steps, facts and links are unchanged. The Data & privacy Reset description now reads "All settings, including General: open-in mode, quick phrases, Verify after copy." It fits the 2-line clamp next to the button (the column is about 318 px wide). Theme test 86/86 (toggle icons, aria, reload, sync, System, OS change, Shift+D outside/inside a field, rebind to Alt+T, reduced motion, Settings access, About, reset text; 1440 and 390, light and dark; 0 JS errors).
+- Step 5 done: in the README feature table, the Content check row now describes the implemented release UI feature: looks removed / looks added / changed, pixels only, no OCR, missing content first, Revert request. The TODO is gone. Nothing else in README changed (1 line). The font licenses stay in the license section: Montserrat and JetBrains Mono, SIL OFL 1.1, linked to licenses/*.txt (both files exist).
+- Checks: Copy prompt byte-identical; theme 86/86, General 24/24, About 63/63 (no credits), Content check 85/85, shortcuts 35/35 (23 rows), Settings 168/168, rebinding 92/92, refactor 12/12 (tooltips now on the sidebar Settings button and the theme toggle), read-only 36/36, Verify 86/86, typing 48/48, engine requests 8/8, sidebar toggle 20/21 (known 3.5 px offset). Test helpers that clicked the removed gear (`#settingsBtn`) now use the sidebar Settings button, or More → Settings on phones. Full suite: 182 tests, 169 passed, 6 failed and 7 errors, all system-browser capture tests (see step 1).
+
+### Next
+- URL labels: Ilham to decide whether the engine may store the before/after URLs (e.g. a `source` block in report.json with the query stripped). That is an engine/privacy change. Once a field exists, the UI labels are a small template change.
+
+## Previous task: Hackathon README and draft catalog (Codex, docs/readme)
 
 Branch: docs/readme from feat/auto-loop at ab5f9e3e836e6a49786e2920fea30ce14edfb36e.
 
@@ -83,7 +112,7 @@ Branch: docs/readme from feat/auto-loop at ab5f9e3e836e6a49786e2920fea30ce14edfb
 - Demo repeat check hit the existing bounded search deadline. Its CLI syntax/source is verified, but current-session repeatability is not. README states the timing limitation. Native Hermes admission validation, final combined pin, video under 90 seconds, final-release screenshots, Content check confirmation and future PR disclosures remain explicit TODOs.
 - Changes are limited to README.md, docs/catalog/orphic-eyes.yaml and this handoff. No new screenshots, engine/UI edits, dependency changes, upstream PRs, merges or deployments. Publish only docs/readme; final remote SHA is verified in the chat's push result.
 
-## Previous task: Local report server and Hermes-driven auto loop
+## Previous task: Local report server and Hermes-driven auto loop (Codex, feat/auto-loop)
 
 Branch: `feat/auto-loop`, from pushed `feat/url-capture` at `d92bbaa83782cbbc8300ee54bde7dbe427c38e93`.
 
@@ -251,6 +280,167 @@ Verified CLI result: exit 1 (`check`, a successful comparison requiring review),
 - The capture timeout covers DNS/startup/navigation/network-idle/wait/screenshot, with bounded process cleanup. Pair preflight and each of its two captures are bounded separately. Avoid concurrent writes to the same target. Successful capture/report files stay local; the guard/profiles/browser processes are temporary and cleaned up.
 - `hermes plugins validate` was unavailable (Hermes CLI not installed). Existing repository manifest/registration/schema/isolated-import and real adapter tests passed. No live Hermes host or Windows run is claimed.
 - `engine/templates/report.html` and every other UI file are unchanged; template SHA-256 remains `e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2`. Diff thresholds, limits, report schema and dependency manifests are unchanged. Commits are local on `feat/url-capture`; nothing was pushed, merged or deployed.
+
+## Previous task: Settings General + About
+
+Branch: `release/hackathon` (pulled, at b2560d2, after the Content check commits). Only `engine/templates/report.html` + this file.
+
+### Plan
+1. General gets only settings that change real behavior, stored in `orphic-eyes.prefs.v1` (added to `PREF_DEFAULTS`, type-checked in `loadPrefs`, so Reset preferences restores them):
+   - Getting started: Quick tour (kept), Keyboard shortcuts (opens the Shortcuts tab).
+   - When a report opens: `defaultMode` Review / Move / Add — applied in `loadReport()` whenever a report opens (embedded report, Load images, Try sample, Load report). Default Review = today's behavior.
+   - Requests: `quickPhrases` on/off — hides the Quick phrases chips under the Move note and the Add description; `verifyAfterCopy` on/off (default off) — Copy prompt opens Verify after a successful copy. The copied text is unchanged.
+   - Not added, on purpose: "Default precision" already exists in Canvas → Move and Add (one control, not two; other tabs stay unchanged). "Confirm before clearing requests": this build has no clear-all action, so the switch would be fake.
+2. About: header (logo cloned from the app header, "Orphic Eyes", tagline "Gives Hermes eyes for visual review.", "Version dev" — no real version exists), tinted header from tokens; 4 steps Compare / Point / Request / Verify with sprite icons; fact chips; links (GitHub repo in a new tab, Keyboard shortcuts, Quick tour); credits. Light/dark, reduced motion, phone layout.
+
+### Status
+- Plan written (849b233).
+- Step 1 done: General has three groups. Getting started: Quick tour, Keyboard shortcuts (switches to the Shortcuts tab). When a report opens: Open in Review / Move / Add (`prefs.defaultMode`, applied at the end of `loadReport()` when a report is present, so the embedded report, Load images, Try sample and Load report all use it; Review = unchanged behavior). Requests: Quick phrases (`prefs.quickPhrases`, hides `chipBlock` under the Move note and the Add description, live), Open Verify after copying (`prefs.verifyAfterCopy`, default off; after a successful Copy prompt, opens Verify if no other dialog is open; copied text unchanged). All three in `PREF_DEFAULTS`, type-checked in `loadPrefs` (bad values fall back), restored by Reset preferences. General test 24/24, Copy prompt byte-identical.
+- Step 2 done: About card. Tinted header (radial bronze + blue wash from tokens over `--st-surface`, right in light and dark) with the header logo cloned at runtime (ids stripped, so no duplicate ids), "Orphic Eyes", tagline "Gives Hermes eyes for visual review.", "Version dev" (`SETTINGS_VERSION`, no real version exists). How it works: 4 cards Compare / Point / Request / Verify with sprite icons (changes, select, requests, check), 4 columns on desktop, 2×2 on phones. Fact chips: Pixels only, never page code · Works offline · Exact 2 px / Approx 8 px · Up to 8 requests (from `MAX_REQUESTS`). Links: GitHub repository (plain `<a target=_blank rel=noopener noreferrer>`, no fetch), Keyboard shortcuts (switches tab), Quick tour. Credits line. Entry motion uses existing keyframes and is off under reduced motion. About test 63/63 (1440 + 390, light + dark, 0 network requests, 0 JS errors).
+- Checks: General 24/24, About 63/63, Copy prompt byte-identical, Content check 85/85, Settings 168/168 (its "no new pref keys" check now allows the three new keys), shortcuts 35/35, rebinding 92/92, refactor 12/12, read-only 36/36, Verify 86/86, typing 48/48, engine requests 8/8, sidebar toggle 20/21 (known 3.5 px offset). pytest: 113 passed, same 5 Edge-capture failures, `tests/test_browser.py` 7 errors (no Edge).
+
+### Next
+- Optional: the Data & privacy reset description still lists "theme, text size, panels and canvas options"; it now also resets the General options (not changed here, other tabs were out of scope).
+
+## Previous task: Content check view
+
+Branch: `release/hackathon` (pulled, at aa8f14c). Only `engine/templates/report.html` + this file. No other branch merged.
+
+### Plan
+1. Revert requests (needed for "Create Revert request"): the prompt builder already knows `revert` ("Make it look like the Before screenshot again."), the UI did not create them. Add `state.revertDrafts` (ids RV-n): counted in `requestCount()` (8-request limit), sent by Copy prompt after Moves and Adds, listed in Requests with delete + Undo, part of undo snapshots, checked by Verify through the existing revert check. With no revert requests the Copy prompt text is unchanged.
+2. Content check: a "Content check" toggle in the Changes heading (there is no All/Unexpected/Approved filter in this build; the heading next to the area-map filter is the nearest place). For each changed area, pixel-only:
+   - local background = per-channel median of a 6 px ring just outside the box, per image;
+   - "detail" (ink) = share of box pixels whose largest channel difference from that background is > 32;
+   - Looks removed: Before ink ≥ 6% and After ink ≤ 1.5%; Looks added: the reverse; otherwise Changed.
+   Summary "N content changes: a looks removed, b looks added, c changed."; order removed → added → changed; each item has Before/After crops, zone, size, a short reason and "Create Revert request" (or "Copy note" when the 8-request limit is reached). No OCR, never names text.
+3. Shortcut `content.check` (Shift+C, editable, ignored while typing). Mobile: the list stacks in the sheet, crops share the width.
+
+### Status
+- Plan written (f61e622).
+- Step 1 done: revert requests. `state.revertDrafts` (RV-n) count toward the 8-request limit (`requestCount()`), Copy prompt lists them after Moves and Adds as `[Revert] <zone> area — … Make it look like the Before screenshot again.`, Requests shows them with delete + Undo, undo/redo snapshots include them, Verify checks them with the existing revert check (Round 2 vs Before). Copy prompt with no reverts: byte-identical. Rebinding 92/92, Verify 86/86.
+- Step 2 done: Content check view. Toggle "Content check" (aria-pressed) in the Changes heading; the Changes list then shows the summary, a one-line "pixels only, no text reading" hint and one card per area (chip, zone, size, Before/After crops — clicking them selects the change on the picture — the reason with both detail percentages, and the action). Thresholds as in the plan (ring 6 px, channel difference > 32, detail ≥ 6 %, plain ≤ 1.5 %). Action: "Create Revert request"; "Revert request added · RV-n" (disabled, says why) when one exists for that area; "Copy note" when 8 requests are reached. Results are computed once per report (crops are blob URLs, revoked when recomputed). A report opened from disk that cannot read its own pixels shows that message instead of results. Lumen: Bottom right (Contact) = Looks removed, listed first; the other 5 = Changed.
+- Step 3 done: shortcut `content.check` = Shift+C (Navigation group, editable in Settings → Shortcuts, no conflict, ignored while typing). It switches the view and shows the Changes list (opens the sidebar / the phone sheet on Changes). Command palette: "Content check" / "Show all changes". The toggle's tooltip shows the current key.
+- Checks: Content check suite 85/85 (Lumen order + counts at 1440 and 390, light and dark; crops; Create Revert request, no duplicate, 8-limit → Copy note, Undo, delete row, prompt text, Verify revert = Pass vs a Before-identical Round 2; Shift+C outside vs inside a field; rebinding to Alt+C; disk-opened engine report shows the honest message; 0 JS errors). Copy prompt byte-identical; shortcuts 35/35 (now 22 rows), Settings 168/168, rebinding 92/92, refactor 12/12, read-only 36/36, Verify 86/86, typing 48/48, engine requests 8/8. pytest: 113 passed, same 5 Edge-capture failures, `tests/test_browser.py` 7 errors (no Edge).
+
+## Previous task: Merge feat/url-capture + Content check view — STOPPED
+
+Branch: `release/hackathon` (pulled; at 3800d4f, up to date with origin).
+
+### Status
+- Stopped at step 1, as the task asks: `origin/feat/url-capture` does not exist. `git ls-remote --heads origin` (checked 2026-11-11 17:44 +07) lists only: assets/lumen-sample, feat/add-action, feat/add-reference, feat/copy-prompt, feat/copy-targets, feat/flow-clarity, feat/fonts, feat/helper-chips, feat/load-images, feat/lumen-sample, feat/micro-animations, feat/mobile-fixes, feat/settings-prefs, feat/settings-redesign, feat/shortcut-rebind, feat/verify-loop, feat/visual-fixes, fix/sidebar-toggle, release/hackathon, stage-5e, ui-overhaul. No branch with "url" in its name, locally or on GitHub.
+- Nothing merged, no UI work started (URL labels and Content check depend on what url_capture writes to the report metadata).
+
+### Next
+- When Codex pushes `feat/url-capture`: `git merge origin/feat/url-capture` into release/hackathon (keep both HANDOFF sections on conflict), run the full suite, then plan and build URL labels + Content check (report.html + this file only).
+
+## Previous task: release/hackathon (stack + stage-5e, one merge)
+
+Branch: `release/hackathon` (from `feat/lumen-sample` at 3abf08d), then `git merge origin/stage-5e` (merge commit, no rebase). No PR, nothing pushed to `stage-5e` or `main`. `feat/url-capture` is not touched.
+
+### Investigation
+- Merge-base of `feat/lumen-sample` and `origin/stage-5e`: **61327c5** "docs: HANDOFF for settings redesign" (the tip of `feat/settings-redesign`). PR #1 merged `fix/sidebar-toggle` (branched from there) into stage-5e, which pulled the stack up to settings-redesign into stage-5e.
+- Commits on stage-5e not in feat/lumen-sample:
+  - `ad131f1` Fix: sidebar collapse button ignored mouse clicks — `engine/templates/report.html` (7+, 5-).
+  - `6bde560` Merge pull request #1 from Ilham-Musyafa/fix/sidebar-toggle — the merge itself. Against its first parent (old stage-5e `fb57926`) it brings in the stack (report.html, README.md, docs/HANDOFF.md, licenses/*, docs/screenshots/*); against `ad131f1` it changes nothing (`git diff ad131f1 6bde560` is empty).
+- Old stage-5e (`fb57926` "docs: link the Apache license text") is already an ancestor of feat/lumen-sample, so stage-5e has no other own work.
+- Every stack branch is an ancestor of feat/lumen-sample (`git merge-base --is-ancestor origin/<b> feat/lumen-sample` = yes, local = origin): ui-overhaul 5ef916f, feat/copy-targets 2cd2104, feat/add-action 6329be2, feat/helper-chips d34fe0a, feat/settings-prefs b5fb078, feat/fonts 917cda6, feat/copy-prompt 578f076, feat/micro-animations 17038f5, feat/load-images dc3b476, feat/add-reference a9ac1c4, feat/flow-clarity 3b4b36e, feat/visual-fixes 38b9b97, feat/mobile-fixes 0fbfaec, feat/settings-redesign 61327c5, feat/shortcut-rebind a5fe92b, feat/verify-loop 68d04c5, feat/lumen-sample 3abf08d. None missing.
+- Dry run (`git merge-tree --write-tree feat/lumen-sample origin/stage-5e`): one conflicted file, `engine/templates/report.html`. The stage-5e side is exactly `ad131f1`, which the stack already carries as `a5fe92b` (same fix, adapted to the `data-sc` shortcut tooltips and the rebindable key in the label).
+
+### Plan
+1. Merge `origin/stage-5e` into `release/hackathon`; resolve report.html hunk by hunk keeping the stack version where it already contains the stage-5e fix.
+2. Re-verify: ancestry for both branches, dry-run merge of release into stage-5e, conflict-marker grep, test suite, all earlier browser checks, Copy prompt byte identity vs feat/lumen-sample.
+
+### Status
+- Merge done: `fabb9ac` Merge origin/stage-5e into release/hackathon. Two conflict hunks in report.html, both resolved to the stack side (it already contains the stage-5e fix as `a5fe92b`):
+  1. `#sbToggle` markup — stage-5e: `aria-label="Collapse sidebar · Ctrl+B"`, `data-kbd="Ctrl+B"`; stack: `data-sc="panel.sidebar"`. Kept stack: `data-kbd` is no longer read by the tooltip code, and `renderSidebarToggle()` sets the label with the current key at start-up.
+  2. `applyPanels()` — stage-5e: inline label code with a fixed "Ctrl+B"; stack: `renderSidebarToggle()` (same attributes, key from the user's binding, refreshed after a rebind). Kept stack.
+  The click-handler half of the fix merged cleanly (identical on both sides). The merged tree equals `feat/lumen-sample`'s tree; README, licenses, screenshots and HANDOFF from stage-5e were already identical in the stack.
+- Proofs: `merge-base --is-ancestor` feat/lumen-sample → release = yes, origin/stage-5e → release = yes. `git merge-tree --write-tree origin/stage-5e release/hackathon` exit 0 (no conflicts); local dry-run `git merge --no-commit --no-ff release/hackathon` on a stage-5e worktree: "Automatic merge went well", 0 unmerged files (aborted, nothing pushed). Conflict-marker grep in changed files and in engine/, tests/, README, HANDOFF: none.
+- Checks: Lumen pixel proof 2/2 (0 differing bytes), Try sample 6 areas, Verify 86/86, typing guard 48/48, engine request types 8/8, shortcuts 35/35, rebinding 92/92, rebind refactor 12/12, read-only 36/36, Settings 168/168, mobile 64/92/68/84, sidebar toggle 20/21 (the known 3.5 px rail offset), Load images and Add reference outputs identical to feat/lumen-sample, flow/motion 0 errors, main app pixel-identical (desktop 18/18, phone 14/14), Copy prompt byte-identical. Tests: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge). `/orphic doctor`: all ✓ (Python 3.13, Pillow 12.3, data dir, engine importable, Chrome).
+
+### Next
+- UI polish (Prompt B)
+
+## Previous task: Lumen sample + typing-safe shortcuts
+
+Branch: `feat/lumen-sample` (from `feat/verify-loop` at 68d04c5). Files: `engine/templates/report.html`, `samples/lumen/*` (from `assets/lumen-sample` f2e09b7), this file.
+
+### Plan
+1. Bring `samples/lumen/before.png` / `after.png` in with `git checkout f2e09b7 -- samples/lumen/`. Embed both in the template as lossless WebP (PNG if that fails), replace the Tidyday data and file names, and prove the embedded images decode to the same pixels as the PNGs (hash of decoded RGBA, in Python and in Chrome). Check the in-browser diff marks only the 6 intended changes.
+2. Shortcuts: one rule in the app keydown handler — while focus is in input / textarea / select / contenteditable, no shortcut fires except Esc (today single keys are blocked but Shift+key combos such as Shift+V are not).
+3. Re-run Verify on Lumen (Round 2 with one fixed and one unfixed request), the earlier suites, update tests/helpers that used Tidyday.
+
+### Status
+- Step 1 done: `samples/lumen/` brought in from f2e09b7. Try sample embeds both as lossless WebP (Pillow `lossless=True, method=6`): before 209,403 → 83,212 bytes, after 207,967 → 82,652 bytes. Decoded pixels are identical to the PNGs: Python RGBA bytes equal (sha256 before 7d4a7e4b…, after 5acbc8f3…), and in Chrome canvas RGBA of PNG vs embedded WebP differ in 0 of 5,184,000 bytes for each image. Tidyday data and names removed (0 matches for "tidyday" in report.html); sample files are named lumen-before.webp / lumen.webp, page name "lumen". report.html 527,765 → 724,883 bytes.
+- In-app diff on Lumen: exactly 6 areas — Top left 126×55 (headline word), Top right 50×12 (About → Journal), Middle left 160×44 (CTA teal → terracotta), Middle right 70×24 (badge moved), Bottom center 99×62 (card icon + title, one cluster), Bottom right 60×11 (Contact missing). Status "Check changes".
+- Step 2 done: one rule in the app keydown handler — while focus is in a text input, textarea, select or contenteditable (`isTypingTarget`), no shortcut fires; only Esc keeps working (it is handled before). Buttons, checkboxes, radios, range sliders and file pickers are not typing targets, so shortcuts still work after clicking them. Typing "Very Valid 123 V" in the Move note types it (no Verify, no mode switch, Ctrl+Z / Ctrl+B left to the field); Shift+V outside fields still opens Verify.
+- Verify on Lumen: Round 2 made with PIL from `samples/lumen/after.png` — request 1 (Try it free, 80,388 160×44, move +40 px right) copied exactly to its target with its old place filled with the page background → Pass; request 2 (Journal nav, 1172,24 72×24, move 16 px left) left as is → Fail "Still at its old place"; Add request → Needs your eyes; grey bar 80,858 300×30 over the footer text → Unexpected (Bottom left); the same image at 1440×960 → size message, no results.
+- Checks: Verify on Lumen 86/86 (1440 + 390, light + dark), typing guard 48/48, engine request types 8/8, shortcuts 35/35, rebinding 92/92, Settings 168/168, mobile 64/92/68/84, main app pixel-identical to `feat/verify-loop` (desktop 18/18, phone 14/14), Copy prompt text byte-identical for the engine report. Load-images/reference scripts differ only by the sample (6 areas, page "lumen", Lumen coordinates). Tests: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge); no repo test referenced Tidyday. 0 JS errors.
+- report.html: 527,765 bytes (feat/verify-loop) → 725,414 bytes (+197,649, the two 83 KB WebP images as base64).
+
+### Next
+- UI polish (Prompt B)
+
+## Previous task: Verify loop (Round 2 check)
+
+Branch: `feat/verify-loop` (from `feat/shortcut-rebind` at a5fe92b). Only `engine/templates/report.html` + this file. No engine changes.
+
+### Plan
+- What gets verified: the requests Copy prompt sends (Move and Add drafts, drawn on the After image) plus requests that came with an engine report (move / revert / hide / comment, `from`/`to` drawn against Before).
+- Entry: "Verify" button in the Requests panel (desktop list footer, phone sheet footer), a command palette item and a new editable shortcut `verify.open` (Shift+V, no overlap with existing bindings). Disabled with a reason until a request exists.
+- Round 2 loads in the Verify dialog with the same rules as Load images (drop, choose, paste; PNG/JPG/WebP, 20 MB, 8000 px). Size must equal the After image, otherwise a clear message and no results.
+- Pixels come from the report's own Before/After (blob or relative paths). If the browser blocks reading them (file:// pages from the engine), Verify says so and shows no results — never guesses.
+- Checks (pixel-only):
+  - Move: template-match the element (After crop for drafts, Before crop for engine moves) in Round 2 around the target, within the request's precision (2 / 8 px). Pass when found at the target and not still at the old place; Fail when still at the old place or found off-target within 48 px; Unclear when not found, ambiguous, or the area is too plain.
+  - Revert: exact pixel diff of the area, Round 2 vs Before, under 5% → Pass, else Fail.
+  - Hide: area vs the image it was drawn on: under 5% different → Fail (still there); 30%+ and the element not found nearby → Pass; otherwise Unclear.
+  - Comment / Add: "Needs your eyes", never Pass.
+  - Each result: After vs Round 2 crop + one plain reason.
+- Unexpected: exact diff After vs Round 2 outside every request area; 3×3 zones with 5%+ changed are listed with a crop.
+- Follow-up prompt: same general format; only Fail/Unclear requests + unexpected zones ("Please restore"); shown in the existing preview dialog (parametrised; the normal Copy prompt text stays byte-identical).
+- Rounds: counter + in-memory history; "Use Round 2 as new After" rebuilds the comparison Before vs Round 2 and archives this round's requests.
+
+### Status
+- Step 1 done: Verify dialog (Requests panel "Verify fixes" link, phone sheet "Verify" button), Round 2 by drop / choose / paste with the Load images rules, size check (clear message, no results), per-request checks (Move / Revert / Hide / Comment / Add) with After vs Round 2 crops and one reason each. - Step 2 done: unexpected changes. After vs Round 2 with the existing exact-pixel rule, outside every request area (padded 16 px; moves block both old and target places), counted per 3×3 zone; a zone at 5%+ is listed as "Unexpected change" with a crop; smaller changes are summed in one note. - Step 3 done: "Copy follow-up prompt" builds the same general format (Page line, numbered items with the usual per-type lines, "Last check: …", "Please restore (n)" for unexpected zones, same Rules), only Fail/Unclear items + unexpected changes. It opens in the existing preview dialog (`openPromptPreview(custom)`; no argument = the normal preview, unchanged) and copies exactly the previewed text. - Step 4 done: rounds + shortcut. "Use Round N as new After" archives this round (summary per round, in memory), clears this round's requests and undo history, and rebuilds the comparison Before vs the checked screenshot; the next Verify is "Round N+1" and lists earlier rounds. Shortcut `verify.open` = Shift+V (editable, no overlap with existing bindings), palette item "Verify fixes" (only when something can be verified), tooltip on the Requests link. Phone: dialog full screen, results stack (crops under the reason), 44px buttons, one Close (top left).
+- Test Round 2 (made with PIL from the Tidyday After, `mkround.py` in the session scratchpad): request 1 (Start free trial, 96 px left) copied exactly to its target and its old place filled with the page background → Pass; request 2 (Help, 16 px left) left as is → Fail "Still at its old place"; a grey footer bar at 80,498 300×31 → Unexpected in Bottom left (12.9%); the same image resized to 960×600 → size message, no results. Engine-style report with move / revert / hide / comment served from 127.0.0.1: Pass / Pass / Pass / Needs your eyes; with After unchanged: revert Fail, hide Unclear. Opened from file:// the page can't read its pixels → clear message, no results.
+- Checks: Verify acceptance 86/86 (1440 + 390, light + dark), engine types 8/8, rebinding 92/92, Shortcuts 35/35 (21 rows), Settings 168/168, mobile 64/92/68/84, Load images / Add reference / flow / motion unchanged. Copy prompt text byte-identical (promptchk vs saved output). Main app pixel-identical to `feat/shortcut-rebind` except the new "Verify fixes" link (desktop Requests list) and "Verify" button (phone Requests sheet). Tests: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge). 0 JS errors.
+- Screenshots: `docs/screenshots/verify-loop/`.
+
+### Not done / limits
+- Move is a template match (sampled pixels within 24 per channel, 95% must agree). It can't verify resizing, restyling or an element that also changed its look; plain areas, repeated patterns and elements that also match their old place are Unclear.
+- Hide can only say the area changed a lot and the element isn't within 16 px; "changed to something else" can look the same as "hidden" — reason text says what was measured.
+- Unexpected changes use 3×3 zones with the 5% rule, so a small change inside a large zone is only counted in the note.
+- Engine reports opened from disk (file://) can't be verified (browser blocks reading the pixels); served pages and Load images work.
+- Starting the next round clears this round's requests (their coordinates belong to the old After) and the undo history; history is a summary only, in memory.
+
+### Next
+- UI polish (Prompt B)
+
+## Previous task: Rebindable keyboard shortcuts
+
+Branch: `feat/shortcut-rebind` (from `feat/settings-redesign` at 61327c5). Only `engine/templates/report.html` + this file. Note: the sidebar-toggle click fix lives on `fix/sidebar-toggle` and is not in this branch.
+
+### Plan
+1. Refactor, no behaviour change: `SHORTCUTS` entries get `id`, `when` (global / move / add / moveadd / drag), `editable` (Esc, Tab locked; hold gestures Space + Shift locked too). Bindings are strings in one order, `Ctrl+Alt+Shift+Key` ("Ctrl" = Ctrl or ⌘). `getBinding(id)` = `prefs.shortcuts[id]` (string or null) else default. One `matchShortcut(event, ids?)` does every key comparison: app shortcuts plus a fixed, unlisted `WIDGET_KEYS` table for list/menu/slider/tab navigation (arrows, Home/End, Enter). One `formatKeys(id)` feeds tooltips (`data-sc` instead of literal `data-kbd`), the command palette, the Help menu and the Shortcuts tab. Prefs: `shortcuts: {id: "Ctrl+Shift+K" | null}`, only changed ids.
+2. Shortcuts tab: keycap button + ✎, lock icon for locked rows, "Edited" dot + ↺ reset (toast with Undo), record mode ("Press new keys…", live preview, Esc/click outside cancels, all shortcuts paused), validation (modifier alone, bare letter/number, browser combos, reserved keys), conflicts (only when `when` overlaps) with Cancel/Replace, "Reset all shortcuts" with confirm; Reset preferences also clears shortcuts.
+3. Touch or <640px: read-only + callout; record field is a button with aria-pressed; validation messages aria-live="assertive"; Esc while recording only cancels.
+
+### Status
+- Step 1 done (refactor). Every key comparison is in `eventBinding()` / `matchShortcut()`; tooltips use `data-sc`, palette/Help/Shortcuts tab use `formatKeys()`. Shortcuts tab now also lists "Redo (second key)" Ctrl+Y and "Move between controls" Tab (locked) — both existed already. Small change: matches are exact now, so extra modifiers no longer trigger (e.g. Ctrl+Shift+K used to open the palette; Shift+V used to pick Select). Widget navigation keys (arrows, Home/End, Enter, Esc, Tab) still ignore extra modifiers as before.
+- Step 2 done (record mode, validation, conflicts, reset). Keycap = button (✎ on hover/focus); locked rows show a lock with "This shortcut can't be changed"; edited rows show a blue dot + "Edited" + ↺ ("Reset to {default}", toast "Shortcut reset · Undo" 5 s). Record field "Press new keys…" (2px blue, "Esc to cancel", live preview); recorder listens on window in capture phase and stops every key, so app shortcuts and Settings' Esc are paused. Rejects: modifier alone, bare letter/number (unless the default is a single key), browser combos, Esc/Tab/Enter/Space alone. Conflicts only when contexts overlap (move vs add don't); Cancel / Replace (other → Not set); a conflict with a locked shortcut is rejected. "Reset all shortcuts" asks in an inline alertdialog; Reset preferences clears shortcuts too. Success flashes blue 600 ms and is announced.
+- Step 3 done. Touch screens (hover: none) or width < 640px: list is read-only (no ✎, no record, no ↺, no Reset all), callout "Keyboard shortcuts work with a physical keyboard. Change them on a computer."; Edited still shown. Record field is a button with aria-pressed; validation and conflict messages go to an aria-live="assertive" region, success to a polite one; Esc while recording (or on the conflict question / Reset-all confirm) only cancels that, Settings stays open. Closing Settings or switching tab ends recording.
+- Checks: rebinding 92/92, refactor/widget keys 12/12, read-only 36/36, Settings 168/168, Shortcuts search 35/35, mobile 64/92/68/84, main app pixel-identical to `feat/settings-redesign` (desktop 18/18, phone 14/14), Copy prompt text identical. Tests: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
+- grep `event.key|keyCode|.which|event.code|ctrlKey|metaKey|altKey|shiftKey` → only inside the shortcut core (`heldModifiers`, `eventBinding`, `matchShortcut`).
+- Screenshots: `docs/screenshots/shortcut-rebind/`.
+
+### Not done / open
+- Matching is exact now: extra modifiers no longer trigger an app shortcut (Ctrl+Shift+K used to open the palette, Shift+V used to pick Select, Shift+Space used to hold Hand). Widget navigation keys still ignore extra modifiers.
+- Hand (Space, hold) and Axis lock (Shift, hold) are locked like Esc/Tab: they are hold gestures, not presses.
+- Browsers never pass some combos to the page (e.g. Ctrl+W in Chrome), so the browser message shows only where the page can see the key.
+- Not tested in Edge or on a real Mac; the sidebar-toggle click fix (`fix/sidebar-toggle`) is not on this branch.
+
+### Next
+- UI polish (Prompt B)
 
 ## Previous task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
 
