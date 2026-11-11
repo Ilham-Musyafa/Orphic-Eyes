@@ -722,8 +722,6 @@ body.insp-closed .inspector{border-left:0}
 .ab-links a{text-decoration:none}
 .ab-links a:hover{text-decoration:underline;text-underline-offset:3px}
 .ab-ext{font-size:.9em;opacity:.8}
-.ab-credits{padding-top:12px;border-top:1px solid var(--st-line)}
-.ab-credits p{margin:0;font-size:var(--fs-sec);line-height:1.6;color:var(--st-muted)}
 @media (max-width:639px){
   .ab-hero{padding:16px;flex-wrap:wrap}
   .ab-steps{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -6658,7 +6656,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         resetPreferences();
       }, 'st-btn-danger' + (resetArmed ? ' armed' : ''));
       pane.appendChild(stGroup('Danger zone', [
-        stRow('reset', 'Reset preferences', 'Theme, text size, panels and canvas options go back to their defaults.', reset)
+        stRow('reset', 'Reset preferences', 'All settings, including General: open-in mode, quick phrases, Verify after copy.', reset)
       ], 'st-danger'));
     } else if (tab === 'shortcuts') {
       pane.appendChild(shortcutList());
@@ -6742,11 +6740,6 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     tour.addEventListener('click', function () { closeLayer(true); startTour(); });
     links.appendChild(tour);
     wrap.appendChild(links);
-
-    var credits = el('div', 'ab-credits');
-    credits.appendChild(el('p', null, 'Built by Ilham Musyafa for the Hermes Agent Plugin Hackathon.'));
-    credits.appendChild(el('p', null, 'Fonts: Montserrat, JetBrains Mono (OFL).'));
-    wrap.appendChild(credits);
     return wrap;
   }
   function renderSettingsPanel(modal) {
