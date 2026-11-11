@@ -10,7 +10,8 @@ Branch: `release/hackathon` (pulled, at effa230). Only engine/templates/report.h
    - Finding: Ctrl/Cmd + scroll zoom did not exist yet (no wheel handler; the only zoom shortcut is `0` = Fit). I am adding it on the stage (×1.1 per notch, clamped 10–400 %, page zoom not hijacked elsewhere), so the request's "keeps working" holds. The `0` shortcut, palette entries and status bar stay in sync through the same `setZoom`.
 
 ### Status
-- Plan written.
+- Plan written (387f543).
+- Step 1 done: `fitTags()` runs after every Move/Add overlay paint, once more after renderStage (rAF, after scroll restore), and on stage scroll (rAF-throttled). Visible area = move frame ∩ scroller client box, inset 2 px. Obstacles: the "Selected area" chip, the snap chip, and the floating bars (`#canvas > .float`: view bar, tool dock, zoom pill). Order: flip across the guide line (marginTop −11 → below; marginLeft 34 → left), clamp, then step to the nearest free visible spot (below/above/right/left of what it hits). Only `style.translate` changes. Label test: 5 edge cases (top, left, bottom, right, top-left) × Fit/100%/200% × scroll start/edge × 1440 and 390 × light/dark = 604/604. Every label is fully inside the visible frame, with no overlap with other labels, the chip or the floating bars, no truncation, and texts identical to the pre-fix build for the same gestures. Pre-fix build on the same run: 76 labels hidden; now 0.
 
 ## Previous task: Details panel always reachable + snap to element
 

@@ -2433,6 +2433,77 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     return node;
   }
 
+  /* Keep every guide label readable: inside the part of the frame that is on screen
+     (so never under the rulers, which sit outside the frame, at any zoom or scroll).
+     A label first flips to the other side of its guide line, then is clamped, then
+     is pushed off other labels and the "Selected area" / snap chips. Only a translate
+     offset changes; the text and the placement rules above stay as they are. */
+  function fitTags() {
+    var layer = document.getElementById('moveOverlay');
+    var frame = document.getElementById('moveFrame');
+    var sc = document.getElementById('stageScroller');
+    if (!layer || !frame || !sc) return;
+    var tags = layer.querySelectorAll('.move-tag, .add-tag');
+    if (!tags.length) return;
+    for (var k = 0; k < tags.length; k++) tags[k].style.translate = '';
+    var fr = frame.getBoundingClientRect(), sr = sc.getBoundingClientRect();
+    var vis = {
+      l: Math.max(fr.left, sr.left + sc.clientLeft) + 2,
+      t: Math.max(fr.top, sr.top + sc.clientTop) + 2,
+      r: Math.min(fr.right, sr.left + sc.clientLeft + sc.clientWidth) - 2,
+      b: Math.min(fr.bottom, sr.top + sc.clientTop + sc.clientHeight) - 2
+    };
+    if (vis.r - vis.l < 20 || vis.b - vis.t < 12) return;
+    var placed = [];
+    /* Chips on the picture, and the floating bars over the stage, are obstacles too. */
+    var obstacles = Array.prototype.slice.call(layer.querySelectorAll('.move-ghost span, .snap-chip'))
+      .concat(Array.prototype.slice.call(document.querySelectorAll('#canvas > .float')));
+    obstacles.forEach(function (n) {
+      var b = n.getBoundingClientRect();
+      if (b.width && b.height) placed.push({ l: b.left, t: b.top, r: b.right, b: b.bottom });
+    });
+    function inside(x, y, w, h) { return x >= vis.l - 0.5 && y >= vis.t - 0.5 && x + w <= vis.r + 0.5 && y + h <= vis.b + 0.5; }
+    function hit(x, y, w, h) {
+      for (var i = 0; i < placed.length; i++) {
+        var p = placed[i];
+        if (x < p.r + 2 && x + w > p.l - 2 && y < p.b + 2 && y + h > p.t - 2) return p;
+      }
+      return null;
+    }
+    for (var n = 0; n < tags.length; n++) {
+      var t = tags[n], r = t.getBoundingClientRect(), w = r.width, h = r.height;
+      if (!w || !h) continue;
+      var x = r.left, y = r.top;
+      var mt = parseFloat(t.style.marginTop) || 0, ml = parseFloat(t.style.marginLeft) || 0;
+      /* 1. Flip across the guide line when that side is off screen. */
+      if (mt && (y < vis.t || y + h > vis.b) && inside(x, y - 2 * mt, w, Math.min(h, vis.b - vis.t))) y -= 2 * mt;
+      if (ml && (x < vis.l || x + w > vis.r) && inside(x - 2 * ml, y, Math.min(w, vis.r - vis.l), h)) x -= 2 * ml;
+      /* 2. Clamp into the visible frame. */
+      x = Math.min(Math.max(x, vis.l), Math.max(vis.l, vis.r - w));
+      y = Math.min(Math.max(y, vis.t), Math.max(vis.t, vis.b - h));
+      /* 3. Step off other labels and chips, to the nearest free spot that is still visible. */
+      for (var tries = 0, p; (p = hit(x, y, w, h)) && tries < 8; tries++) {
+        var ox = x, oy = y;
+        var cands = [[ox, p.b + 3], [ox, p.t - h - 3], [p.r + 3, oy], [p.l - w - 3, oy]].filter(function (c) { return inside(c[0], c[1], w, h); });
+        if (!cands.length) break;
+        cands.sort(function (a, b) {
+          var fa = hit(a[0], a[1], w, h) ? 1 : 0, fb = hit(b[0], b[1], w, h) ? 1 : 0;
+          return fa - fb || (Math.abs(a[0] - ox) + Math.abs(a[1] - oy)) - (Math.abs(b[0] - ox) + Math.abs(b[1] - oy));
+        });
+        x = cands[0][0]; y = cands[0][1];
+      }
+      var dx = Math.round(x - r.left), dy = Math.round(y - r.top);
+      if (dx || dy) t.style.translate = dx + 'px ' + dy + 'px';
+      placed.push({ l: x, t: y, r: x + w, b: y + h });
+    }
+  }
+  var fitTagsQueued = false;
+  function queueFitTags() {
+    if (fitTagsQueued) return;
+    fitTagsQueued = true;
+    requestAnimationFrame(function () { fitTagsQueued = false; fitTags(); });
+  }
+
   /* Guides describe both rectangles: dashed magenta lines from the ORIGINAL
      edges and the NEW edges to the image edges, with a px distance for dx and
      dy measured anchor to anchor. Duplicate edges are drawn once so each line
@@ -2510,6 +2581,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     tag(layer, ghost.x + ghost.w / 2, ghost.y - 12,
       'x ' + Math.round(ghost.x) + ' y ' + Math.round(ghost.y), 'gray');
     paintSnap(layer, size);
+    fitTags();
   }
 
   /* ---------- add mode: overlay ---------- */
@@ -2567,6 +2639,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     node.setAttribute('data-add-tag', 'add');
     layer.appendChild(node);
     paintSnap(layer, size);
+    fitTags();
   }
 
   /* ---------- move mode: pointer ---------- */
@@ -3978,6 +4051,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     rulerHost(true);
     rulerHost(false);
     if (state.mode === 'add') paintAddOverlay(); else paintOverlay();
+    queueFitTags();   /* again once the scroll position is restored */
   }
 
   function renderStage() {
@@ -7396,6 +7470,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     });
     $('#inspectorClose').addEventListener('click', toggleInspector);
     $('#inspShow').addEventListener('click', toggleInspector);
+    $('#stageScroller').addEventListener('scroll', queueFitTags, { passive: true });
     $('#themeBtn').addEventListener('click', toggleTheme);
     $('#moreBtn').addEventListener('click', function () {
       if (state.moreJustClosed) { state.moreJustClosed = false; return; }
