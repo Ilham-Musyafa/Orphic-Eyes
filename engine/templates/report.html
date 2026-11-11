@@ -173,6 +173,8 @@ body.insp-closed{--inspector-cur:0px}
 .header .m-page,.header .m-more{display:none}
 .sheet-grip{display:none}
 .req-sheet-foot,.modal-head .m-close{display:none}
+body.touch .tip kbd,body.touch .menu kbd{display:none}
+.kbd-list .kbd-touch{grid-column:1 / -1;margin:0 0 var(--s2)}
 .stepper-short{display:none;font-size:var(--fs-sec);color:var(--muted);white-space:nowrap}
 @media (max-width:1599px){.step-label{display:none}.step+.step::before{width:8px}}
 @media (max-width:1279px){.capture-chip{display:none}.header{grid-template-columns:auto minmax(0,1fr) auto}.header .hd-center{justify-self:center}}
@@ -732,6 +734,26 @@ body.insp-closed .inspector{border-left:0}
   .modal-prompt .modal-actions .btn:not(.primary){display:none}
   .modal-prompt #previewCopy{flex:1;min-height:44px;justify-content:center}
 }
+/* phone: picture sits at the top; every control is a 44px touch target */
+@media (max-width:639px){
+  :root{--hit:44px;--hit-dense:44px;--stage-pad-top:68px;--stage-pad-x:8px}
+  @supports (height:100dvh){html,body{height:100dvh}}
+  .stage-inner{margin-top:0;margin-bottom:0;align-items:flex-start}
+  .stage-inner>*{margin-top:0;margin-bottom:0}
+  .tool{min-width:44px;justify-content:center}
+  .rv-handle{width:44px;height:44px}
+  /* Small change boxes keep their drawn size but get a 44px tap area. */
+  .mark-box::after{content:"";position:absolute;left:50%;top:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}
+  body.no-report .stage-scroller{--stage-pad-top:16px}
+  .float-top{top:8px}
+  .float .seg button,.opt,.tool{min-height:44px}
+  .zoom-pill .opt{min-width:44px;justify-content:center}
+  .stage-scroller{padding-bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 86px)}
+  body.mode-review .stage-scroller{padding-bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 78px)}
+  body:not(.mode-review) .zoom-pill{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 86px)}
+  .toast{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 86px)}
+  body:not(.mode-review) .toast{bottom:calc(var(--sheet-bar-h) + var(--sheet-h) + 142px)}
+}
 @media (max-width:639px) and (prefers-reduced-motion:reduce){.sidebar,.inspector{transition:none}}
 </style>
 </head>
@@ -1002,6 +1024,9 @@ body.insp-closed .inspector{border-left:0}
 
   function $(sel) { return document.querySelector(sel); }
   var motionQuery = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+  /* Touch screens (no hover) get tap wording and no keyboard hints. */
+  var touchQuery = window.matchMedia ? window.matchMedia('(hover: none)') : null;
+  function isTouch() { return !!(touchQuery && touchQuery.matches); }
   function reducedMotion() { return !!(motionQuery && motionQuery.matches); }
   /* Restart a one-shot CSS animation class on a node. */
   function replay(node, cls) {
@@ -2668,6 +2693,10 @@ body.insp-closed .inspector{border-left:0}
     list.innerHTML = '';
     if (!state.report) {
       list.appendChild(el('p', 'empty-note', 'Load images to start'));
+      return;
+    }
+    if (!state.requests.length && !draftCount && !addCount && isTouch()) {
+      list.appendChild(el('p', 'empty-note', 'No requests yet. Mark an area and tap Add.'));
       return;
     }
     if (!state.requests.length && !draftCount && !addCount) {
@@ -5236,6 +5265,7 @@ body.insp-closed .inspector{border-left:0}
   ];
   function shortcutList() {
     var list = el('div', 'kbd-list');
+    if (isTouch()) list.appendChild(el('p', 'hint-note kbd-touch', 'Keyboard shortcuts work with a physical keyboard.'));
     SHORTCUTS.forEach(function (row) {
       if (!row[1]) { list.appendChild(el('div', 'caption kbd-group', row[0])); return; }
       list.appendChild(el('span', null, row[0]));
@@ -5645,6 +5675,10 @@ body.insp-closed .inspector{border-left:0}
     });
     bindTooltips();
     bindSheet();
+    document.body.classList.toggle('touch', isTouch());
+    if (touchQuery && touchQuery.addEventListener) {
+      touchQuery.addEventListener('change', function () { document.body.classList.toggle('touch', isTouch()); render(); });
+    }
     bindLoadReport();
     bindImageLoader();
     bindReferences();
@@ -6005,7 +6039,7 @@ body.insp-closed .inspector{border-left:0}
     });
     box.appendChild(steps);
     box.appendChild(slotsRow(false));
-    box.appendChild(el('span', 'loader-sub', 'Drop two images, choose them, or paste with Ctrl+V. They stay in this tab and are never uploaded.'));
+    box.appendChild(el('span', 'loader-sub', isTouch() ? 'Tap Load images, or try the sample. They stay in this tab and are never uploaded.' : 'Drop two images, choose them, or paste with Ctrl+V. They stay in this tab and are never uploaded.'));
     if (state.loaderError || state.loadError) {
       var err = el('p', 'field-error', state.loaderError || state.loadError);
       err.setAttribute('role', 'alert');
@@ -6334,8 +6368,8 @@ body.insp-closed .inspector{border-left:0}
       drop.type = 'button';
       drop.id = 'refDrop';
       drop.setAttribute('data-ref-drop', '');
-      drop.setAttribute('aria-label', 'Add reference: drop an image or GIF, or paste with Ctrl+V');
-      drop.appendChild(el('span', 'ref-drop-idle', 'Drop an image or GIF, or paste with Ctrl+V'));
+      drop.setAttribute('aria-label', isTouch() ? 'Add reference: tap to add an image or GIF' : 'Add reference: drop an image or GIF, or paste with Ctrl+V');
+      drop.appendChild(el('span', 'ref-drop-idle', isTouch() ? 'Tap to add an image or GIF' : 'Drop an image or GIF, or paste with Ctrl+V'));
       drop.appendChild(el('span', 'ref-drop-active', 'Drop to add reference'));
       block.appendChild(drop);
       var add = el('button', 'btn ref-add');
