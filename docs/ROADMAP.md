@@ -59,6 +59,9 @@ Sources: [README](../README.md), [report UI](../engine/templates/report.html), [
 | 🔨 | Local autosave of the review session | Restore images/drafts/rounds; preferences already persist | M |
 | 🔨 | Hide and Comment request creation in the UI | Expose existing engine intents | M |
 | 🔨 | Native Windows test coverage in CI | Catch browser, cleanup and path differences | M |
+| 🔨 | Before / After slider in the report | Compare one area by dragging instead of switching views | S |
+| 🔨 | Compact result card for Hermes chat | One PNG with boxes and a PASS/FAIL bar, readable in Hermes Desktop or CLI without opening the report | M |
+| 🔨 | macOS test run, then add `macos` to platforms | Claim only platforms verified on real hardware | M |
 
 ## Later · v0.5 Automation
 
@@ -66,6 +69,8 @@ Sources: [README](../README.md), [report UI](../engine/templates/report.html), [
 | --- | --- | --- | --- |
 | 🧭 | Export report as a shareable file | Bundle images/evidence; current reports are folder bundles | M |
 | 🧭 | Optional URL label: host only, never path/query | Add context; **privacy decision pending** before storage/display | S |
+| 🧭 | Auto-verify hook before the agent says "done" | Run compare automatically; send the agent back when unrequested changes appear | L |
+| 🧭 | Protected areas | Mark regions that must not change; any change there fails the check | M |
 | 💡 | Scheduled post-deploy visual check through Hermes | Compare an approved baseline after deployment | M |
 | 💡 | Design-consistency automation | Flag possible spacing/colour drift across pages | L |
 | 💡 | Competitor page monitoring | Watch a selected public page for visual changes | M |
@@ -77,8 +82,8 @@ Ideas need explicit targets, permission, baseline ownership and notification rul
 timeline
     title Phases, not dates
     v0.3 Hackathon : Compare and requests : Verify and bounded review loop
-    v0.4 Polish : Review controls : Session recovery and Windows CI
-    v0.5 Automation : Shareable reports : Optional labels and automation experiments
+    v0.4 Polish : Review controls : Session recovery and Windows CI : Slider and Hermes result card
+    v0.5 Automation : Shareable reports : Optional labels and automation experiments : Auto-verify hook and protected areas
 ```
 
 Priorities can change. Keep contributions small, private by default and pixel-only; verify before marking shipped.
