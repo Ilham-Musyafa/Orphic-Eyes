@@ -233,7 +233,7 @@ Current official [catalog schema](https://github.com/NousResearch/hermes-agent/b
 | requires_hermes | Optional; example declares its own floor, ours omits it because no minimum has been verified. If needed, establish it and match plugin.yaml. |
 | subdir, image, screenshots, onboarding | Optional and omitted; plugin is at repo root. Gallery screenshots can be added later with verified public GitHub-hosted URLs. |
 
-The README's current disclosures already agree with the inspected engine; README was not modified. “Local processing” is not rewritten as “no network whatsoever”: browser resources/redirects, loopback HTTP traffic and inherited proxy settings are explicitly disclosed. Final-release README/UI contents, native validation, repo visibility, event deadline and live Typeform/X submission must still be verified by their owners.
+The README's cleanup statement was minimally qualified to reflect its error paths; the remaining disclosures already agree with the inspected engine. “Local processing” is not rewritten as “no network whatsoever”: browser resources/redirects, loopback HTTP traffic and inherited proxy settings are explicitly disclosed. Final-release README/UI contents, native validation, repo visibility, event deadline and live Typeform/X submission must still be verified by their owners.
 
 ## Every remaining TODO / gate
 
