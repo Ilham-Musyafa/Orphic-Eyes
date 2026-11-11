@@ -1,5 +1,7 @@
 # Orphic Eyes
 
+Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
+
 **Give Hermes eyes: compare screenshots, point at what needs changing, and turn pixels into precise requests for any AI coding agent.**
 
 ## Why

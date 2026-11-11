@@ -1,6 +1,17 @@
 # HANDOFF
 
-## Current task: Test reliability and submit audit (Codex)
+## Current task: Two-minute roadmap (docs only)
+
+Branch: `docs/roadmap`, from `origin/fix/test-reliability` at 57369380ccc3f9abae6c2387fb66a1512f557b82. No merges. Scope: ROADMAP.md, one README link line and this handoff.
+
+- Added a vision, status/size legend, shipped table, short Next/Later tables and two Mermaid diagrams with phase names instead of dates. Future automation remains explicitly an idea; no schedule, integration, semantic/SEO or native Windows certification is claimed.
+- Verified shipped claims against README and code: compare_images/report UI; Move/Add drafts and addRevertDraft; buildPrompt/preview; Verify round 2 and per-type checks; Content check; capture-pair CLI; registered orphic_loop_step and bounded loop; embedded SAMPLE/trySample; shortcut rebinding/conflict/reset; theme toggle and saved settings. Add stays outside engine request types and needs human review; loop returns prompts rather than executing edits.
+- Snap moved to Shipped because offerSnap/findSnap/acceptSnap, Alt handling and saved snapElements already exist in the inherited release. Accuracy polish stays Next; Alt is existing behavior. Hide/Comment UI creation stays Next (engine-only today). Session autosave is distinct from saved preferences; shareable-file export is distinct from existing folder bundles and reference-image downloads.
+- Mermaid CLI/parser unavailable (`mmdc` absent; Node cannot resolve mermaid). Carefully checked syntax against official Mermaid flowchart and timeline docs: github.com/mermaid-js/mermaid/blob/develop/packages/mermaid/src/docs/syntax/flowchart.md and timeline.md. Timeline periods may be arbitrary text, so phase labels require no invented dates. Diagrams use only local Markdown source, no images, includes or external resources. No live GitHub render is claimed.
+- Verification: Markdown fences/table structure, local source links, source evidence and three-file diff checked; git diff --check passed. No runtime tests needed for this docs-only change. Push only docs/roadmap and confirm with git ls-remote; no PR, release/main/stage-5e change or deployment.
+
+
+## Previous task: Test reliability and submit audit (Codex)
 
 Branch: `fix/test-reliability`, from `origin/docs/submit-prep` 1048073; merged `origin/release/hackathon` 283e7cd, then refreshed to effa230 (panel/snap UI) before final verification. Both merges conflicted only in HANDOFF; both sides were retained. Imported report.html is byte-identical to the release ref; no template edits.
 
