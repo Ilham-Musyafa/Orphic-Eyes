@@ -1,6 +1,18 @@
 # HANDOFF
 
-## Current task: Verify loop (Round 2 check)
+## Current task: Lumen sample + typing-safe shortcuts
+
+Branch: `feat/lumen-sample` (from `feat/verify-loop` at 68d04c5). Files: `engine/templates/report.html`, `samples/lumen/*` (from `assets/lumen-sample` f2e09b7), this file.
+
+### Plan
+1. Bring `samples/lumen/before.png` / `after.png` in with `git checkout f2e09b7 -- samples/lumen/`. Embed both in the template as lossless WebP (PNG if that fails), replace the Tidyday data and file names, and prove the embedded images decode to the same pixels as the PNGs (hash of decoded RGBA, in Python and in Chrome). Check the in-browser diff marks only the 6 intended changes.
+2. Shortcuts: one rule in the app keydown handler — while focus is in input / textarea / select / contenteditable, no shortcut fires except Esc (today single keys are blocked but Shift+key combos such as Shift+V are not).
+3. Re-run Verify on Lumen (Round 2 with one fixed and one unfixed request), the earlier suites, update tests/helpers that used Tidyday.
+
+### Status
+- Plan written.
+
+## Previous task: Verify loop (Round 2 check)
 
 Branch: `feat/verify-loop` (from `feat/shortcut-rebind` at a5fe92b). Only `engine/templates/report.html` + this file. No engine changes.
 
