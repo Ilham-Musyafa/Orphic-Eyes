@@ -388,8 +388,22 @@ body.no-report .stage-scroller,body.no-report.mode-review .stage-scroller{--stag
 .tool.on{background:var(--blue-bg);color:var(--blue-ink)}
 .zoom-pill{right:var(--float-gap);bottom:var(--float-gap)}
 .zoom-pill .opt{padding:0 10px}
-.zoom-pill .zoom-now{min-width:48px;justify-content:center;color:var(--ink);font-variant-numeric:tabular-nums;cursor:default;padding:0 var(--s2)}
-.zoom-pill .zoom-now:hover{background:transparent}
+.zoom-pill .zoom-now{min-width:52px;justify-content:center;color:var(--ink);font-variant-numeric:tabular-nums;padding:0 var(--s2)}
+.zoom-pill .zoom-now[aria-expanded="true"]{background:var(--blue-bg);color:var(--blue-ink)}
+.zoom-pill .zoom-step{padding:0;width:var(--hit-dense);justify-content:center}
+.zoom-pill .zoom-step .ic{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round}
+.zoom-pill .zoom-step[aria-disabled="true"]{opacity:.4;cursor:default}
+.zoom-pill .zoom-step[aria-disabled="true"]:hover{background:transparent;color:var(--muted)}
+.zoom-pop{position:fixed;z-index:60;width:240px;padding:10px 12px 12px;border-radius:var(--r-panel);background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow-pop);animation:oe-panel-up var(--dur) var(--ease-out)}
+.zoom-pop-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;font-size:var(--fs-sec);font-weight:var(--w-strong);color:var(--ink)}
+.zoom-pop-hint{font-weight:var(--w-regular);font-size:var(--fs-cap);color:var(--faint)}
+.zoom-pop-row{display:flex;align-items:center;gap:10px}
+.zoom-range{flex:1;min-width:0;accent-color:var(--blue)}
+.zoom-num{display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 6px;border:1px solid var(--line2);border-radius:var(--r-input);background:var(--input);color:var(--ink);font-size:var(--fs-sec);font-variant-numeric:tabular-nums}
+.zoom-num:focus-within{outline:2px solid var(--focus);outline-offset:1px}
+.zoom-num input{width:40px;border:0;background:transparent;color:inherit;font:inherit;text-align:right;outline:none;-moz-appearance:textfield}
+.zoom-num input::-webkit-outer-spin-button,.zoom-num input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.zoom-num span{color:var(--muted)}
 /* tooltips */
 [data-tip]{position:relative}
 .tip{position:fixed;z-index:90;pointer-events:none;background:var(--toast-bg);color:var(--toast-ink);font-size:var(--fs-sec);font-weight:var(--w-medium);line-height:1.3;padding:5px 8px;border-radius:6px;white-space:normal;overflow-wrap:anywhere;opacity:0;transition:opacity 120ms var(--ease);max-width:280px}
@@ -1156,7 +1170,9 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         <button type="button" class="opt" data-zoom="1">100%</button>
         <button type="button" class="opt" data-zoom="2">200%</button>
         <span class="float-sep" aria-hidden="true"></span>
-        <span class="opt zoom-now" id="zoomNow" aria-live="polite">100%</span>
+        <button type="button" class="opt zoom-step" id="zoomOut" data-zoom-step="-1" aria-label="Zoom out" data-tip="Zoom out"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9"/></svg></button>
+        <button type="button" class="opt zoom-now" id="zoomNow" aria-haspopup="dialog" aria-expanded="false" aria-label="Zoom 100%, set exact zoom" data-tip="Set exact zoom">100%</button>
+        <button type="button" class="opt zoom-step" id="zoomIn" data-zoom-step="1" aria-label="Zoom in" data-tip="Zoom in"><svg class="ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8h9M8 3.5v9"/></svg></button>
       </div>
     </section>
 
@@ -4742,7 +4758,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       zooms[z].classList.toggle('on', zon);
       zooms[z].setAttribute('aria-pressed', zon ? 'true' : 'false');
     }
-    $('#zoomNow').textContent = Math.round((state.scale || 1) * 100) + '%';
+    renderZoomControl();
     renderSidebarTabs();
     applyPanels();
   }
@@ -5000,8 +5016,17 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
 
     document.getElementById('zoomPill').addEventListener('click', function (event) {
       var button = event.target.closest('[data-zoom]');
-      if (button) setZoom(button.getAttribute('data-zoom'));
+      if (button) { setZoom(button.getAttribute('data-zoom')); return; }
+      var step = event.target.closest('[data-zoom-step]');
+      if (step) { if (step.getAttribute('aria-disabled') !== 'true') zoomStep(Number(step.getAttribute('data-zoom-step'))); return; }
+      if (event.target.closest('#zoomNow')) openZoomPopover();
     });
+    /* Ctrl/Cmd + scroll (and trackpad pinch) over the picture zooms it, around the pointer. */
+    $('#stageScroller').addEventListener('wheel', function (event) {
+      if (!(event.ctrlKey || event.metaKey) || !state.report) return;
+      event.preventDefault();
+      zoomWheel(event);
+    }, { passive: false });
 
     document.getElementById('undoBtn').addEventListener('click', undo);
     document.getElementById('redoBtn').addEventListener('click', redo);
@@ -5601,11 +5626,126 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     openLayer(wrap, { focus: count ? '#previewCopy' : (isPhone() ? '.m-close' : '.modal-actions .btn') });
   }
 
-    function setZoom(value) {
+    /* Zoom: presets, steps, exact value. All paths go through setZoom so the pill,
+     status bar, palette and shortcuts stay in sync. Scale 0.1 – 4 (10 – 400%). */
+  var ZOOM_STEPS = [0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
+  var ZOOM_MIN = 0.1, ZOOM_MAX = 4;
+  function currentScale() {
+    var z = state.zoom === 'fit' ? Number(state.scale) : Number(state.zoom);
+    return z > 0 ? z : 1;
+  }
+  function clampZoom(v) { return Math.round(clamp(v, ZOOM_MIN, ZOOM_MAX) * 100) / 100; }
+  function nextZoomStep(dir) {
+    var cur = currentScale(), i;
+    if (dir > 0) { for (i = 0; i < ZOOM_STEPS.length; i++) if (ZOOM_STEPS[i] > cur + 0.004) return ZOOM_STEPS[i]; }
+    else { for (i = ZOOM_STEPS.length - 1; i >= 0; i--) if (ZOOM_STEPS[i] < cur - 0.004) return ZOOM_STEPS[i]; }
+    return null;
+  }
+  function zoomStep(dir) {
+    var next = nextZoomStep(dir);
+    if (next !== null) setZoom(next);
+  }
+  var wheelZoom = null;
+  function zoomWheel(event) {
+    var sc = $('#stageScroller');
+    var r = sc.getBoundingClientRect();
+    if (!wheelZoom) {
+      wheelZoom = { factor: 1, mx: event.clientX - r.left, my: event.clientY - r.top };
+      requestAnimationFrame(function () {
+        var w = wheelZoom; wheelZoom = null;
+        var from = currentScale(), to = clampZoom(from * w.factor);
+        if (to === from) return;
+        var ax = sc.scrollLeft + w.mx, ay = sc.scrollTop + w.my;
+        setZoom(to);
+        var k = to / from;
+        sc.scrollLeft = ax * k - w.mx;
+        sc.scrollTop = ay * k - w.my;
+      });
+    }
+    var dy = event.deltaMode === 1 ? event.deltaY * 16 : event.deltaY;
+    wheelZoom.factor *= Math.exp(-clamp(dy, -100, 100) / 400);
+  }
+  function renderZoomControl() {
+    var now = $('#zoomNow');
+    if (!now) return;
+    var pct = Math.round(currentScale() * 100) + '%';
+    now.textContent = pct;
+    now.setAttribute('aria-label', 'Zoom ' + pct + (state.zoom === 'fit' ? ' (fit)' : '') + ', set exact zoom');
+    explainDisabled($('#zoomOut'), nextZoomStep(-1) === null ? 'Already at ' + Math.round(ZOOM_MIN * 100) + '%' : '', 'Zoom out');
+    explainDisabled($('#zoomIn'), nextZoomStep(1) === null ? 'Already at ' + Math.round(ZOOM_MAX * 100) + '%' : '', 'Zoom in');
+    var pop = document.querySelector('#layer .zoom-pop');
+    if (pop) pop.syncZoom();
+  }
+  /* Exact zoom: slider + number. Enter applies the number, Esc closes, values clamp to 10–400. */
+  function openZoomPopover() {
+    var anchor = $('#zoomNow');
+    var pop = el('div', 'zoom-pop');
+    pop.setAttribute('role', 'dialog');
+    pop.setAttribute('aria-label', 'Exact zoom');
+    var head = el('div', 'zoom-pop-head');
+    head.appendChild(el('span', null, 'Zoom'));
+    var hint = el('span', 'zoom-pop-hint', 'Enter applies \u00b7 Esc closes');
+    head.appendChild(hint);
+    pop.appendChild(head);
+    var row = el('div', 'zoom-pop-row');
+    var range = el('input', 'zoom-range');
+    range.type = 'range'; range.min = '10'; range.max = '400'; range.step = '1';
+    range.setAttribute('aria-label', 'Zoom percent');
+    var numWrap = el('label', 'zoom-num');
+    var num = el('input');
+    num.type = 'number'; num.min = '10'; num.max = '400'; num.step = '1'; num.inputMode = 'numeric';
+    num.setAttribute('aria-label', 'Zoom percent, 10 to 400');
+    numWrap.appendChild(num);
+    numWrap.appendChild(el('span', null, '%'));
+    row.appendChild(range);
+    row.appendChild(numWrap);
+    pop.appendChild(row);
+    pop.syncZoom = function () {
+      var pct = Math.round(currentScale() * 100);
+      range.value = String(pct);
+      if (document.activeElement !== num) num.value = String(pct);
+    };
+    pop.syncZoom();
+    var pending = null;
+    range.addEventListener('input', function () {
+      num.value = range.value;
+      pending = Number(range.value);
+      requestAnimationFrame(function () { if (pending !== null) { var v = pending; pending = null; setZoom(clampZoom(v / 100)); } });
+    });
+    function applyNum() {
+      var v = parseFloat(String(num.value).replace(',', '.'));
+      if (!isFinite(v)) { num.value = String(Math.round(currentScale() * 100)); return; }
+      var z = clampZoom(v / 100);
+      num.value = String(Math.round(z * 100));
+      range.value = num.value;
+      setZoom(z);
+    }
+    num.addEventListener('keydown', function (event) {
+      if (matchShortcut(event, 'w.enter', { anyModifiers: true })) { event.preventDefault(); applyNum(); }
+    });
+    num.addEventListener('change', applyNum);
+    trapKeys(pop);
+    anchor.setAttribute('aria-expanded', 'true');
+    openLayer(pop, { focus: 'input[type=number]', onClose: function () { anchor.setAttribute('aria-expanded', 'false'); } });
+    var a = anchor.getBoundingClientRect(), m = pop.getBoundingClientRect();
+    pop.style.left = Math.round(clamp(a.left + a.width / 2 - m.width / 2, 8, window.innerWidth - m.width - 8)) + 'px';
+    pop.style.top = Math.round(Math.max(8, a.top - m.height - 8)) + 'px';
+    setTimeout(function () {
+      document.addEventListener('pointerdown', function off(event) {
+        if (!pop.isConnected) { document.removeEventListener('pointerdown', off, true); return; }
+        if (pop.contains(event.target)) return;
+        document.removeEventListener('pointerdown', off, true);
+        if (anchor.contains(event.target)) event.preventDefault();
+        closeLayer(true);
+      }, true);
+    }, 0);
+  }
+  function setZoom(value) {
     state.zoom = value === 'fit' ? 'fit' : String(value);
     renderStage();
     renderStatusbar();
     renderChrome();
+    renderZoomControl();
   }
 
   function setView(view) {
