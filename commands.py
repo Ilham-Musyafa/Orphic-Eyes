@@ -51,8 +51,7 @@ def _browser_version(path, root):
         words = ctypes.cast(pointer, ctypes.POINTER(wintypes.DWORD))
         return ".".join(str(part) for part in (words[2] >> 16, words[2] & 65535,
                                               words[3] >> 16, words[3] & 65535))
-    environment = os.environ.copy()
-    environment.update(TMP=str(root), TEMP=str(root), TMPDIR=str(root))
+    environment = tools._module("_browser_env").browser_env(root)
     result = subprocess.run([str(path), "--version"], capture_output=True, text=True,
                             timeout=10, env=environment, check=True)
     version = " ".join(result.stdout.split())[:180]

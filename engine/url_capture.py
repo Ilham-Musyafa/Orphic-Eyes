@@ -21,6 +21,7 @@ from PIL import Image
 from ._devtools import DevTools
 from ._url_network import GuardedProxy, URLPolicyError, URLResolutionError, destination
 from .capture import detect_browser
+from ._browser_env import browser_env
 from ._browser_process import launch_options, remove_profile, stop_browser
 
 
@@ -157,8 +158,7 @@ def capture(url, out_path, width=1440, height=900, full_page=False, wait_ms=250,
             cleanup.callback(remove_profile, profile)
             proxy = GuardedProxy(allow_local, deadline)
             cleanup.callback(proxy.close)
-            environment = os.environ.copy()
-            environment.update(TMP=str(profile), TEMP=str(profile), TMPDIR=str(profile))
+            environment = browser_env(profile)
             command = [executable, "--headless=new", "--disable-gpu", "--hide-scrollbars",
                        "--force-device-scale-factor=1", "--force-prefers-reduced-motion",
                        "--no-first-run", "--no-default-browser-check", "--disable-extensions",

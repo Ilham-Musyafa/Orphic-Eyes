@@ -11,6 +11,7 @@ from urllib.parse import unquote, urlsplit
 
 from PIL import Image
 
+from ._browser_env import browser_env
 from ._browser_process import launch_options, remove_profile, stop_browser
 from ._devtools import DevTools
 
@@ -111,8 +112,7 @@ def capture(url, out_png, browser=None, width=1280, height=800):
             f"--user-data-dir={profile}",
             "about:blank",
         ]
-        environment = os.environ.copy()
-        environment.update(TMP=profile, TEMP=profile, TMPDIR=profile)
+        environment = browser_env(profile)
         proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL,
                                 stderr=subprocess.DEVNULL, env=environment, **launch_options())
         # The screenshot CLI can produce a PNG and then stall during shutdown.
