@@ -134,7 +134,8 @@ class CaptureFailureTests(unittest.TestCase):
             self.assertEqual(result["summary"]["box_count"], 1)
             self.assertEqual(result["size"], {"width": 1440, "height": 900})
             persisted = json.loads(Path(result["paths"]["report"]).read_text())
-            self.assertEqual(persisted, {key: value for key, value in result.items() if key != "paths"})
+            self.assertEqual(persisted, {key: value for key, value in result.items()
+                                        if key not in ("paths", "report_url", "serve_hint")})
             self.assertEqual(persisted["schema_version"], 1)
 
     def test_failed_second_capture_publishes_no_partial_report(self):

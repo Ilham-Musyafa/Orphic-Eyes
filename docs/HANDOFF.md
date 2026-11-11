@@ -11,6 +11,10 @@ Branch: `feat/auto-loop`, from pushed `feat/url-capture` at `d92bbaa83782cbbc830
 4. Register orphic_loop_step using the existing Hermes adapter pattern (requires the minimal plugin.yaml tool declaration as well as Python registration). Test serving confinement and actual HTTP image access, two-round correction, unchanged failure, unexpected changes, max-round and unclear paths, missing-browser skips, and full regression suite. Document examples/limits in docs/AUTO-LOOP.md and update this handoff after every step.
 5. Commit in small steps, push only feat/auto-loop, confirm both feature refs with ls-remote. No PRs, merges or deployments.
 
+### Progress
+- Report-serving core implemented in engine/serve.py: loopback/random port, read-only artifact allowlist, no directory listings, traversal/symlink/hard-link refusal, Host/Origin defenses, private registry discovery and bounded shutdown. Nine server tests passed, including cross-process discovery, timeout cleanup and capture-pair report_url behavior. Output metadata stays outside persisted report.json.
+- Eleven loop unit tests passed: unchanged-but-wrong stays unresolved, round 2 can finish, immutable anchors survive original target changes, persistent unexpected zones remain visible, explicit move requests reuse existing matching, max_rounds/needs_human stop paths, link/lock protection and failed-round cleanup. Integration and final regression verification are ongoing.
+
 ### Constraints and starting state
 - Never edit/stage engine/templates/report.html, README.md or any UI file; Claude owns report.html on release/hackathon.
 - Source template starting SHA-256: e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2. README starting SHA-256: c1cb30ccf91990d01faea7ac4ed989d2154150ef3f4a809329ee04036d9ae0ae.

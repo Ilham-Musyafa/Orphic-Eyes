@@ -286,7 +286,8 @@ def capture_pair(before_url, after_url, store_dir, *, name="urls", width=1440, h
                      "after": str(case / "current.png"), "diff": str(case / "diff.png")}
             if (case / "report.html").is_file():
                 paths["html"] = str(case / "report.html")
-            return {**saved, "paths": paths}
+            from .serve import attach_report_link
+            return attach_report_link({**saved, "paths": paths}, store_dir, case)
     except (CaptureError, ValueError) as exc:
         return {"status": "error", "error": str(exc)}
     except Exception:
