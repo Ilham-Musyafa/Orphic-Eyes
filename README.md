@@ -65,7 +65,7 @@ python -B demo/run_demo.py --repeat 2
 python -m engine.cli serve --store demo/output --timeout 600
 ```
 
-The demo regenerates tracked `demo/output/` artifacts; run it in a disposable checkout or preserve existing outputs first. It expects one done, one not_done and one unknown verdict. The server prints an HTTP report URL. Open that URL for pixel-based Verify rather than opening report.html from disk; stop the server with Ctrl+C or let the timeout expire. A generated report is an offline folder bundle, not a standalone HTML file containing every PNG.
+The demo regenerates tracked `demo/output/` artifacts; run it in a disposable checkout or preserve existing outputs first. It expects one done, one not_done and one unknown verdict. Its repeatability check can abort if the fixed search budget is exhausted on a busy or slow runner; do not loosen the matching rules to obtain a pass. The server prints an HTTP report URL. Open that URL for pixel-based Verify rather than opening report.html from disk; stop the server with Ctrl+C or let the timeout expire. A generated report is an offline folder bundle, not a standalone HTML file containing every PNG.
 
 To capture the existing local fixtures, use two terminals from the repository root:
 
