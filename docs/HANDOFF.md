@@ -18,7 +18,15 @@ Branch: `release/hackathon` (from `feat/lumen-sample` at 3abf08d), then `git mer
 2. Re-verify: ancestry for both branches, dry-run merge of release into stage-5e, conflict-marker grep, test suite, all earlier browser checks, Copy prompt byte identity vs feat/lumen-sample.
 
 ### Status
-- Investigation written; merge next.
+- Merge done: `fabb9ac` Merge origin/stage-5e into release/hackathon. Two conflict hunks in report.html, both resolved to the stack side (it already contains the stage-5e fix as `a5fe92b`):
+  1. `#sbToggle` markup — stage-5e: `aria-label="Collapse sidebar · Ctrl+B"`, `data-kbd="Ctrl+B"`; stack: `data-sc="panel.sidebar"`. Kept stack: `data-kbd` is no longer read by the tooltip code, and `renderSidebarToggle()` sets the label with the current key at start-up.
+  2. `applyPanels()` — stage-5e: inline label code with a fixed "Ctrl+B"; stack: `renderSidebarToggle()` (same attributes, key from the user's binding, refreshed after a rebind). Kept stack.
+  The click-handler half of the fix merged cleanly (identical on both sides). The merged tree equals `feat/lumen-sample`'s tree; README, licenses, screenshots and HANDOFF from stage-5e were already identical in the stack.
+- Proofs: `merge-base --is-ancestor` feat/lumen-sample → release = yes, origin/stage-5e → release = yes. `git merge-tree --write-tree origin/stage-5e release/hackathon` exit 0 (no conflicts); local dry-run `git merge --no-commit --no-ff release/hackathon` on a stage-5e worktree: "Automatic merge went well", 0 unmerged files (aborted, nothing pushed). Conflict-marker grep in changed files and in engine/, tests/, README, HANDOFF: none.
+- Checks: Lumen pixel proof 2/2 (0 differing bytes), Try sample 6 areas, Verify 86/86, typing guard 48/48, engine request types 8/8, shortcuts 35/35, rebinding 92/92, rebind refactor 12/12, read-only 36/36, Settings 168/168, mobile 64/92/68/84, sidebar toggle 20/21 (the known 3.5 px rail offset), Load images and Add reference outputs identical to feat/lumen-sample, flow/motion 0 errors, main app pixel-identical (desktop 18/18, phone 14/14), Copy prompt byte-identical. Tests: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge). `/orphic doctor`: all ✓ (Python 3.13, Pillow 12.3, data dir, engine importable, Chrome).
+
+### Next
+- UI polish (Prompt B)
 
 ## Previous task: Lumen sample + typing-safe shortcuts
 
