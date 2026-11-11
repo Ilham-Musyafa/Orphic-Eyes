@@ -2867,6 +2867,12 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   var SNAP_SAME = 2;          /* already within 2 px on every side: nothing to suggest */
   var SNAP_MAX_PX = 1500000;  /* windows larger than this are skipped (stays fast) */
   var snapCache = { src: null, promise: null };
+  /* Scratch buffers are reused between runs: no large allocations (or GC pauses) per box. */
+  var snapBuf = { n: 0 };
+  function snapBuffers(N) {
+    if (snapBuf.n < N) snapBuf = { n: N, mask: new Uint8Array(N), hz: new Uint8Array(N), dm: new Uint8Array(N), queue: new Int32Array(N) };
+    return snapBuf;
+  }
   function snapPixels() {
     var src = state.report && state.report.images ? state.report.images.after : null;
     if (!src) return Promise.reject(new Error('no image'));
@@ -2887,15 +2893,17 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       else { addPx(x0, y); addPx(x0 + 1, y); addPx(x1 - 2, y); addPx(x1 - 1, y); }
     }
     var bg = hist.map(function (h) { var acc = 0; for (var v = 0; v < 256; v++) { acc += h[v]; if (acc >= n / 2) return v; } return 255; });
-    var mask = new Uint8Array(N);
+    var buf = snapBuffers(N), mask = buf.mask;
+    /* Per-channel lookup: 1 when a value is more than SNAP_DIFF away from the background. */
+    var lut = [new Uint8Array(256), new Uint8Array(256), new Uint8Array(256)];
+    for (var c = 0; c < 3; c++) for (var v = 0; v < 256; v++) lut[c][v] = Math.abs(v - bg[c]) > SNAP_DIFF ? 1 : 0;
+    var l0 = lut[0], l1 = lut[1], l2 = lut[2];
     for (var j = 0; j < wh; j++) {
       var p = ((y0 + j) * W + x0) * 4, row = j * ww;
-      for (var i = 0; i < ww; i++, p += 4) {
-        if (Math.abs(d[p] - bg[0]) > SNAP_DIFF || Math.abs(d[p + 1] - bg[1]) > SNAP_DIFF || Math.abs(d[p + 2] - bg[2]) > SNAP_DIFF) mask[row + i] = 1;
-      }
+      for (var i = 0; i < ww; i++, p += 4) mask[row + i] = l0[d[p]] | l1[d[p + 1]] | l2[d[p + 2]];
     }
     /* Dilate 1 px (3×3) so anti-aliased edges and a button's label join its fill. */
-    var hz = new Uint8Array(N), dm = new Uint8Array(N);
+    var hz = buf.hz, dm = buf.dm;
     for (j = 0; j < wh; j++) {
       row = j * ww;
       for (i = 0; i < ww; i++) hz[row + i] = mask[row + i] | (i > 0 ? mask[row + i - 1] : 0) | (i < ww - 1 ? mask[row + i + 1] : 0);
@@ -2905,19 +2913,19 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       for (i = 0; i < ww; i++) dm[row + i] = hz[row + i] | (j > 0 ? hz[row - ww + i] : 0) | (j < wh - 1 ? hz[row + ww + i] : 0);
     }
     /* 4-connected regions; each bbox is measured on undilated pixels. */
-    var seen = new Uint8Array(N), queue = new Int32Array(N);
+    var queue = buf.queue;   /* dm doubles as the visited flag: 1 = unvisited element pixel, 2 = visited */
     var selArea = sel.w * sel.h, winArea = N, best = null;
     for (var s = 0; s < N; s++) {
-      if (!dm[s] || seen[s]) continue;
+      if (dm[s] !== 1) continue;
       var head = 0, tail = 0, minX = ww, minY = wh, maxX = -1, maxY = -1;
-      queue[tail++] = s; seen[s] = 1;
+      queue[tail++] = s; dm[s] = 2;
       while (head < tail) {
-        var q = queue[head++], qx = q % ww, qy = (q - qx) / ww;
+        var q = queue[head++], qy = (q / ww) | 0, qx = q - qy * ww;
         if (mask[q]) { if (qx < minX) minX = qx; if (qx > maxX) maxX = qx; if (qy < minY) minY = qy; if (qy > maxY) maxY = qy; }
-        if (qx > 0 && dm[q - 1] && !seen[q - 1]) { seen[q - 1] = 1; queue[tail++] = q - 1; }
-        if (qx < ww - 1 && dm[q + 1] && !seen[q + 1]) { seen[q + 1] = 1; queue[tail++] = q + 1; }
-        if (qy > 0 && dm[q - ww] && !seen[q - ww]) { seen[q - ww] = 1; queue[tail++] = q - ww; }
-        if (qy < wh - 1 && dm[q + ww] && !seen[q + ww]) { seen[q + ww] = 1; queue[tail++] = q + ww; }
+        if (qx > 0 && dm[q - 1] === 1) { dm[q - 1] = 2; queue[tail++] = q - 1; }
+        if (qx < ww - 1 && dm[q + 1] === 1) { dm[q + 1] = 2; queue[tail++] = q + 1; }
+        if (qy > 0 && dm[q - ww] === 1) { dm[q - ww] = 2; queue[tail++] = q - ww; }
+        if (qy < wh - 1 && dm[q + ww] === 1) { dm[q + ww] = 2; queue[tail++] = q + ww; }
       }
       if (maxX < 0) continue;
       var bw = maxX - minX + 1, bh = maxY - minY + 1;
