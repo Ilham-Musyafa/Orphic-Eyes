@@ -13,7 +13,8 @@ Branch: `release/hackathon` (pulled, at b2560d2, after the Content check commits
 2. About: header (logo cloned from the app header, "Orphic Eyes", tagline "Gives Hermes eyes for visual review.", "Version dev" — no real version exists), tinted header from tokens; 4 steps Compare / Point / Request / Verify with sprite icons; fact chips; links (GitHub repo in a new tab, Keyboard shortcuts, Quick tour); credits. Light/dark, reduced motion, phone layout.
 
 ### Status
-- Plan written.
+- Plan written (849b233).
+- Step 1 done: General has three groups. Getting started: Quick tour, Keyboard shortcuts (switches to the Shortcuts tab). When a report opens: Open in Review / Move / Add (`prefs.defaultMode`, applied at the end of `loadReport()` when a report is present, so the embedded report, Load images, Try sample and Load report all use it; Review = unchanged behavior). Requests: Quick phrases (`prefs.quickPhrases`, hides `chipBlock` under the Move note and the Add description, live), Open Verify after copying (`prefs.verifyAfterCopy`, default off; after a successful Copy prompt, opens Verify if no other dialog is open; copied text unchanged). All three in `PREF_DEFAULTS`, type-checked in `loadPrefs` (bad values fall back), restored by Reset preferences. General test 24/24, Copy prompt byte-identical.
 
 ## Previous task: Content check view
 

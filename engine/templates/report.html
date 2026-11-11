@@ -1428,6 +1428,14 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     });
     var size = report.size || {};
     if (num(size.width) && num(size.height)) state.capture = { w: size.width, h: size.height };
+    /* Settings → General → Open in: a newly opened report starts in that mode (Review keeps today's behavior). */
+    if (prefs.defaultMode === 'move' || prefs.defaultMode === 'add') {
+      state.mode = prefs.defaultMode;
+      state.selectedBox = null;
+      state.selectedRequest = null;
+      state.sidebarTab = 'requests';
+      state.sheet = 'requests';
+    }
   }
 
   /* ---------- copy helpers ---------- */
@@ -4083,7 +4091,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     note.placeholder = 'Anything else the AI should know';
     explainDisabled(note, sel ? '' : 'Mark an area first');
     noteBlock.appendChild(note);
-    noteBlock.appendChild(chipBlock('selectionNote'));
+    if (prefs.quickPhrases !== false) noteBlock.appendChild(chipBlock('selectionNote'));
     body.appendChild(noteBlock);
 
     /* Before crop */
@@ -4263,6 +4271,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     if (sel) {
       form.appendChild(refSection());
       form.appendChild(kindSection());
+    }
+    if (sel && prefs.quickPhrases !== false) {
       /* Existing helper chips stay as Quick notes, under the questions. */
       var quick = el('div', 'block');
       quick.appendChild(el('div', 'caption', 'Quick notes'));
@@ -5038,6 +5048,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     inspectorOpen: true, defaultView: 'slider', showGrid: true, snap: true, gridSize: 8,
     rulers: true, defaultPrecision: 'exact', tourDone: false,
     promptCoords: true, promptRuleScope: true, promptRuleAsk: true, promptPage: true,
+    defaultMode: 'review', quickPhrases: true, verifyAfterCopy: false,
     shortcuts: {}   /* only changed bindings: { id: "Ctrl+Shift+K" | null } */
   };
   var prefs = copy(PREF_DEFAULTS);
@@ -5052,11 +5063,12 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       });
     }
     /* Older or hand-edited saves: unknown keys (e.g. accent) are dropped, wrong types fall back. */
-    ['snap', 'rulers', 'inspectorOpen', 'tourDone', 'showGrid', 'promptCoords', 'promptRuleScope', 'promptRuleAsk', 'promptPage'].forEach(function (key) {
+    ['snap', 'rulers', 'inspectorOpen', 'tourDone', 'showGrid', 'promptCoords', 'promptRuleScope', 'promptRuleAsk', 'promptPage', 'quickPhrases', 'verifyAfterCopy'].forEach(function (key) {
       if (typeof prefs[key] !== 'boolean') prefs[key] = PREF_DEFAULTS[key];
     });
     if (prefs.sidebarCollapsed !== true && prefs.sidebarCollapsed !== false) prefs.sidebarCollapsed = null;
     if (prefs.defaultPrecision !== 'approximate') prefs.defaultPrecision = 'exact';
+    if (['review', 'move', 'add'].indexOf(prefs.defaultMode) === -1) prefs.defaultMode = 'review';
     if (['light', 'dark', 'system'].indexOf(prefs.theme) === -1) prefs.theme = 'light';
     if (!TEXT_SCALE[prefs.textSize]) prefs.textSize = 'm';
     if ([4, 8, 16].indexOf(prefs.gridSize) === -1) prefs.gridSize = 8;
@@ -5202,6 +5214,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       button.classList.add('copied');
       state.copiedOnce = true;
       renderStepper();
+      /* Settings → General: optionally go straight to Verify (the copied text is the same). */
+      if (prefs.verifyAfterCopy && verifyCount() && !overlayOpen()) setTimeout(function () { if (!overlayOpen()) openVerify(); }, 250);
       var live = $('#liveRegion');
       if (live) { live.textContent = ''; setTimeout(function () { live.textContent = 'Prompt copied'; }, 30); }
       clearTimeout(state.copyTimer);
@@ -6387,7 +6401,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
 
   /* settings: left tab list, one panel; phones get a two-level list */
   var SETTINGS_TABS = [
-    { id: 'general', label: 'General', icon: 'gear', sub: 'Get to know the app.' },
+    { id: 'general', label: 'General', icon: 'gear', sub: 'Getting started, and how reports and requests behave.' },
     { id: 'appearance', label: 'Appearance', icon: 'sun', sub: 'Theme and text size.' },
     { id: 'canvas', label: 'Canvas', icon: 'image', sub: 'How the picture opens, and the grid, snapping and rulers.' },
     { id: 'prompt', label: 'Copy prompt', icon: 'copy', sub: 'What goes into the prompt you copy.' },
@@ -6519,8 +6533,22 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   function settingsContent(tab) {
     var pane = el('div', 'st-body');
     if (tab === 'general') {
-      pane.appendChild(stGroup(null, [
-        stRow('tour', 'Quick tour', 'A four-step walk through the app.', stButton('tour', 'Start tour', function () { closeLayer(true); startTour(); }))
+      pane.appendChild(stGroup('Getting started', [
+        stRow('tour', 'Quick tour', 'A four-step walk through the app.', stButton('tour', 'Start tour', function () { closeLayer(true); startTour(); })),
+        stRow('keys', 'Keyboard shortcuts', 'See and change the keys for every action.', stButton('keys', 'Open', function () { selectSettingsTab('shortcuts', true); }))
+      ]));
+      pane.appendChild(stGroup('When a report opens', [
+        stRow('defaultmode', 'Open in', 'The mode a newly opened report starts in.', stSeg('defaultmode', [['review', 'Review'], ['move', 'Move'], ['add', 'Add']], prefs.defaultMode, function (v) {
+          prefs.defaultMode = v; savePrefs(); refreshSettings();
+        }), true)
+      ]));
+      pane.appendChild(stGroup('Requests', [
+        stRow('quickphrases', 'Quick phrases', 'Tap-to-add phrases under the Move note and the Add description.', stSwitch('quickphrases', prefs.quickPhrases !== false, function (v) {
+          prefs.quickPhrases = v; savePrefs(); render(); refreshSettings();
+        })),
+        stRow('verifyaftercopy', 'Open Verify after copying', 'After Copy prompt, open Verify to check the next screenshot.', stSwitch('verifyaftercopy', prefs.verifyAfterCopy === true, function (v) {
+          prefs.verifyAfterCopy = v; savePrefs(); refreshSettings();
+        }))
       ]));
     } else if (tab === 'appearance') {
       pane.appendChild(stGroup(null, [
