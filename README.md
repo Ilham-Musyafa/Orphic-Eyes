@@ -28,7 +28,7 @@ Built for the Nous Research Hermes Agent Plugin Hackathon. This is a submission 
 | Move requests, Add instructions, Exact/Approx placement | Report UI; engine precision is 2/8 px per axis for supported crop requests |
 | Copy Prompt for any AI coding agent | Report UI; copying does not send anything |
 | Verify: next-round pass/fail/unclear checks, unexpected changes, follow-up prompt | **Release UI** |
-| Content check | **TODO: implementation not found at the inspected release commit; confirm before advertising** |
+| Content check: each changed area is marked "looks removed", "looks added" or "changed" from pixels only (no OCR, text is never read); missing content is listed first, with a one-click Revert request | **Release UI** |
 | URL capture with fixed viewport, DPR 1 and bounded waits | Engine |
 | `orphic_loop_step`: capture, review fixed goals, return a follow-up prompt and stop condition | Engine/Hermes adapter |
 | Local read-only HTTP report server so image pixels share the report origin | Engine |
