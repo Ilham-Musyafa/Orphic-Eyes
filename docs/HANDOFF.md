@@ -13,9 +13,11 @@ Branch: `feat/url-capture`, from `origin/stage-5e` at `6bde560c28f05d7d50d66e69f
 - Inspected capture, baseline store, compare_images, build_report/write_report, Hermes handlers/schema/registration, and existing browser tests.
 - Existing browser launcher: `/workspace/.orphic-eyes/run`; Python: `/workspace/.venvs/orphic-eyes/bin/python`. It maps a working official Chrome build without changing repository files and keeps temporary socket paths short. Browser sandbox remains enabled.
 - `engine/templates/report.html` is owned by another agent: do not edit or stage it. Initial SHA-256: e3b41a17a0dbb5b15fa30e1675e8f8afa2a32cf216be6e07b8278b71480b41e2.
-- No implementation changes yet. No push, merge, or deployment authorized.
+- Step 1 complete: bounded standard-library DevTools WebSocket transport plus an HTTP CONNECT guard. Every browser destination is resolved and checked; direct and upstream public connections pin a validated numeric address to prevent DNS rebinding. Inherited proxies and TLS validation remain enabled. Policy failures/errors omit URLs and browser logs.
+- Validation so far: all 150 existing/new tests passed before the additional upstream-pinning regression test; browserless simulation ran 135 tests, with 7 skip records and zero failures/errors. Final validation will follow the remaining changes.
+- Scope remains Python engine, minimal existing Python Hermes adapter, tests and this handoff. No UI, dependency manifest, thresholds or report schema changes. No push, merge or deployment.
 
-## Current task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
+## Previous task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
 
 Branch: `feat/settings-redesign` (from `feat/mobile-fixes` at 0fbfaec). One commit per step. Only Settings changed; prefs stay in `orphic-eyes.prefs.v1` with the same keys.
 
