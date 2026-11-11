@@ -158,6 +158,9 @@ body.insp-closed{--inspector-cur:0px}
 .header{display:grid;grid-template-columns:minmax(max-content,1fr) auto minmax(max-content,1fr);align-items:center;gap:var(--s3);padding:0 var(--s3) 0 var(--s4);background:var(--panel);border-bottom:1px solid var(--line);min-width:0}
 .hd-left,.hd-right{display:flex;align-items:center;gap:var(--s2);min-width:0}
 .hd-right{justify-content:flex-end}
+.insp-show[hidden]{display:none}
+.insp-show{gap:6px;padding:0 var(--s2) 0 var(--s2);animation:oe-fade-in var(--dur) var(--ease-out)}
+@media (max-width:1100px){.insp-show .lbl{display:none}}
 /* Theme toggle: two icons in one spot, swapped with a short rotate + fade. */
 .theme-btn{position:relative}
 .theme-btn .ic{position:absolute;inset:0;margin:auto;transition:opacity var(--dur) var(--ease-out),transform var(--dur) var(--ease-out)}
@@ -476,6 +479,17 @@ body.no-rulers .ruler-top,body.no-rulers .ruler-left,body.no-rulers .ruler-corne
 .move-frame img{display:block;width:100%;height:100%;object-fit:fill;pointer-events:none}
 .move-frame.cursor-cross{cursor:crosshair}.move-frame.cursor-grab{cursor:grab}.move-frame.cursor-grabbing{cursor:grabbing}
 .move-overlay{position:absolute;inset:0;pointer-events:none;z-index:3}
+/* Snap to element: a suggestion, drawn apart from the user's own box. */
+.snap-box{position:absolute;z-index:4;border:2px dashed var(--green);border-radius:4px;box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 18%,transparent);pointer-events:none;animation:oe-fade-in var(--dur) var(--ease-out)}
+.snap-chip{position:absolute;z-index:6;display:flex;align-items:center;gap:6px;padding:4px 4px 4px 10px;margin:6px 0;border-radius:var(--r-pill);background:var(--panel);border:1px solid var(--line2);box-shadow:var(--shadow-float);white-space:nowrap;pointer-events:auto;font-size:var(--fs-sec);color:var(--ink);animation:oe-panel-up var(--dur) var(--ease-out)}
+.snap-chip.above{transform:translateY(calc(-100% - 12px))}
+.snap-title{font-weight:var(--w-strong);color:var(--green);margin-right:2px}
+.snap-btn{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:var(--r-pill);border:1px solid var(--line2);background:var(--panel);color:var(--ink);font-weight:var(--w-medium)}
+.snap-btn:hover{background:var(--hover)}
+.snap-btn.primary{background:var(--green);border-color:var(--green);color:var(--panel)}
+.snap-btn.primary:hover{filter:brightness(1.06)}
+.snap-btn kbd{font-family:var(--font-mono);font-size:var(--fs-cap);opacity:.8}
+@media (max-width:639px){.snap-btn{height:36px}.snap-btn kbd{display:none}}
 .move-grid{position:absolute;inset:0;z-index:1}
 .move-sel{position:absolute;z-index:2;border:2px dashed #2F80FF;background:rgba(47,128,255,.07)}
 .move-ghost{position:absolute;z-index:3;border:2px solid #2F80FF;background:rgba(47,128,255,.14);display:flex;align-items:center;justify-content:center;padding:2px;overflow:hidden}
@@ -797,6 +811,11 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
   .main{grid-template-columns:var(--sidebar-cur,var(--sidebar-w)) minmax(0,1fr)}
   .inspector{position:absolute;top:0;right:0;bottom:0;width:var(--inspector-w);z-index:30;box-shadow:var(--shadow-pop);border-left:0;transform:translateX(0);transition:transform var(--dur-panel) var(--ease-out)}
   body.insp-closed .inspector{transform:translateX(calc(100% + 24px));box-shadow:none}
+  /* Docked at mid widths when the canvas keeps >= 480 px (see inspectorDocked). */
+  body.insp-dock{--inspector-w:272px}
+  body.insp-dock .main{grid-template-columns:var(--sidebar-cur,var(--sidebar-w)) minmax(0,1fr) var(--inspector-cur,var(--inspector-w))}
+  body.insp-dock .inspector{position:relative;top:auto;right:auto;bottom:auto;width:auto;z-index:auto;box-shadow:none;border-left:1px solid var(--line);transform:none;transition:none}
+  body.insp-dock.insp-closed .inspector{border-left:0}
   .capture-chip .cap-name{display:none}
 }
 @media (max-width:1100px){
@@ -1054,6 +1073,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       <span class="capture-chip hide-sm hide-md" id="captureChip" tabindex="0" data-tip="Capture size comes from the report"><span class="cap-name" id="captureName">Desktop</span><span class="num" id="captureSize">&mdash;</span></span>
       <button type="button" class="icon-btn theme-btn" id="themeBtn" aria-label="Dark mode" aria-pressed="false" data-tip="Switch to dark mode" data-sc="theme.toggle"><svg class="ic th-sun" aria-hidden="true"><use href="#i-sun"/></svg><svg class="ic th-moon" aria-hidden="true"><use href="#i-moon"/></svg></button>
       <button type="button" class="btn primary" id="copyMain" aria-label="Copy prompt" data-tip="Copy all requests as one prompt for any AI assistant" data-sc="prompt.copy"><svg class="ic copy-ic" viewBox="0 0 16 16" aria-hidden="true"><g class="ic-copy"><use href="#i-copy"/></g><path class="ic-check" d="m3 8.5 3.2 3L13 4.75" pathLength="1"/></svg><span class="lbl">Copy prompt</span></button>
+      <button type="button" class="btn insp-show" id="inspShow" aria-label="Show panel" data-tip="Show panel" data-sc="panel.inspector"><svg class="ic"><use href="#i-panel-right"/></svg><span class="lbl">Details</span></button>
       <button type="button" class="icon-btn m-more" id="moreBtn" aria-label="More options" aria-haspopup="menu" aria-expanded="false"><svg class="ic"><use href="#i-more"/></svg></button>
     </div>
   </header>
@@ -1359,6 +1379,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     rulers: true,
     sidebarTab: 'changes',
     drawerOpen: false,
+    snapSuggest: null,      /* { kind, from, to, ms }: a pixel suggestion for the box just drawn */
+    inspAuto: false,        /* opened by Move/Add or a new selection: temporary, not saved */
     sheet: 'changes'
   };
 
@@ -1468,6 +1490,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       state.selectedRequest = null;
       state.sidebarTab = 'requests';
       state.sheet = 'requests';
+      state.inspAuto = true;
     }
   }
 
@@ -2486,6 +2509,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
 
     tag(layer, ghost.x + ghost.w / 2, ghost.y - 12,
       'x ' + Math.round(ghost.x) + ' y ' + Math.round(ghost.y), 'gray');
+    paintSnap(layer, size);
   }
 
   /* ---------- add mode: overlay ---------- */
@@ -2542,6 +2566,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     node.style.top = clamp((sel.y - 12) / size.h * 100, halfPctY, 100 - halfPctY) + '%';
     node.setAttribute('data-add-tag', 'add');
     layer.appendChild(node);
+    paintSnap(layer, size);
   }
 
   /* ---------- move mode: pointer ---------- */
@@ -2620,7 +2645,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         toast('Click an add area, or use Place (P)');
         return;
       }
-      state.drag = { kind: 'add-select', start: point, before: snapshotState() };
+      state.snapSuggest = null;
+      state.drag = { kind: 'add-select', start: point, before: snapshotState(), alt: !!event.altKey };
       state.drawRect = { x: point.x, y: point.y, w: 0, h: 0 };
       paintAddOverlay();
       if (frame.setPointerCapture) { try { frame.setPointerCapture(event.pointerId); } catch (err) {} }
@@ -2635,7 +2661,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       event.preventDefault();
       return;
     }
-    state.drag = { kind: 'select', start: point, before: snapshotState() };
+    state.snapSuggest = null;
+    state.drag = { kind: 'select', start: point, before: snapshotState(), alt: !!event.altKey };
     state.drawRect = { x: point.x, y: point.y, w: 0, h: 0 };
     paintOverlay();
     if (frame.setPointerCapture) { try { frame.setPointerCapture(event.pointerId); } catch (err) {} }
@@ -2705,6 +2732,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         syncSelectedAdd();
         commitHistory(drag.before);
         render();
+        offerSnap('add', addRect, drag.alt || !!event.altKey);
       } else {
         paintAddOverlay();
         if (addRect) toast('Select at least 8 \u00d7 8 px');
@@ -2722,6 +2750,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         syncSelectedDraft();
         commitHistory(drag.before);
         render();
+        offerSnap('move', rect, drag.alt || !!event.altKey);
       } else {
         paintOverlay();
         if (rect) toast('Select at least 8 \u00d7 8 px');
@@ -2733,6 +2762,172 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       commitHistory(drag.before);
       render();
     }
+  }
+
+  /* =================================================================
+     Snap to element (Move and Add). Pixel-only: after a box is drawn, look
+     around it in the After image for one region that clearly differs from
+     the local background, and offer its tight box. Never applied without
+     Accept; nothing is shown when no region is clear enough.
+     ================================================================= */
+  var SNAP_PAD = 48;          /* search window = selection + 48 px each side, clamped to the image */
+  var SNAP_DIFF = 16;         /* a channel differs from the ring background by more: element pixel */
+  var SNAP_OVERLAP = 0.6;     /* overlap must cover 60% of the smaller of region and selection */
+  var SNAP_FILL = 0.3;        /* a region fully inside the selection must fill 30% of it */
+  var SNAP_MAX_WIN = 0.9;     /* a region filling 90% of the window is background, not an element */
+  var SNAP_SAME = 2;          /* already within 2 px on every side: nothing to suggest */
+  var SNAP_MAX_PX = 1500000;  /* windows larger than this are skipped (stays fast) */
+  var snapCache = { src: null, promise: null };
+  function snapPixels() {
+    var src = state.report && state.report.images ? state.report.images.after : null;
+    if (!src) return Promise.reject(new Error('no image'));
+    if (snapCache.src !== src) snapCache = { src: src, promise: verifyPixels(src) };
+    return snapCache.promise;
+  }
+  function findSnap(px, sel) {
+    var W = px.w, H = px.h, d = px.data;
+    var x0 = Math.max(0, Math.floor(sel.x - SNAP_PAD)), y0 = Math.max(0, Math.floor(sel.y - SNAP_PAD));
+    var x1 = Math.min(W, Math.ceil(sel.x + sel.w + SNAP_PAD)), y1 = Math.min(H, Math.ceil(sel.y + sel.h + SNAP_PAD));
+    var ww = x1 - x0, wh = y1 - y0, N = ww * wh;
+    if (ww < 8 || wh < 8 || N > SNAP_MAX_PX) return null;
+    /* Background: per-channel median of the window's 2 px border ring. */
+    var hist = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)], n = 0;
+    function addPx(x, y) { var p = (y * W + x) * 4; hist[0][d[p]]++; hist[1][d[p + 1]]++; hist[2][d[p + 2]]++; n++; }
+    for (var y = y0; y < y1; y++) {
+      if (y - y0 < 2 || y1 - 1 - y < 2) { for (var x = x0; x < x1; x++) addPx(x, y); }
+      else { addPx(x0, y); addPx(x0 + 1, y); addPx(x1 - 2, y); addPx(x1 - 1, y); }
+    }
+    var bg = hist.map(function (h) { var acc = 0; for (var v = 0; v < 256; v++) { acc += h[v]; if (acc >= n / 2) return v; } return 255; });
+    var mask = new Uint8Array(N);
+    for (var j = 0; j < wh; j++) {
+      var p = ((y0 + j) * W + x0) * 4, row = j * ww;
+      for (var i = 0; i < ww; i++, p += 4) {
+        if (Math.abs(d[p] - bg[0]) > SNAP_DIFF || Math.abs(d[p + 1] - bg[1]) > SNAP_DIFF || Math.abs(d[p + 2] - bg[2]) > SNAP_DIFF) mask[row + i] = 1;
+      }
+    }
+    /* Dilate 1 px (3×3) so anti-aliased edges and a button's label join its fill. */
+    var hz = new Uint8Array(N), dm = new Uint8Array(N);
+    for (j = 0; j < wh; j++) {
+      row = j * ww;
+      for (i = 0; i < ww; i++) hz[row + i] = mask[row + i] | (i > 0 ? mask[row + i - 1] : 0) | (i < ww - 1 ? mask[row + i + 1] : 0);
+    }
+    for (j = 0; j < wh; j++) {
+      row = j * ww;
+      for (i = 0; i < ww; i++) dm[row + i] = hz[row + i] | (j > 0 ? hz[row - ww + i] : 0) | (j < wh - 1 ? hz[row + ww + i] : 0);
+    }
+    /* 4-connected regions; each bbox is measured on undilated pixels. */
+    var seen = new Uint8Array(N), queue = new Int32Array(N);
+    var selArea = sel.w * sel.h, winArea = N, best = null;
+    for (var s = 0; s < N; s++) {
+      if (!dm[s] || seen[s]) continue;
+      var head = 0, tail = 0, minX = ww, minY = wh, maxX = -1, maxY = -1;
+      queue[tail++] = s; seen[s] = 1;
+      while (head < tail) {
+        var q = queue[head++], qx = q % ww, qy = (q - qx) / ww;
+        if (mask[q]) { if (qx < minX) minX = qx; if (qx > maxX) maxX = qx; if (qy < minY) minY = qy; if (qy > maxY) maxY = qy; }
+        if (qx > 0 && dm[q - 1] && !seen[q - 1]) { seen[q - 1] = 1; queue[tail++] = q - 1; }
+        if (qx < ww - 1 && dm[q + 1] && !seen[q + 1]) { seen[q + 1] = 1; queue[tail++] = q + 1; }
+        if (qy > 0 && dm[q - ww] && !seen[q - ww]) { seen[q - ww] = 1; queue[tail++] = q - ww; }
+        if (qy < wh - 1 && dm[q + ww] && !seen[q + ww]) { seen[q + ww] = 1; queue[tail++] = q + ww; }
+      }
+      if (maxX < 0) continue;
+      var bw = maxX - minX + 1, bh = maxY - minY + 1;
+      if (bw < MIN_SELECT || bh < MIN_SELECT) continue;
+      /* Touching the window edge (not the image edge) means it continues outside: a band, not an element. */
+      if ((minX === 0 && x0 > 0) || (minY === 0 && y0 > 0) || (maxX === ww - 1 && x1 < W) || (maxY === wh - 1 && y1 < H)) continue;
+      if (bw * bh > SNAP_MAX_WIN * winArea) continue;
+      var gx = x0 + minX, gy = y0 + minY;
+      var ix = Math.max(0, Math.min(gx + bw, sel.x + sel.w) - Math.max(gx, sel.x));
+      var iy = Math.max(0, Math.min(gy + bh, sel.y + sel.h) - Math.max(gy, sel.y));
+      var inter = ix * iy;
+      if (!inter || inter / Math.min(bw * bh, selArea) < SNAP_OVERLAP) continue;
+      var inside = gx >= sel.x && gy >= sel.y && gx + bw <= sel.x + sel.w && gy + bh <= sel.y + sel.h;
+      if (inside && bw * bh < SNAP_FILL * selArea) continue;
+      if (!best || inter > best.inter) best = { inter: inter, x: gx, y: gy, w: bw, h: bh };
+    }
+    if (!best) return null;
+    if (Math.abs(best.x - sel.x) <= SNAP_SAME && Math.abs(best.y - sel.y) <= SNAP_SAME &&
+        Math.abs(best.x + best.w - sel.x - sel.w) <= SNAP_SAME && Math.abs(best.y + best.h - sel.y - sel.h) <= SNAP_SAME) return null;
+    return { x: best.x, y: best.y, w: best.w, h: best.h };
+  }
+  /* The suggestion lives only while the box it was made for is still the current one. */
+  function validSnap() {
+    var sg = state.snapSuggest;
+    if (!sg || state.mode !== sg.kind) return null;
+    if (sg.kind === 'move' && (state.selection !== sg.from || state.offset.dx || state.offset.dy)) return null;
+    if (sg.kind === 'add' && state.addSelection !== sg.from) return null;
+    return sg;
+  }
+  function offerSnap(kind, rect, skip) {
+    state.snapSuggest = null;
+    if (skip || prefs.snapElements === false) return;
+    snapPixels().then(function (px) {
+      var cur = kind === 'move' ? state.selection : state.addSelection;
+      if (cur !== rect || state.mode !== kind || state.drag) return;
+      var t0 = window.performance ? performance.now() : Date.now();
+      var to = findSnap(px, rect);
+      var ms = (window.performance ? performance.now() : Date.now()) - t0;
+      if (!to) return;
+      state.snapSuggest = { kind: kind, from: rect, to: to, ms: Math.round(ms * 10) / 10 };
+      if (kind === 'move') paintOverlay(); else paintAddOverlay();
+      var live = $('#liveRegion');
+      if (live) { live.textContent = ''; setTimeout(function () { live.textContent = 'Snap to element suggested: ' + to.w + ' by ' + to.h + ' px. Enter to accept, Esc to keep yours.'; }, 30); }
+    }).catch(function () { /* pixels unreadable (e.g. opened from disk): keep the manual box, say nothing */ });
+  }
+  function acceptSnap() {
+    var sg = validSnap();
+    if (!sg) return false;
+    var before = snapshotState();
+    var r = { x: sg.to.x, y: sg.to.y, w: sg.to.w, h: sg.to.h };
+    state.snapSuggest = null;
+    if (sg.kind === 'move') { state.selection = r; syncSelectedDraft(); } else { state.addSelection = r; syncSelectedAdd(); }
+    commitHistory(before);
+    render();
+    toast('Snapped to element · ' + r.w + '×' + r.h + ' px');
+    return true;
+  }
+  function keepMySnap() {
+    if (!validSnap()) { state.snapSuggest = null; return false; }
+    var kind = state.snapSuggest.kind;
+    state.snapSuggest = null;
+    if (kind === 'move') paintOverlay(); else paintAddOverlay();
+    return true;
+  }
+  function paintSnap(layer, size) {
+    var sg = validSnap();
+    if (!sg) return;
+    var box = el('div', 'snap-box');
+    placeBox(box, sg.to, size);
+    layer.appendChild(box);
+    var chip = el('div', 'snap-chip');
+    chip.setAttribute('role', 'group');
+    chip.setAttribute('aria-label', 'Snap to element');
+    chip.setAttribute('data-ms', String(sg.ms));
+    var below = sg.to.y + sg.to.h < size.h * 0.82;
+    var right = sg.to.x > size.w * 0.6;
+    chip.style.top = ((below ? sg.to.y + sg.to.h : sg.to.y) / size.h * 100) + '%';
+    if (right) chip.style.right = ((size.w - sg.to.x - sg.to.w) / size.w * 100) + '%';
+    else chip.style.left = (sg.to.x / size.w * 100) + '%';
+    chip.classList.add(below ? 'below' : 'above');
+    chip.appendChild(el('span', 'snap-title', 'Snap to element'));
+    var accept = el('button', 'snap-btn primary');
+    accept.type = 'button';
+    accept.setAttribute('data-snap', 'accept');
+    accept.appendChild(el('span', null, 'Accept'));
+    var ak = formatKeys('snap.accept');
+    if (ak) accept.appendChild(el('kbd', null, ak));
+    var keep = el('button', 'snap-btn');
+    keep.type = 'button';
+    keep.setAttribute('data-snap', 'keep');
+    keep.appendChild(el('span', null, 'Keep mine'));
+    keep.appendChild(el('kbd', null, formatKeys('general.escape') || 'Esc'));
+    chip.appendChild(accept);
+    chip.appendChild(keep);
+    /* The chip sits on the drawing frame: its taps must not start a new box. */
+    chip.addEventListener('pointerdown', function (event) { event.stopPropagation(); });
+    accept.addEventListener('click', function () { acceptSnap(); });
+    keep.addEventListener('click', function () { keepMySnap(); });
+    layer.appendChild(chip);
   }
 
   function updateMoveInline() {
@@ -4693,6 +4888,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     /* Drafts and selections survive mode switches on purpose. */
     state.sidebarTab = state.mode === 'review' ? 'changes' : 'requests';
     state.sheet = state.sidebarTab;
+    if (state.mode !== 'review') { state.inspAuto = true; state.drawerOpen = true; if (prefs.snapElements !== false) snapPixels().catch(function () {}); }
     render();
   }
 
@@ -5001,6 +5197,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       'verify.open': function () { openVerify(); },
       'content.check': function () { toggleContentCheck(); },
       'theme.toggle': function () { toggleTheme(); },
+      'snap.accept': function () { acceptSnap(); },
       'mode.review': function () { setMode('review'); },
       'mode.move': function () { setMode('move'); },
       'mode.add': function () { setMode('add'); },
@@ -5013,7 +5210,8 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       var writing = isTypingTarget(event.target);
       if (state.recordingShortcut || overlayOpen()) return; /* palette, settings and menus handle their own keys */
       if (matchShortcut(event, 'general.escape', { anyModifiers: true })) {
-        /* Esc drops the transient selection; the drafts themselves stay. */
+        /* Esc first declines a snap suggestion (keeps the user's box), then drops the transient selection. */
+        if (keepMySnap()) return;
         if (state.mode === 'add' && (state.addSelection || state.drawRect)) {
           state.addSelection = null;
           state.addSelected = null;
@@ -5051,6 +5249,9 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         }
         return;
       }
+      if (id === 'snap.accept') {
+        if (!validSnap() || (event.target && event.target.closest && event.target.closest('button, [role="button"], a, summary, select'))) return;
+      }
       if (!SHORTCUT_RUN[id]) return;
       event.preventDefault();
       SHORTCUT_RUN[id]();
@@ -5082,7 +5283,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     inspectorOpen: true, defaultView: 'slider', showGrid: true, snap: true, gridSize: 8,
     rulers: true, defaultPrecision: 'exact', tourDone: false,
     promptCoords: true, promptRuleScope: true, promptRuleAsk: true, promptPage: true,
-    defaultMode: 'review', quickPhrases: true, verifyAfterCopy: false,
+    defaultMode: 'review', quickPhrases: true, verifyAfterCopy: false, snapElements: true,
     shortcuts: {}   /* only changed bindings: { id: "Ctrl+Shift+K" | null } */
   };
   var prefs = copy(PREF_DEFAULTS);
@@ -5097,7 +5298,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       });
     }
     /* Older or hand-edited saves: unknown keys (e.g. accent) are dropped, wrong types fall back. */
-    ['snap', 'rulers', 'inspectorOpen', 'tourDone', 'showGrid', 'promptCoords', 'promptRuleScope', 'promptRuleAsk', 'promptPage', 'quickPhrases', 'verifyAfterCopy'].forEach(function (key) {
+    ['snap', 'rulers', 'inspectorOpen', 'tourDone', 'showGrid', 'promptCoords', 'promptRuleScope', 'promptRuleAsk', 'promptPage', 'quickPhrases', 'verifyAfterCopy', 'snapElements'].forEach(function (key) {
       if (typeof prefs[key] !== 'boolean') prefs[key] = PREF_DEFAULTS[key];
     });
     if (prefs.sidebarCollapsed !== true && prefs.sidebarCollapsed !== false) prefs.sidebarCollapsed = null;
@@ -5376,13 +5577,21 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     body.classList.toggle('sb-collapsed', sidebarCollapsed());
     var key = selectionKey();
     if (key !== state.lastSelKey) {
-      /* A new selection opens the drawer (mid widths) or the Details sheet stays as chosen (mobile). */
-      if (key) state.drawerOpen = true;
+      /* A new selection opens the panel for this session (not saved), or the Details sheet stays as chosen (mobile). */
+      if (key) { state.drawerOpen = true; state.inspAuto = true; }
       if (key && kind === 'mobile' && state.sheetH > 0) state.sheet = 'inspector';
       state.lastSelKey = key;
     }
-    var closed = kind === 'desktop' ? prefs.inspectorOpen === false : kind === 'mid' ? !state.drawerOpen : false;
-    if (state.panelsInit && state.inspClosed && !closed && kind === 'desktop') replay($('#inspector'), 'panel-in');
+    var docked = inspectorDocked();
+    var closed = kind === 'mobile' ? false
+      : docked ? !(prefs.inspectorOpen !== false || state.inspAuto)
+      : !(state.drawerOpen || state.inspAuto);
+    var layoutKey = (docked ? 'dock' : 'float') + (closed ? '-closed' : '-open');
+    var layoutChanged = state.panelsInit && state.inspLayout && state.inspLayout !== layoutKey && docked;
+    state.inspLayout = layoutKey;
+    body.classList.toggle('insp-dock', docked && kind === 'mid');
+    if (layoutChanged) setTimeout(function () { renderStage(); renderChrome(); }, 190);
+    if (state.panelsInit && state.inspClosed && !closed && docked) replay($('#inspector'), 'panel-in');
     var collapsedNow = sidebarCollapsed();
     if (state.panelsInit && state.sbCollapsed && !collapsedNow && kind !== 'mobile') replay(document.querySelector('.sb-body'), 'panel-in');
     state.inspClosed = closed;
@@ -5390,6 +5599,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     state.panelsInit = true;
     body.classList.toggle('insp-closed', closed);
     renderSidebarToggle();
+    renderInspShow();
     if (kind === 'mobile' && isPhone()) {
       if (!state.sheetPos) state.sheetPos = 'peek';
       state.sheetH = Math.max(0, phoneSheetTotal(state.sheetPos) - sheetBarH());
@@ -5433,12 +5643,31 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     applyPanels();
     setTimeout(function () { renderStage(); renderChrome(); }, 190);
   }
+  /* Mid widths dock a narrower panel when the canvas keeps a usable width; otherwise it overlays. */
+  var INSP_MID_W = 272, CANVAS_MIN_W = 480;
+  function inspectorDocked() {
+    var kind = viewportKind();
+    if (kind === 'desktop') return true;
+    if (kind !== 'mid') return false;
+    var side = sidebarCollapsed() ? 56 : 260;
+    return window.innerWidth - side - INSP_MID_W >= CANVAS_MIN_W;
+  }
+  function renderInspShow() {
+    var b = document.getElementById('inspShow');
+    if (!b) return;
+    b.hidden = viewportKind() === 'mobile' || inspectorShown();
+  }
+  function inspectorShown() { return !document.body.classList.contains('insp-closed'); }
+  /* X, Show panel, Ctrl+I and the palette: an explicit choice, remembered (docked) or for this session (overlay). */
   function toggleInspector() {
     var kind = viewportKind();
     if (kind === 'mobile') { setSheet('inspector'); return; }
-    if (kind === 'mid') state.drawerOpen = !state.drawerOpen;
-    else { prefs.inspectorOpen = prefs.inspectorOpen === false; savePrefs(); }
+    var open = !inspectorShown();
+    state.inspAuto = false;
+    if (inspectorDocked()) { prefs.inspectorOpen = open; savePrefs(); }
+    else state.drawerOpen = open;
     applyPanels();
+    renderInspShow();
     setTimeout(function () { renderStage(); renderChrome(); }, 190);
   }
   function setSidebarTab(tab) {
@@ -5841,6 +6070,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     { id: 'tool.select', group: 'Canvas', action: 'Select tool', keys: 'V', when: 'moveadd' },
     { id: 'tool.move', group: 'Canvas', action: 'Move tool', keys: 'M', when: 'move' },
     { id: 'tool.place', group: 'Canvas', action: 'Place tool', keys: 'P', when: 'add' },
+    { id: 'snap.accept', group: 'Canvas', action: 'Accept snap to element', keys: 'Enter', when: 'moveadd' },
     /* Hold gestures: they act while the key is held, so they stay fixed. */
     { id: 'tool.hand', group: 'Canvas', action: 'Hand tool (hold)', keys: 'Space', when: 'moveadd', editable: false },
     { id: 'canvas.axisLock', group: 'Canvas', action: 'Lock to one axis (hold)', keys: 'Shift', when: 'drag', editable: false },
@@ -6628,6 +6858,9 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
         stRow('rulers', 'Rulers', 'Pixel rulers around the picture in Move and Add.', stSwitch('rulers', state.rulers, function (v) {
           state.rulers = v; document.body.classList.toggle('no-rulers', !v); savePrefs(); render(); refreshSettings();
         })),
+        stRow('snapelements', 'Snap to elements', 'Suggest a tight box around the element you outline. Hold Alt while drawing to skip once.', stSwitch('snapelements', prefs.snapElements !== false, function (v) {
+          prefs.snapElements = v; if (!v) state.snapSuggest = null; savePrefs(); render(); refreshSettings();
+        })),
         stRow('precision', 'Default precision', 'Exact = 2 px · Approx = 8 px', stSeg('precision', [['exact', 'Exact'], ['approximate', 'Approx']], prefs.defaultPrecision, function (v) {
           if (state.precision !== v) setPrecision(v); else { prefs.defaultPrecision = v; savePrefs(); refreshSettings(); }
         }), true)
@@ -7162,6 +7395,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       setContentMode(!state.content.on);
     });
     $('#inspectorClose').addEventListener('click', toggleInspector);
+    $('#inspShow').addEventListener('click', toggleInspector);
     $('#themeBtn').addEventListener('click', toggleTheme);
     $('#moreBtn').addEventListener('click', function () {
       if (state.moreJustClosed) { state.moreJustClosed = false; return; }
