@@ -3067,6 +3067,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     var t = $('#contentToggle');
     if (!t) return;
     t.setAttribute('aria-pressed', state.content.on ? 'true' : 'false');
+    t.setAttribute('data-sc', 'content.check');
     explainDisabled(t, state.boxes.length ? '' : 'No changed areas to check', 'Show which content looks removed, added or changed');
   }
   function setContentMode(on) {
@@ -3075,6 +3076,18 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     if (t) t.setAttribute('aria-pressed', state.content.on ? 'true' : 'false');
     renderLeft();
   }
+  /* Shortcut / palette: switch the view and show the Changes list. */
+  function toggleContentCheck() {
+    if (!state.report) { toast('Load images first'); return; }
+    if (!state.boxes.length) { toast('No changed areas to check'); return; }
+    var on = !state.content.on;
+    if (on) {
+      if (isPhone()) openPhoneSheet('changes'); else if (state.sidebarTab !== 'changes' || sidebarCollapsed()) setSidebarTab('changes');
+    }
+    setContentMode(on);
+    toast(on ? 'Content check on' : 'Content check off');
+  }
+
   function renderLeft() {
     var holder = $('#leftList');
     $('#listCount').textContent = String(state.boxes.length);
@@ -4943,6 +4956,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
       'panel.inspector': function () { toggleInspector(); },
       'prompt.copy': function () { copyPrompt(); },
       'verify.open': function () { openVerify(); },
+      'content.check': function () { toggleContentCheck(); },
       'mode.review': function () { setMode('review'); },
       'mode.move': function () { setMode('move'); },
       'mode.add': function () { setMode('add'); },
@@ -5756,6 +5770,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     { id: 'general.tab', group: 'General', action: 'Move between controls', keys: 'Tab', when: 'global', editable: false },
     { id: 'panel.sidebar', group: 'Navigation', action: 'Toggle sidebar', keys: 'Ctrl+B', when: 'global' },
     { id: 'panel.inspector', group: 'Navigation', action: 'Toggle details panel', keys: 'Ctrl+I', when: 'global' },
+    { id: 'content.check', group: 'Navigation', action: 'Content check', keys: 'Shift+C', when: 'global' },
     { id: 'zoom.fit', group: 'Canvas', action: 'Zoom to fit', keys: '0', when: 'global' },
     { id: 'tool.select', group: 'Canvas', action: 'Select tool', keys: 'V', when: 'moveadd' },
     { id: 'tool.move', group: 'Canvas', action: 'Move tool', keys: 'M', when: 'move' },
@@ -6764,6 +6779,7 @@ mark.st-hit{background:rgba(47,128,255,.18);color:inherit;border-radius:3px}
     add('Action', 'Copy prompt', copyPrompt, 'prompt.copy');
     add('Action', 'Preview prompt', openPromptPreview);
     if (verifyCount()) add('Action', 'Verify fixes', openVerify, 'verify.open');
+    if (state.boxes.length) add('Action', state.content.on ? 'Show all changes' : 'Content check', toggleContentCheck, 'content.check');
     ['review', 'move', 'add'].forEach(function (m, i) {
       add('Mode', 'Switch to ' + m.charAt(0).toUpperCase() + m.slice(1) + ' mode', function () { setMode(m); }, 'mode.' + m);
     });
