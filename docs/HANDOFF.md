@@ -1,6 +1,30 @@
 # HANDOFF
 
-## Current task: Mobile fixes (<640px / touch)
+## Current task: Settings redesign + Shortcuts (replaces Settings steps 3–4)
+
+Branch: `feat/settings-redesign` (from `feat/mobile-fixes` at 0fbfaec). One commit per step. Only Settings changed; prefs stay in `orphic-eyes.prefs.v1` with the same keys.
+
+### Done
+1. 5fec24d Shell: 760×560 card (max 92vw/86vh, radius 12, rgba(0,0,0,.4) backdrop), 200px side list (title, tabs, "Version dev": no version constant exists), vertical tablist (Up/Down/Home/End, roving focus) + tabpanel, sticky title/subtitle, own scroll, "Changes save automatically" footer, 32px close. Re-render after a change keeps scroll + focused control.
+2. 808db7c Rows/controls: group cards with optional uppercase titles; 56px rows (label 13/500, description 12 muted, 2 lines, 420px); switch 32×18 (role=switch), 28px segmented radiogroup (arrow keys), 28px select for Default view (4 options), 28px secondary buttons; red Danger zone for Reset preferences; 8 requests / 240 characters and the privacy note are blue ⓘ callouts. Descriptions via aria-describedby.
+3. 2256df7 Shortcuts: one `SHORTCUTS` list ({group, action, keys, when}); groups General, Navigation, Canvas, Modes, Requests; 44px rows, mono keycaps (no "+"), ⌘ ⌥ ⇧ on Mac; search (action, group, key names; "ctrl k" → Ctrl K), marked matches, empty groups hidden, 'No shortcuts match "{q}".' + Clear search, aria-live count, Esc clears then closes; autofocus on desktop only; touch note; Ctrl K tip (palette exists). Row labels like "Open settings, Control plus comma".
+4. 9a6e061 Phone (<640): full screen, level 1 = 52px section rows + close, level 2 = "‹ Settings" back + content; switches right, segments/select full width, 44px targets, keycaps 10px, safe-area padding. Dark: #1C1C1F content, #161618 side list, #ffffff14 borders, #ECECEC text, #A0A0A0 descriptions, active #2F80FF on 16% blue, danger #FF6B6B.
+5. c450dcd Optional: 2px active bar, 4px backdrop blur, 1.2s "Saved" flash (role=status), matched text marked, last tab remembered for the session, 120ms control transitions (off with Reduce motion). 695b435 keeps the old panel-up open animation.
+- Tabs and where settings went: General = Quick tour · Appearance = Theme, Text size · Canvas = Default view, Show grid, Grid size, Snap to grid, Rulers, Default precision · Copy prompt = 4 switches + 8/240 callout + Preview prompt · Data & privacy = privacy note + Reset preferences (moved from General) · Shortcuts · About = existing text. No tab omitted; no settings added.
+- Shortcut audit: all 18 listed shortcuts have handlers (Ctrl K, Ctrl ,, ?, Ctrl Z, Ctrl Shift Z, Esc, Ctrl B, Ctrl I, 0, V, M, P, Space, Shift, 1, 2, 3, Ctrl Enter); kept, none removed, none added. Working but not listed (left as they were): Ctrl Y (redo), slider handle arrows/Home/End, sheet handle and sidebar tab arrows.
+- Deviations: active tab label uses #1D63D3 (light) / #5C9BFF (dark) for 4.5:1; icon and bar stay #2F80FF. Light segmented background #F4F4F2 so unselected labels pass 4.5:1.
+- Checked in Chrome at 1440 and 390/360 (touch), light/dark: acceptance 168/168, shortcuts 35/35, every listed key really works, settings persist after reload, focus returns to gear / ⋯. Main app pixel-identical to `feat/mobile-fixes` (desktop 18/18; phone 14/14 apart from a 2px focus flicker on ⋯ that also shows base-vs-base). Copy prompt text identical; mobile, load, reference, flow and motion checks unchanged.
+- report.html: 441,018 → 465,787 bytes. Diff: no URLs/fetch/XHR/eval, no new storage keys. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
+- Screenshots: `docs/screenshots/settings-redesign/`.
+
+### Not done
+- Optional group filter chips in Shortcuts (search already filters by group name).
+- Not tested in Edge or on a real Mac (⌘ keycaps checked by code only).
+
+### Next
+- UI polish (Prompt B)
+
+## Previous task: Mobile fixes (<640px / touch)
 
 Branch: `feat/mobile-fixes` (from `feat/visual-fixes` at 38b9b97). One commit per step. Phone rules live in `@media (max-width:639px)` blocks; touch wording uses `matchMedia('(hover: none)')` (`body.touch`). 640–767 px keeps the old bottom sheet.
 
