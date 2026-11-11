@@ -54,6 +54,11 @@ def plugin_config():
         return {}
 
 
+def allow_local():
+    """Private/loopback HTTP(S) access is a user decision (config), never a tool argument."""
+    return plugin_config().get("allow_local") is True
+
+
 def file_root():
     """Directory that file:// pages must live in; defaults to the working directory."""
     value = plugin_config().get("file_root")
@@ -69,6 +74,12 @@ def trusted_file_dir(folder):
         yield
     finally:
         _TRUSTED_FILE_DIR.reset(token)
+
+
+def _reject_model_allow_local(args):
+    if isinstance(args, dict) and "allow_local" in args:
+        raise ValueError("allow_local is not a tool argument; the user enables trusted local "
+                         "destinations with " + CONFIG_HINT + ".allow_local: true in Hermes config.yaml")
 
 
 def _safe_file(folder, filename):
@@ -130,7 +141,7 @@ def _failure(exc, *, url_pair=False):
         elif "timed out" in lower:
             fix = "Check destination access; increase timeout_ms if appropriate and keep wait_ms below it."
         else:
-            fix = "Supply public http/https before_url and after_url; use allow_local=true only for trusted local test pages. Use a fresh target name."
+            fix = "Supply public http/https before_url and after_url and a fresh target name. Local/private pages need the user to set " + CONFIG_HINT + ".allow_local: true in Hermes config.yaml."
     elif "viewport" in lower and "width/height" in lower:
         fix = "Pass either viewport (desktop/mobile/tablet) or width/height, never both."
     elif "capture size mismatch" in lower:
@@ -229,6 +240,7 @@ def _run(args, allowed, action, operation):
     try:
         if not isinstance(args, dict):
             raise ValueError("arguments must be an object")
+        _reject_model_allow_local(args)
         if set(args) - set(allowed):
             raise ValueError("unsupported arguments; use only the fields in this tool's schema")
         name = _target(args)
@@ -282,14 +294,14 @@ def _check_capture_size(path, width, height):
 
 
 def _compare(args, name, root):
-    pair_fields = {"before_url", "after_url", "width", "height", "wait_ms", "timeout_ms", "allow_local"}
+    pair_fields = {"before_url", "after_url", "width", "height", "wait_ms", "timeout_ms"}
     if set(args) & pair_fields:
         if not {"before_url", "after_url"} <= set(args):
             raise ValueError("URL capture requires both before_url and after_url")
         if set(args) & {"url", "expect", "requests"}:
             raise ValueError("URL capture cannot combine before_url/after_url with url, expect or requests")
         result = _module("url_capture").capture_pair(
-            args["before_url"], args["after_url"], root, name=name,
+            args["before_url"], args["after_url"], root, name=name, allow_local=allow_local(),
             **{key: args[key] for key in pair_fields - {"before_url", "after_url"} if key in args})
         return result
     intents = None
@@ -319,12 +331,13 @@ def _compare(args, name, root):
 
 def handle_compare(args: dict, **_kw) -> str:
     return _run(args, ("name", "url", "expect", "requests", "before_url", "after_url",
-                       "width", "height", "wait_ms", "timeout_ms", "allow_local"), "compare", _compare)
+                       "width", "height", "wait_ms", "timeout_ms"), "compare", _compare)
 
 
 def handle_loop_step(args: dict, **_kw) -> str:
     try:
-        allowed = {"name", "after_url", "requests", "max_rounds", "allow_local", "wait_ms", "timeout_ms"}
+        allowed = {"name", "after_url", "requests", "max_rounds", "wait_ms", "timeout_ms"}
+        _reject_model_allow_local(args)
         if not isinstance(args, dict) or set(args) - allowed:
             raise ValueError("Loop arguments must be an object containing only schema fields")
         if not {"name", "after_url"} <= set(args):
@@ -332,7 +345,7 @@ def handle_loop_step(args: dict, **_kw) -> str:
         name = _target(args)
         root = resolve_data_dir()
         _case(root, name)
-        result = _module("loop").loop_step(name, args["after_url"], root,
+        result = _module("loop").loop_step(name, args["after_url"], root, allow_local=allow_local(),
                     **{key: value for key, value in args.items() if key not in ("name", "after_url")})
         if result.get("status") == "error":
             raise ValueError(result["error"])
@@ -442,7 +455,6 @@ URL_PAIR = {
     "height": {"type": "integer", "minimum": 1, "default": 900, "description": "Paired capture viewport height; DPR=1."},
     "wait_ms": {"type": "integer", "minimum": 0, "default": 250, "description": "Extra wait after network idle; motion is disabled."},
     "timeout_ms": {"type": "integer", "minimum": 1, "default": 30000, "description": "Deadline per capture, including navigation and network idle; greater than wait_ms."},
-    "allow_local": {"type": "boolean", "default": False, "description": "Explicitly permit private/loopback HTTP(S) destinations, including resources and redirects, for trusted local pages. Never permits file/data/javascript URLs."},
 }
 
 
@@ -463,19 +475,19 @@ TOOL_DEFINITIONS = (
          "height": {"type": "integer", "minimum": 1, "default": 720,
                     "description": "Viewport height in pixels, e.g. 720."}}, ("url",)), handle_baseline),
     ("orphic_compare", _schema("orphic_compare",
-        "Compare screenshots by pixels. Returns report_url when a local report server is running, otherwise serve_hint with the start command; open HTML over HTTP for Verify. URL pair mode: supply before_url and after_url (public HTTP/HTTPS) plus a fresh name; no baseline needed. Optional width/height default to 1440x900, DPR=1. Blocks private networks unless allow_local=true. Returns paths.report, optional paths.html, summary.box_count (changed zones), status and numbered boxes. Never combines pair mode with url/expect/requests. Otherwise, call after editing a local web app: captures using the baseline viewport/browser; omitted url reuses its local URL (http://localhost, http://127.0.0.1 or local file://). Optional requests verify up to 8 Point & Tell intents (Exact=2px, Approx=8px); read requests_ok separately from visual status. expect classifies without approving. Both modes use the existing pixel thresholds and offline report template; no page source, DOM contents or computed styles are inspected.",
+        "Compare screenshots by pixels. Returns report_url when a local report server is running, otherwise serve_hint with the start command; open HTML over HTTP for Verify. URL pair mode: supply before_url and after_url (public HTTP/HTTPS) plus a fresh name; no baseline needed. Optional width/height default to 1440x900, DPR=1. Blocks private networks unless the user set allow_local in plugin config (link-local/metadata addresses are always blocked). Returns paths.report, optional paths.html, summary.box_count (changed zones), status and numbered boxes. Never combines pair mode with url/expect/requests. Otherwise, call after editing a local web app: captures using the baseline viewport/browser; omitted url reuses its local URL (http://localhost, http://127.0.0.1 or local file://). Optional requests verify up to 8 Point & Tell intents (Exact=2px, Approx=8px); read requests_ok separately from visual status. expect classifies without approving. Both modes use the existing pixel thresholds and offline report template; no page source, DOM contents or computed styles are inspected.",
         {**URL_PAIR, "url": URL, "requests": {"type": "array", "maxItems": 8, "items": REQUEST,
                                    "description": "Point & Tell intents; from is in BASELINE pixels, to in AFTER pixels; same size; exact=2px, approximate=8px."},
          "expect": {"type": "array", "items": REGION,
                                  "description": "Expected changed areas, e.g. [{x:8,y:8,w:100,h:40}]."}}), handle_compare),
     ("orphic_loop_step", _schema("orphic_loop_step",
-        "Run one pixel-only review round on an existing baseline/capture-pair target. Captures after_url and reports changes from the previous image, per_zone goal verdicts, persistent unexpected_zones and follow_up_prompt. Completion uses fixed baseline-relative Point & Tell requests, or restores initial changed areas to the original reference when requests are omitted. Returns stop_condition continue/done/max_rounds/needs_human and should_stop; never edits code or sends the prompt. Goals/max_rounds are fixed on first call (default 3 rounds). Stop on should_stop. report_url is usable while the local report server runs; otherwise follow serve_hint. Source URLs are not persisted. HTTP/HTTPS only; private destinations require explicit allow_local=true. No page code or text is read.",
+        "Run one pixel-only review round on an existing baseline/capture-pair target. Captures after_url and reports changes from the previous image, per_zone goal verdicts, persistent unexpected_zones and follow_up_prompt. Completion uses fixed baseline-relative Point & Tell requests, or restores initial changed areas to the original reference when requests are omitted. Returns stop_condition continue/done/max_rounds/needs_human and should_stop; never edits code or sends the prompt. Goals/max_rounds are fixed on first call (default 3 rounds). Stop on should_stop. report_url is usable while the local report server runs; otherwise follow serve_hint. Source URLs are not persisted. HTTP/HTTPS only; private destinations require the user's allow_local plugin config. No page code or text is read.",
         {"after_url": {"type": "string", "description": "HTTP/HTTPS page to capture this round; reuse the same existing target name. Never include credentials in URLs."},
          "requests": {"type": "array", "maxItems": 8, "items": REQUEST,
                       "description": "Optional fixed intents with from/to in the ORIGINAL baseline pixels; omit on later calls to reuse. Comment/unknown verdicts require a human."},
          "max_rounds": {"type": "integer", "minimum": 1, "default": 3,
                         "description": "Set on the first call; fixed for the session. Stop when should_stop=true."},
-         "allow_local": URL_PAIR["allow_local"], "wait_ms": URL_PAIR["wait_ms"],
+         "wait_ms": URL_PAIR["wait_ms"],
          "timeout_ms": URL_PAIR["timeout_ms"]}, ("name", "after_url")), handle_loop_step),
     ("orphic_approve", _schema("orphic_approve",
         "After reviewing the latest comparison, approve intended unexpected box IDs or all boxes. Returns updated metrics and classifications; approvals match image content and do not replace the baseline." + LIMITS,

@@ -16,8 +16,9 @@ from tests.test_url_capture import local_pages, url_capture
 class HermesURLTests(unittest.TestCase):
     def test_schema_and_incomplete_or_mixed_pair_arguments(self):
         schema = next(item[1] for item in tools.TOOL_DEFINITIONS if item[0] == "orphic_compare")
-        for field in ("before_url", "after_url", "width", "height", "allow_local", "wait_ms", "timeout_ms"):
+        for field in ("before_url", "after_url", "width", "height", "wait_ms", "timeout_ms"):
             self.assertIn(field, schema["parameters"]["properties"])
+        self.assertNotIn("allow_local", schema["parameters"]["properties"])
         for args in ({"before_url": "https://example.com"}, {"width": 1440},
                      {"before_url": "https://example.com", "after_url": "https://example.com", "url": "http://localhost"}):
             self.assertFalse(json.loads(tools.handle_compare(args))["success"])
@@ -62,10 +63,11 @@ class URLPluginBrowserTests(unittest.TestCase):
         self.folder = Path(self.temp.name)
 
     def test_pair_report_and_real_hermes_call(self):
-        with local_pages() as server, patch.dict(os.environ, {"HERMES_HOME": str(self.folder)}):
+        with local_pages() as server, patch.dict(os.environ, {"HERMES_HOME": str(self.folder)}), \
+                patch.object(tools, "plugin_config", return_value={"allow_local": True}):
             base = f"http://127.0.0.1:{server.server_port}"
             result = json.loads(tools.handle_compare({"name": "preview", "before_url": base + "/a?token=SECRET_QUERY",
-                                                      "after_url": base + "/b", "allow_local": True}))
+                                                      "after_url": base + "/b"}))
             self.assertTrue(result["success"], result)
             self.assertEqual(result["summary"]["box_count"], 1)
             self.assertIn("1 changed zone", result["message"])

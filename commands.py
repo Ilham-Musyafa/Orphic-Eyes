@@ -22,7 +22,8 @@ orphic_approve, orphic_accept, orphic_ignore.
 Baseline/legacy compare: local http://localhost, http://127.0.0.1 or file://.
 Baseline file:// pages must be inside plugins.entries.orphic-eyes.file_root
 (default: working directory); dot-directories, .env and the Hermes home are refused.
-Compare URL pairs and loop steps: HTTP/HTTPS; private destinations require allow_local=true.
+Compare URL pairs and loop steps: HTTP/HTTPS; private destinations require
+plugins.entries.orphic-eyes.allow_local: true in config.yaml (user setting).
 HTML requires an optional template.
 Demo replaces only the target named demo; its files live under the data directory.
 """

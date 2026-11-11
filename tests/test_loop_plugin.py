@@ -23,11 +23,13 @@ class LoopToolTests(unittest.TestCase):
 
     def test_report_url_and_tool_schema_and_response(self):
         home = self.root / "hermes"
-        with patch.dict(os.environ, {"HERMES_HOME": str(home)}), patch.object(tools, "resolve_data_dir", return_value=self.root):
+        with patch.dict(os.environ, {"HERMES_HOME": str(home)}), patch.object(tools, "resolve_data_dir", return_value=self.root), \
+                patch.object(tools, "plugin_config", return_value={"allow_local": True}):
             schema = next(schema for name, schema, handler in tools.TOOL_DEFINITIONS if name == "orphic_loop_step")
             self.assertEqual(schema["parameters"]["required"], ["name", "after_url"])
+            self.assertNotIn("allow_local", schema["parameters"]["properties"])
             with ReportServer(self.root) as server:
-                response = tools.handle_loop_step({"name": "case", "after_url": "http://127.0.0.1/", "allow_local": True})
+                response = tools.handle_loop_step({"name": "case", "after_url": "http://127.0.0.1/"})
                 result = json.loads(response)
                 self.assertTrue(result["success"], result)
                 self.assertLess(len(response.encode()), tools.MAX_RESULT_BYTES)
@@ -39,8 +41,9 @@ class LoopToolTests(unittest.TestCase):
         result["per_zone"] = [dict(result["per_zone"][0], id="Z" + str(index)) for index in range(1, 51)]
         result["zone_count"] = result["failing_count"] = 50
         result["follow_up_prompt"] = "Fix the listed pixel regions only. " * 200
-        with patch.object(tools, "resolve_data_dir", return_value=self.root), patch.object(test_loop.loop, "loop_step", return_value=result):
-            encoded = tools.handle_loop_step({"name":"case", "after_url":"http://127.0.0.1/", "allow_local":True})
+        with patch.object(tools, "resolve_data_dir", return_value=self.root), patch.object(test_loop.loop, "loop_step", return_value=result), \
+                patch.object(tools, "plugin_config", return_value={"allow_local": True}):
+            encoded = tools.handle_loop_step({"name":"case", "after_url":"http://127.0.0.1/"})
         compact = json.loads(encoded)
         self.assertLess(len(encoded.encode()), tools.MAX_RESULT_BYTES)
         self.assertEqual(compact["zone_count"], 50)
@@ -71,16 +74,17 @@ class LoopBrowserTests(unittest.TestCase):
         thread = threading.Thread(target=pages.serve_forever, kwargs={"poll_interval": 0.05}, daemon=True)
         thread.start()
         try:
-            with tempfile.TemporaryDirectory(prefix="oe_loop_e2e_") as temporary, patch.dict(os.environ, {"HERMES_HOME": temporary}):
+            with tempfile.TemporaryDirectory(prefix="oe_loop_e2e_") as temporary, patch.dict(os.environ, {"HERMES_HOME": temporary}), \
+                    patch.object(tools, "plugin_config", return_value={"allow_local": True}):
                 root = tools.resolve_data_dir()
                 root.mkdir()
                 base = f"http://127.0.0.1:{pages.server_port}"
                 with ReportServer(root) as server:
                     initial = json.loads(tools.handle_compare({"name": "review", "before_url": base + "/reference",
-                                         "after_url": base + "/current", "width": 400, "height": 300, "allow_local": True}))
+                                         "after_url": base + "/current", "width": 400, "height": 300}))
                     self.assertTrue(initial["success"], initial)
                     self.assertTrue(initial["report_url"].startswith(server.base_url))
-                    args = {"name": "review", "after_url": base + "/current", "allow_local": True}
+                    args = {"name": "review", "after_url": base + "/current"}
                     first = json.loads(tools.handle_loop_step(args))
                     self.assertTrue(first["success"], first)
                     self.assertEqual(first["stop_condition"], "continue")

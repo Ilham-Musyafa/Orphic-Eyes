@@ -51,7 +51,9 @@ class URLValidationTests(unittest.TestCase):
                      "0.0.0.0", "224.0.0.1", "[::1]", "[fc00::1]", "[fe80::1]",
                      "[::ffff:127.0.0.1]"):
             with self.subTest(host=host):
-                self.assertIn("allow_local", validate_url("http://" + host + "/"))
+                # Link-local/metadata hosts are refused outright (even with allow_local).
+                expected = "always blocked" if host in ("169.254.169.254", "[fe80::1]") else "allow_local"
+                self.assertIn(expected, validate_url("http://" + host + "/"))
 
     def test_public_hostname_resolving_to_private_or_mixed_addresses_is_blocked(self):
         local = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.0.0.1", 80))]

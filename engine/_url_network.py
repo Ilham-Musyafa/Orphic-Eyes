@@ -70,11 +70,35 @@ def resolve(host, port, timeout):
     return addresses
 
 
+# Cloud metadata and link-local services are refused even with allow_local.
+ALWAYS_BLOCKED = tuple(ipaddress.ip_network(net) for net in (
+    "169.254.0.0/16", "fe80::/10", "fd00:ec2::254/128"))
+
+
+def always_blocked(address):
+    """True for link-local/metadata addresses, including mapped and tunnelled forms."""
+    address = ipaddress.ip_address(address)
+    candidates = [address]
+    mapped = getattr(address, "ipv4_mapped", None)
+    if mapped:
+        candidates.append(mapped)
+    if getattr(address, "sixtofour", None):
+        candidates.append(address.sixtofour)
+    candidates += list(getattr(address, "teredo", None) or [])
+    if address.version == 6 and address in ipaddress.ip_network("64:ff9b::/96"):
+        candidates.append(ipaddress.IPv4Address(int(address) & 0xFFFFFFFF))
+    return any(item.version == net.version and item in net
+               for item in candidates for net in ALWAYS_BLOCKED)
+
+
 def destination(url, allow_local, timeout):
     parts, host, port = parse_url(url)
     if not allow_local and (host == "localhost" or host.endswith((".localhost", ".local", ".internal"))):
-        raise URLPolicyError("URL local/private network access requires allow_local=True")
+        raise URLPolicyError("URL local/private network access requires the user's allow_local plugin config")
     addresses = resolve(host, port, timeout)
+    for entry in addresses:
+        if always_blocked(entry[4][0].split("%", 1)[0]):
+            raise URLPolicyError("URL link-local/metadata destinations are always blocked")
     if not allow_local:
         for entry in addresses:
             address = ipaddress.ip_address(entry[4][0])
@@ -83,7 +107,7 @@ def destination(url, allow_local, timeout):
             embedded += list(getattr(address, "teredo", None) or [])
             if (not address.is_global or address.is_multicast or address.is_reserved or
                     any(not item.is_global or item.is_multicast for item in embedded)):
-                raise URLPolicyError("URL local/private network access requires allow_local=True")
+                raise URLPolicyError("URL local/private network access requires the user's allow_local plugin config")
     return parts, host, port, addresses
 
 
@@ -120,7 +144,9 @@ class GuardedProxy(ThreadingHTTPServer):
             # fail closed rather than allowing a second, unvalidated lookup.
             sock = socket.create_connection((proxy.hostname, proxy.port or 80), timeout=min(5, self.remaining()))
             try:
-                target = host if self.allow_local else addresses[0][4][0]
+                # Always pin the validated numeric address, also with allow_local,
+                # so the upstream proxy cannot re-resolve to a metadata address.
+                target = addresses[0][4][0].split("%", 1)[0]
                 authority = ("[" + target + "]" if ":" in target else target) + ":" + str(port)
                 headers = f"CONNECT {authority} HTTP/1.1\r\nHost: {authority}\r\n"
                 if proxy.username is not None:
