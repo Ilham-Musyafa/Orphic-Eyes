@@ -1,5 +1,7 @@
 """Image-only Hermes tool adapter; no registration or I/O at import time."""
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 import importlib
 import json
 import logging
@@ -11,6 +13,10 @@ logger = logging.getLogger(__name__)
 MAX_RESULT_BYTES = 4000
 STATE_FILE = "plugin-state.json"
 VIEWPORT_PRESETS = {"desktop": (1280, 720), "mobile": (390, 844), "tablet": (768, 1024)}
+PLUGIN_ID = "orphic-eyes"
+CONFIG_HINT = "plugins.entries." + PLUGIN_ID
+# Only /orphic demo sets this, for pages it wrote itself under the data directory.
+_TRUSTED_FILE_DIR = ContextVar("orphic_trusted_file_dir", default=None)
 
 
 def _module(name):
@@ -35,6 +41,34 @@ def resolve_data_dir():
     if root.exists() and not root.is_dir():
         raise ValueError("data directory is not a directory")
     return root
+
+
+def plugin_config():
+    """Read the user's plugins.entries.orphic-eyes block; fail closed to defaults."""
+    try:
+        from hermes_cli.config import load_config
+        config = load_config() or {}
+        entry = ((config.get("plugins") or {}).get("entries") or {}).get(PLUGIN_ID) or {}
+        return entry if isinstance(entry, dict) else {}
+    except Exception:
+        return {}
+
+
+def file_root():
+    """Directory that file:// pages must live in; defaults to the working directory."""
+    value = plugin_config().get("file_root")
+    if isinstance(value, str) and value.strip():
+        return Path(value).expanduser()
+    return Path.cwd()
+
+
+@contextmanager
+def trusted_file_dir(folder):
+    token = _TRUSTED_FILE_DIR.set(Path(folder))
+    try:
+        yield
+    finally:
+        _TRUSTED_FILE_DIR.reset(token)
 
 
 def _safe_file(folder, filename):
@@ -69,7 +103,17 @@ def _rectangle(value):
 
 
 def _url(value):
-    error = _module("capture").validate_url(value)
+    capture = _module("capture")
+    error = capture.validate_url(value)
+    if error is None:
+        trusted = _TRUSTED_FILE_DIR.get()
+        if trusted is not None:
+            error = capture.confine_file_url(value, trusted, protected=False)
+        else:
+            error = capture.confine_file_url(value, file_root(),
+                                             hermes_home=resolve_data_dir().parent)
+            if error and "file_root" in error:
+                error += "; set " + CONFIG_HINT + ".file_root in Hermes config.yaml"
     if error:
         raise ValueError(error)
     return value
@@ -91,8 +135,10 @@ def _failure(exc, *, url_pair=False):
         fix = "Pass either viewport (desktop/mobile/tablet) or width/height, never both."
     elif "capture size mismatch" in lower:
         fix = "Use a supported browser or viewport; do not resize the PNG to fake the requested viewport."
+    elif "file_root" in lower or "file://" in lower:
+        fix = "Use a regular file:// page inside " + CONFIG_HINT + ".file_root (default: working directory), outside dot-directories, or use http://localhost:PORT/."
     elif "url" in lower:
-        fix = "Use http://localhost:PORT/, http://127.0.0.1:PORT/ or a local absolute file:// URL."
+        fix = "Use http://localhost:PORT/, http://127.0.0.1:PORT/ or a file:// page inside the configured file_root."
     elif "browser" in lower:
         fix = "Install an Edge, Chrome or Chromium browser locally, then run /orphic doctor."
     elif "baseline not found" in lower:
@@ -376,7 +422,7 @@ def handle_ignore(args: dict, **_kw) -> str:
 
 NAME = {"type": "string", "description": "Target name, e.g. login; 1-40 ASCII letters/digits/_/-.",
         "default": "default", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$"}
-URL = {"type": "string", "description": "Local page, e.g. http://localhost:3000/ or file:///C:/app/index.html."}
+URL = {"type": "string", "description": "Local page, e.g. http://localhost:3000/ or a file:// page inside the user's configured file_root."}
 REGION = {"type": "object", "additionalProperties": False,
           "properties": {key: {"type": "integer", "minimum": 0 if key in ("x", "y") else 1,
                                 "description": f"Screenshot pixels: {key}, e.g. {8 if key in ('x', 'y') else 40}."}
@@ -406,7 +452,7 @@ def _schema(name, description, properties, required=()):
                            "properties": {"name": NAME, **properties}, "required": list(required)}}
 
 
-LIMITS = " Only http://localhost, http://127.0.0.1 and local file:// URLs; image-only, no DOM access."
+LIMITS = " Only http://localhost, http://127.0.0.1 and file:// pages inside the user's file_root; image-only, no DOM access."
 TOOL_DEFINITIONS = (
     ("orphic_baseline", _schema("orphic_baseline",
         "Call first, before editing a local web app's UI, to save a baseline screenshot. Optional viewport: desktop=1280x720, mobile=390x844, tablet=768x1024; do not combine with width/height. Verifies actual PNG dimensions, DPR=1. Returns JSON status, paths and viewport; replacing a baseline clears prior comparison/approvals." + LIMITS,

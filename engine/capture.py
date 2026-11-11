@@ -42,6 +42,59 @@ def validate_url(url):
         return "invalid URL: " + str(exc)
 
 
+_PROTECTED_HOME_DIRS = (".ssh", ".aws", ".config", ".gnupg")
+
+
+def _inside(child, parent):
+    child, parent = os.path.normcase(os.fspath(child)), os.path.normcase(os.fspath(parent))
+    return child == parent or child.startswith(parent.rstrip("\\/") + os.sep)
+
+
+def confine_file_url(url, root, *, hermes_home=None, protected=True):
+    """Return None when a file:// URL is a regular file inside root, else an error.
+
+    The real path is resolved (symlinks followed, case-normalised on Windows)
+    before the root check. When protected, the Hermes home, credential folders,
+    dotfiles/dot-directories and *.env files are refused even inside root.
+    Errors never include the path. Non-file URLs return None.
+    """
+    try:
+        parts = urlsplit(url)
+        if parts.scheme != "file":
+            return None
+        raw = unquote(parts.path)
+        if os.name == "nt" and len(raw) > 2 and raw[0] == "/" and raw[2] == ":":
+            raw = raw[1:]
+        requested = Path(raw)
+        try:
+            target = requested.resolve(strict=True)
+            base = Path(root).expanduser().resolve(strict=True)
+        except (OSError, RuntimeError):
+            return "file:// page was not found or file_root is unavailable"
+        if not _inside(target, base):
+            return "file:// URL is outside the configured file_root"
+        if protected:
+            home = Path.home()
+            selected = hermes_home or os.environ.get("HERMES_HOME") or home / ".hermes"
+            for folder in (Path(selected).expanduser(), *(home / name for name in _PROTECTED_HOME_DIRS)):
+                try:
+                    folder = folder.resolve()
+                except (OSError, RuntimeError):
+                    continue
+                if _inside(target, folder):
+                    return "file:// URL points to a protected directory"
+            if any(part.startswith(".") and part not in (".", "..")
+                   for part in (*requested.parts, *target.parts)):
+                return "file:// URL must not use dotfiles or dot-directories"
+            if target.suffix.lower() == ".env":
+                return "file:// URL must not point to an .env file"
+        if not target.is_file():
+            return "file:// URL must point to a regular file"
+        return None
+    except Exception:
+        return "file:// URL could not be checked"
+
+
 def detect_browser(browser=None):
     """Return a browser path or None, using the reference detection order."""
     try:

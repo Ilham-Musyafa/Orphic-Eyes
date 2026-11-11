@@ -20,6 +20,8 @@ HELP = """/orphic help    Show commands
 Tools: orphic_baseline, orphic_compare, orphic_loop_step,
 orphic_approve, orphic_accept, orphic_ignore.
 Baseline/legacy compare: local http://localhost, http://127.0.0.1 or file://.
+Baseline file:// pages must be inside plugins.entries.orphic-eyes.file_root
+(default: working directory); dot-directories, .env and the Hermes home are refused.
 Compare URL pairs and loop steps: HTTP/HTTPS; private destinations require allow_local=true.
 HTML requires an optional template.
 Demo replaces only the target named demo; its files live under the data directory.
@@ -116,10 +118,13 @@ font:700 16px Arial,sans-serif}
     after = tools._safe_file(folder, "after.html")
     before.write_text(page.replace("LEFT", "64"), encoding="utf-8")
     after.write_text(page.replace("LEFT", "104"), encoding="utf-8")
-    baseline = json.loads(tools.handle_baseline({"name": "demo", "url": before.as_uri()}))
-    if not baseline["success"]:
-        return "Demo baseline failed: " + baseline["error"] + "\nFix: " + baseline["fix"]
-    result = json.loads(tools.handle_compare({"name": "demo", "url": after.as_uri()}))
+    # The demo pages live in the data directory, outside file_root; trust only
+    # this folder, which the demo just wrote, for these two calls.
+    with tools.trusted_file_dir(folder):
+        baseline = json.loads(tools.handle_baseline({"name": "demo", "url": before.as_uri()}))
+        if not baseline["success"]:
+            return "Demo baseline failed: " + baseline["error"] + "\nFix: " + baseline["fix"]
+        result = json.loads(tools.handle_compare({"name": "demo", "url": after.as_uri()}))
     if not result["success"]:
         return "Demo compare failed: " + result["error"] + "\nFix: " + result["fix"]
     lines = ["Demo: " + result["status"] + " — Start trial moved 40 px right.",
