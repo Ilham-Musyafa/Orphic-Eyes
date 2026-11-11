@@ -26,7 +26,14 @@ def _check_deadline(deadline):
 
 
 def _score(source, needle):
-    return 1.0 - ImageStat.Stat(ImageChops.difference(source, needle)).mean[0] / 255.0
+    difference = ImageChops.difference(source, needle)
+    if difference.mode == "L" and difference.width * difference.height <= 4096:
+        # The same integer pixel sum and division order as ImageStat.mean,
+        # without building/statistically reducing 256 histogram bins for each
+        # tiny coarse candidate. Keep thresholds and deadlines unchanged.
+        mean = sum(difference.tobytes()) / (difference.width * difference.height)
+        return 1.0 - mean / 255.0
+    return 1.0 - ImageStat.Stat(difference).mean[0] / 255.0
 
 
 def _potential(gray, target, cutoff, deadline=None):
@@ -53,8 +60,10 @@ def _potential(gray, target, cutoff, deadline=None):
             mean = ImageStat.Stat(target.crop((x, y, x + bw, y + bh))).mean[0]
             cx, cy = x + bw // 2, y + bh // 2
             values = averaged.crop((cx, cy, cx + pw, cy + ph)).tobytes()
-            lower = [total + max(0.0, abs(value - mean) - 1.0) * bw * bh
-                     for total, value in zip(lower, values)]
+            # Each sample is a byte: compute the identical bound contribution
+            # once per possible value instead of redoing float math per pixel.
+            weights = [max(0.0, abs(value - mean) - 1.0) * bw * bh for value in range(256)]
+            lower = [total + weights[value] for total, value in zip(lower, values)]
     maximum_error = (1.0 - cutoff) * 255 * nw * nh + 1e-7
     return ((index % pw, index // pw) for index, error in enumerate(lower) if error <= maximum_error)
 

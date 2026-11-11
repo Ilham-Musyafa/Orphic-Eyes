@@ -16,6 +16,18 @@ def texture(width=48, height=32, seed=9):
 
 
 class LocateTests(unittest.TestCase):
+    def test_grayscale_score_is_identical_to_reference_statistics(self):
+        from PIL import ImageChops, ImageStat
+        from engine.locate import _score
+        for width, height in ((1, 1), (12, 8), (48, 32), (190, 48)):
+            first = texture(width, height).convert("L")
+            second = texture(width, height, seed=19).convert("L")
+            reference = 1.0 - ImageStat.Stat(ImageChops.difference(first, second)).mean[0] / 255.0
+            self.assertEqual(_score(first, second), reference)
+        for level in range(256):
+            first, second = Image.new("L", (8, 8), level), Image.new("L", (8, 8), 0)
+            self.assertEqual(_score(first, second), 1.0 - level / 255.0)
+
     def test_off_grid_exact_match_and_coordinate_space(self):
         needle = texture()
         haystack = Image.new("RGB", (400, 240), "white")

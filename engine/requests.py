@@ -72,6 +72,7 @@ def _bounds(region):
 
 def verify_requests(before, after, requests):
     results = []
+    matches_by_regions = {}  # Same immutable images, within this call only.
     deadline = time.perf_counter() + REQUEST_BUDGET_SECONDS
     for request in requests:
         verdict = {"id": request["id"], "status": "unknown", "found": None,
@@ -102,8 +103,13 @@ def verify_requests(before, after, requests):
                 else:
                     windows.append(other)
             try:
-                matches = sorted((find_crop(after, needle, window, deadline=deadline) for window in windows),
-                                 key=lambda item: item[1], reverse=True)
+                key = tuple(source[field] for field in ("x", "y", "w", "h")) + tuple(
+                    target[field] for field in ("x", "y", "w", "h"))
+                if key not in matches_by_regions:
+                    matches_by_regions[key] = sorted(
+                        (find_crop(after, needle, window, deadline=deadline) for window in windows),
+                        key=lambda item: item[1], reverse=True)
+                matches = matches_by_regions[key]
             except SearchBudgetExceeded:
                 verdict["why"] = "Search time budget exceeded; no pixel verdict"
                 results.append(verdict)
