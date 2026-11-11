@@ -1,6 +1,28 @@
 # HANDOFF
 
-## Current task: Merge auto-loop + readme, header theme toggle, small UI fixes
+## Current task: Details panel always reachable + snap to element
+
+Branch: `feat/panel-snap` from origin/release/hackathon at 283e7cd. It merges back into release/hackathon with a merge commit. Codex branches and docs/submit-prep are not touched.
+
+### Plan
+A. Details panel
+1. One remembered open state, `prefs.inspectorOpen` (default true), for every non-phone width. Desktop (≥1280) docks as today. Mid widths (768–1279) dock a narrower panel (272 px) when the canvas keeps at least 480 px. With the default rail sidebar that means a window of 808 px or wider, so 900/1100 dock. Below that, the panel stays the existing overlay drawer, because docking would squeeze the canvas to an unusable strip. Phones keep the sheet.
+2. X closes and remembers it (`inspectorOpen=false`).
+3. When closed, a visible "Show panel" button (panel icon + "Details") shows in the header next to Copy prompt, with a tooltip that includes formatKeys('panel.inspector'). Ctrl+I and the palette keep working.
+4. Auto-open rule: entering Move/Add, opening a report in Move/Add, or making a new selection opens the panel for this session (`state.inspAuto`). The remembered pref only changes when the user clicks X / Show panel / Ctrl+I. So auto-open is temporary, and closing is what gets remembered.
+5. Reset preferences: the pref goes back to open.
+B. Snap to element (Move and Add)
+1. After a selection is drawn, read the After image pixels (same `verifyPixels` canvas as Content check, cached per image). Search window = selection + 48 px, clamped to the image.
+2. Background = per-channel median of the window's 2 px border ring (the Content check ring idea). A pixel is "element" when a channel differs by more than 16. The mask is dilated by 1 px, then 4-connected regions. Each region's bbox uses undilated pixels.
+3. A region is a candidate when it is ≥ MIN_SELECT on both sides, lies fully inside the window (touching the window edge means it continues outside, e.g. a background band), and is ≤ 90% of the window. Its overlap with the user's box must be ≥ 60% of the smaller of the two. When it lies fully inside the box it must be ≥ 30% of the box (no snapping a rough card box down to one glyph). The biggest overlap wins. No suggestion when nothing qualifies or when the box is already within 2 px.
+4. Suggestion only: a dashed outline plus a chip "Snap to element" with Accept (Enter) / Keep mine (Esc). Accept replaces the selection as one undo step. Alt while drawing, or Settings → Canvas → "Snap to elements" off, skips it. Unreadable pixels (file:// tainted canvas) mean a silent skip.
+5. New shortcut `snap.accept` (Enter, Move/Add, rebindable). Esc stays the fixed close key. A snapped box makes the same request format, so unsnapped Copy prompt output is unchanged.
+Thresholds were tuned on Lumen with a Python prototype first. Shadows differ by 5–12 levels and white cards by 19–21, hence 16.
+
+### Status
+- Plan written.
+
+## Previous task: Merge auto-loop + readme, header theme toggle, small UI fixes
 
 Branch: `release/hackathon` (pulled, at 5c573c2). `docs/windows-test` is not touched.
 
