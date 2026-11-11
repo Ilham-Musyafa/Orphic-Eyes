@@ -1,6 +1,21 @@
 # HANDOFF
 
-## Current task: Content check view
+## Current task: Settings General + About
+
+Branch: `release/hackathon` (pulled, at b2560d2, after the Content check commits). Only `engine/templates/report.html` + this file.
+
+### Plan
+1. General gets only settings that change real behavior, stored in `orphic-eyes.prefs.v1` (added to `PREF_DEFAULTS`, type-checked in `loadPrefs`, so Reset preferences restores them):
+   - Getting started: Quick tour (kept), Keyboard shortcuts (opens the Shortcuts tab).
+   - When a report opens: `defaultMode` Review / Move / Add — applied in `loadReport()` whenever a report opens (embedded report, Load images, Try sample, Load report). Default Review = today's behavior.
+   - Requests: `quickPhrases` on/off — hides the Quick phrases chips under the Move note and the Add description; `verifyAfterCopy` on/off (default off) — Copy prompt opens Verify after a successful copy. The copied text is unchanged.
+   - Not added, on purpose: "Default precision" already exists in Canvas → Move and Add (one control, not two; other tabs stay unchanged). "Confirm before clearing requests": this build has no clear-all action, so the switch would be fake.
+2. About: header (logo cloned from the app header, "Orphic Eyes", tagline "Gives Hermes eyes for visual review.", "Version dev" — no real version exists), tinted header from tokens; 4 steps Compare / Point / Request / Verify with sprite icons; fact chips; links (GitHub repo in a new tab, Keyboard shortcuts, Quick tour); credits. Light/dark, reduced motion, phone layout.
+
+### Status
+- Plan written.
+
+## Previous task: Content check view
 
 Branch: `release/hackathon` (pulled, at aa8f14c). Only `engine/templates/report.html` + this file. No other branch merged.
 
