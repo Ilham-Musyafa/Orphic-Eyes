@@ -1,5 +1,11 @@
 # HANDOFF
 
+> **Screenshots moved:** the dev-history screenshots that were in `docs/screenshots/` now live only on branch `docs-screenshots-archive` (same paths), to keep the installed plugin tree small. Every "Screenshots: docs/screenshots/..." line below refers to that branch.
+
+## Current task: Move dev screenshots out of the installed tree (fix/review-security)
+
+Catalog review (NousResearch/hermes-agent#153695) asked to move the ~23 MB of docs screenshots out of the installed tree. Branch `docs-screenshots-archive` was created from ff0bf65 (keeps all 138 files under `docs/screenshots/`); on `fix/review-security` `docs/screenshots/` was removed with `git rm -r`. `docs/images/` stays. Nothing in code, tests, README or plugin.yaml referenced `docs/screenshots`. Tracked tree (git archive, excluding .git): 26M -> 2.5M. No code, test, README or plugin.yaml changes.
+
 ## Current task: Security review fixes (fix/review-security)
 
 Branch `fix/review-security` from a0411b9 for the 3 blocking items in the catalog PR review (NousResearch/hermes-agent#153695). The catalog yaml was NOT changed or re-pinned here.
@@ -606,7 +612,7 @@ Branch: `feat/verify-loop` (from `feat/shortcut-rebind` at a5fe92b). Only `engin
 - Step 1 done: Verify dialog (Requests panel "Verify fixes" link, phone sheet "Verify" button), Round 2 by drop / choose / paste with the Load images rules, size check (clear message, no results), per-request checks (Move / Revert / Hide / Comment / Add) with After vs Round 2 crops and one reason each. - Step 2 done: unexpected changes. After vs Round 2 with the existing exact-pixel rule, outside every request area (padded 16 px; moves block both old and target places), counted per 3×3 zone; a zone at 5%+ is listed as "Unexpected change" with a crop; smaller changes are summed in one note. - Step 3 done: "Copy follow-up prompt" builds the same general format (Page line, numbered items with the usual per-type lines, "Last check: …", "Please restore (n)" for unexpected zones, same Rules), only Fail/Unclear items + unexpected changes. It opens in the existing preview dialog (`openPromptPreview(custom)`; no argument = the normal preview, unchanged) and copies exactly the previewed text. - Step 4 done: rounds + shortcut. "Use Round N as new After" archives this round (summary per round, in memory), clears this round's requests and undo history, and rebuilds the comparison Before vs the checked screenshot; the next Verify is "Round N+1" and lists earlier rounds. Shortcut `verify.open` = Shift+V (editable, no overlap with existing bindings), palette item "Verify fixes" (only when something can be verified), tooltip on the Requests link. Phone: dialog full screen, results stack (crops under the reason), 44px buttons, one Close (top left).
 - Test Round 2 (made with PIL from the Tidyday After, `mkround.py` in the session scratchpad): request 1 (Start free trial, 96 px left) copied exactly to its target and its old place filled with the page background → Pass; request 2 (Help, 16 px left) left as is → Fail "Still at its old place"; a grey footer bar at 80,498 300×31 → Unexpected in Bottom left (12.9%); the same image resized to 960×600 → size message, no results. Engine-style report with move / revert / hide / comment served from 127.0.0.1: Pass / Pass / Pass / Needs your eyes; with After unchanged: revert Fail, hide Unclear. Opened from file:// the page can't read its pixels → clear message, no results.
 - Checks: Verify acceptance 86/86 (1440 + 390, light + dark), engine types 8/8, rebinding 92/92, Shortcuts 35/35 (21 rows), Settings 168/168, mobile 64/92/68/84, Load images / Add reference / flow / motion unchanged. Copy prompt text byte-identical (promptchk vs saved output). Main app pixel-identical to `feat/shortcut-rebind` except the new "Verify fixes" link (desktop Requests list) and "Verify" button (phone Requests sheet). Tests: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge). 0 JS errors.
-- Screenshots: `docs/screenshots/verify-loop/`.
+- Screenshots: `docs/screenshots/verify-loop/` (on branch `docs-screenshots-archive`).
 
 ### Not done / limits
 - Move is a template match (sampled pixels within 24 per channel, 95% must agree). It can't verify resizing, restyling or an element that also changed its look; plain areas, repeated patterns and elements that also match their old place are Unclear.
@@ -633,7 +639,7 @@ Branch: `feat/shortcut-rebind` (from `feat/settings-redesign` at 61327c5). Only 
 - Step 3 done. Touch screens (hover: none) or width < 640px: list is read-only (no ✎, no record, no ↺, no Reset all), callout "Keyboard shortcuts work with a physical keyboard. Change them on a computer."; Edited still shown. Record field is a button with aria-pressed; validation and conflict messages go to an aria-live="assertive" region, success to a polite one; Esc while recording (or on the conflict question / Reset-all confirm) only cancels that, Settings stays open. Closing Settings or switching tab ends recording.
 - Checks: rebinding 92/92, refactor/widget keys 12/12, read-only 36/36, Settings 168/168, Shortcuts search 35/35, mobile 64/92/68/84, main app pixel-identical to `feat/settings-redesign` (desktop 18/18, phone 14/14), Copy prompt text identical. Tests: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
 - grep `event.key|keyCode|.which|event.code|ctrlKey|metaKey|altKey|shiftKey` → only inside the shortcut core (`heldModifiers`, `eventBinding`, `matchShortcut`).
-- Screenshots: `docs/screenshots/shortcut-rebind/`.
+- Screenshots: `docs/screenshots/shortcut-rebind/` (on branch `docs-screenshots-archive`).
 
 ### Not done / open
 - Matching is exact now: extra modifiers no longer trigger an app shortcut (Ctrl+Shift+K used to open the palette, Shift+V used to pick Select, Shift+Space used to hold Hand). Widget navigation keys still ignore extra modifiers.
@@ -659,7 +665,7 @@ Branch: `feat/settings-redesign` (from `feat/mobile-fixes` at 0fbfaec). One comm
 - Deviations: active tab label uses #1D63D3 (light) / #5C9BFF (dark) for 4.5:1; icon and bar stay #2F80FF. Light segmented background #F4F4F2 so unselected labels pass 4.5:1.
 - Checked in Chrome at 1440 and 390/360 (touch), light/dark: acceptance 168/168, shortcuts 35/35, every listed key really works, settings persist after reload, focus returns to gear / ⋯. Main app pixel-identical to `feat/mobile-fixes` (desktop 18/18; phone 14/14 apart from a 2px focus flicker on ⋯ that also shows base-vs-base). Copy prompt text identical; mobile, load, reference, flow and motion checks unchanged.
 - report.html: 441,018 → 465,787 bytes. Diff: no URLs/fetch/XHR/eval, no new storage keys. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
-- Screenshots: `docs/screenshots/settings-redesign/`.
+- Screenshots: `docs/screenshots/settings-redesign/` (on branch `docs-screenshots-archive`).
 
 ### Not done
 - Optional group filter chips in Shortcuts (search already filters by group name).
@@ -680,7 +686,7 @@ Branch: `feat/mobile-fixes` (from `feat/visual-fixes` at 38b9b97). One commit pe
 - Checked in Chrome device emulation (touch on) at 390×844 and 360×780, light and dark: header/menu 64/64, sheet 92/92, requests/preview 68/68, canvas + touch + 44 px audit 84/84; no console errors, no horizontal overflow.
 - Desktop unchanged: pixel-identical screenshots against `feat/visual-fixes` at 1440, 1024 and 700 px, light and dark, empty + report + Move (18/18). Copy prompt text byte-identical; Load images, Add reference, Flow clarity and motion checks unchanged.
 - report.html: 421,888 → 441,018 bytes. Diff: no URLs/fetch/XHR/eval/localStorage. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
-- Screenshots: `docs/screenshots/mobile-fixes/` (390 px, light + dark, per step).
+- Screenshots: `docs/screenshots/mobile-fixes/` (on branch `docs-screenshots-archive`) (390 px, light + dark, per step).
 
 ### Not done
 - Optional: area map full-size overlay (the map is hidden on phones instead of shown as a thumbnail); "Fit width"/"Fit screen" in the zoom pill (no room at 360–390 px without dropping a zoom step). Stack view: Side by side already stacks Before over After on portrait, so nothing was added.
@@ -705,7 +711,7 @@ Branch: `feat/visual-fixes` (from `feat/flow-clarity` at 3b4b36e). One commit pe
 - 849160f (found while checking 2): the longer chip pushed Copy prompt past the edge at 1440 px and the header already overflowed below 1280 px. Stepper labels from 1600 px, capture chip + brand name hidden below 1280 px, "Step n of 4" below 1100 px, status chip hidden below 900 px. Measured 768–1920 px: no overlap, Copy prompt inside the window.
 - Checked in Chrome at 1440 light/dark with the embedded engine report, a data-URI preview, Try sample (fail) and two identical images (pass). Copy prompt text unchanged (engine, references). Flow clarity checks still pass.
 - Diff: no URLs/fetch/XHR/eval. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
-- Screenshots: `docs/screenshots/visual-fixes/` (`*-before.png` / `*-after.png` per item).
+- Screenshots: `docs/screenshots/visual-fixes/` (on branch `docs-screenshots-archive`) (`*-before.png` / `*-after.png` per item).
 
 ### Not done
 - Edge not available in the cloud runner.
@@ -727,7 +733,7 @@ Branch: `feat/flow-clarity` (from `feat/add-reference` at a9ac1c4). One commit p
 6. d3f114b "{n} of 8 requests" next to the Requests heading: amber at 7, red at 8 with "Limit reached. Copy this batch, then start a new one."; at 8 Add request / Save are locked with that reason.
 - Checked in Chrome (1440 light/dark, 390 dark): all six acceptance items, no console errors. Copy prompt text unchanged (engine report, loaded images, references). Load images and Add reference unchanged.
 - report.html: 406,529 → 419,589 bytes. Diff: no URLs/fetch/XHR/eval. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
-- Screenshots: `docs/screenshots/flow-clarity/`.
+- Screenshots: `docs/screenshots/flow-clarity/` (on branch `docs-screenshots-archive`).
 
 ### Not done
 - Edge not available in the cloud runner.
@@ -744,7 +750,7 @@ Branch: `feat/add-reference` (from `feat/load-images` at dc3b476).
 - B (1188766): "What should the AI copy from it?" Layout / Style / Animation / Interaction, single-select, tap again clears, selection blue, 28 px pills 12 px/500. A reference requires a kind ("Pick what to copy from the reference."). Guided questions per kind (Style·Copy multi-select, Direction only for Slide), 72 px muted labels, 120 ms fade (off with reduced motion). Note placeholder per kind. Existing helper chips moved to a "Quick notes" row under the questions.
 - C: Copy prompt line `{n}. [Add · {Kind}] {name} — at x…` + Reference line + one answers line (speeds ~150/300/600 ms) + Note; Attachments line above the list and two extra Rules when references exist; toast "Prompt copied · Attach {k} reference files in your AI chat" with "Download references" (each file with its ref-n name); Preview prompt hint. Prompts without references are byte-identical to `feat/load-images` (checked).
 - report.html: 383,754 → 406,529 bytes. Diff: no URLs/fetch/XHR/eval, no localStorage. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge).
-- Screenshots: `docs/screenshots/add-reference/`.
+- Screenshots: `docs/screenshots/add-reference/` (on branch `docs-screenshots-archive`).
 
 ### Not done
 - 3D & motion kind (out of scope for this prompt). Edge not available. Browsers may ask once to allow several downloads when "Download references" saves more than one file.
@@ -811,7 +817,7 @@ Branch: `feat/copy-prompt` (from `feat/fonts` at 917cda6).
 - "Preview prompt" link at the bottom of the Requests panel and in Ctrl+K; modal with read-only monospace text, Copy prompt + Close, Esc closes. Preview text equals the clipboard text (checked).
 - Settings tab "Copy prompt" (after Canvas): Include coordinates, Add 'change nothing else' rule, Ask before guessing, Include page and viewport size (all default on, saved in prefs, survive reload) + info card with "Preview prompt".
 - Verified in Chrome: all switches change the copied text immediately and after reload; all five types through `OrphicPrompt.build`; no console errors; light and dark.
-- Screenshots: `docs/screenshots/copy-prompt/` (header disabled/enabled, Requests panel, Preview, Settings tab; light + dark).
+- Screenshots: `docs/screenshots/copy-prompt/` (on branch `docs-screenshots-archive`) (header disabled/enabled, Requests panel, Preview, Settings tab; light + dark).
 - Diff: no http(s) URLs, fetch, XMLHttpRequest or eval added. Tests unchanged: 113 passed, the same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge in the cloud runner).
 
 ### Not done
@@ -833,7 +839,7 @@ Branch: `feat/fonts` (from `feat/settings-prefs` at b5fb078).
 - Spacing fixes: none needed. A before/after scan of every clipped text node (1440: Review, a selected change, Move, Add, all 5 Settings tabs; 390: all 4 bottom-sheet tabs) found the same 7 clipped items at 1440 (existing intentional ellipses) and 0 at 390; no new clipping.
 - Checked with external requests blocked: 0 external requests, DevTools rendered fonts = Montserrat (UI) and JetBrains Mono (mono fields).
 - Licenses: `licenses/Montserrat-OFL.txt`, `licenses/JetBrainsMono-OFL.txt` (copied from upstream); README "Fonts" note under License.
-- Screenshots: `docs/screenshots/fonts/` (main 1440 light/dark, 390 light/dark, Move 1440 light).
+- Screenshots: `docs/screenshots/fonts/` (on branch `docs-screenshots-archive`) (main 1440 light/dark, 390 light/dark, Move 1440 light).
 - Diff has no http(s) URLs, `<link>`, fetch, XMLHttpRequest or eval added. Tests unchanged: 113 passed, same 5 Edge-capture failures; `tests/test_browser.py` 7 errors (no Edge in the cloud runner).
 
 ### Not done
