@@ -52,7 +52,7 @@ class HtmlFreshnessTests(unittest.TestCase):
     def assert_page_matches(self, case):
         page = (case / "report.html").read_text(encoding="utf-8")
         embedded = page.split('<script type="application/json" id="orphic-report">', 1)[1].split('</script>', 1)[0]
-        self.assertEqual(json.loads(embedded), json.loads((case / "report.json").read_text()))
+        self.assertEqual(json.loads(embedded), json.loads((case / "report.json").read_text(encoding="utf-8")))
 
     def test_every_operation_refreshes_html_and_baseline_removes_it(self):
         self.baseline()
@@ -91,12 +91,12 @@ class HtmlFreshnessTests(unittest.TestCase):
         self.baseline()
         self.call(tools.handle_compare, {})
         case = tools.resolve_data_dir() / "default"
-        report = json.loads((case / "report.json").read_text())
+        report = json.loads((case / "report.json").read_text(encoding="utf-8"))
         with patch("engine.report_html.DEFAULT_TEMPLATE", test_plugin.FIXTURES / "report_embed.html"):
             result = write_report(report, case / "report.json")
         self.assertIn("html", result["paths"])
         self.assert_page_matches(case)
-        self.assertEqual(json.loads((case / "report.json").read_text()), report)
+        self.assertEqual(json.loads((case / "report.json").read_text(encoding="utf-8")), report)
         self.assertNotIn("paths", report)
 
     def test_no_template_omits_html_for_approve_ignore_and_accept(self):

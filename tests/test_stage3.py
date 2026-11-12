@@ -68,7 +68,7 @@ class Stage3Tests(unittest.TestCase):
         self.assertEqual(set(result), KEYS)
         self.assertEqual(result["ignore_regions"], [
             {"name": "button", "x": 30, "y": 150, "w": 100, "h": 40}])
-        self.assertEqual(json.loads((self.case / "config.json").read_text()), result["ignore_regions"])
+        self.assertEqual(json.loads((self.case / "config.json").read_text(encoding="utf-8")), result["ignore_regions"])
         with Image.open(self.case / "diff.png") as diff:
             self.assertEqual(diff.getpixel((50, 170)), (0, 0, 0))
 
@@ -129,12 +129,12 @@ class Stage3Tests(unittest.TestCase):
         self.assertTrue(result["boxes"][0]["approved"])
         self.assertEqual(result["summary"]["unexpected_count"], 0)
         self.assertEqual(set(result), KEYS | {"note"})
-        records = json.loads((self.case / "approvals.json").read_text())
+        records = json.loads((self.case / "approvals.json").read_text(encoding="utf-8"))
         self.assertEqual(set(records[0]), {"x", "y", "w", "h", "sha256"})
         self.assertEqual(records, [_fingerprint(self.current, result["boxes"][0])])
         self.assertTrue(self.compare()["boxes"][0]["approved"])
         latest = self.compare()
-        self.assertEqual(json.loads((self.case / "report.json").read_text()), latest)
+        self.assertEqual(json.loads((self.case / "report.json").read_text(encoding="utf-8")), latest)
 
     def test_changed_crop_same_bounds_is_not_approved(self):
         original = self.compare()
@@ -167,7 +167,7 @@ class Stage3Tests(unittest.TestCase):
         self.assertEqual(result["status"], "pass")
         self.assertTrue(all(box["approved"] for box in result["boxes"]))
         approve("demo", self.store, [1, 1])
-        self.assertEqual(len(json.loads((self.case / "approvals.json").read_text())), 2)
+        self.assertEqual(len(json.loads((self.case / "approvals.json").read_text(encoding="utf-8"))), 2)
 
     def test_approve_refuses_stale_layout(self):
         self.compare()
@@ -185,7 +185,7 @@ class Stage3Tests(unittest.TestCase):
             result = accept("demo", self.store)
         self.assertEqual(result["status"], "pass", result)
         self.assertEqual((self.case / "baseline.png").read_bytes(), expected_bytes)
-        self.assertEqual(json.loads((self.case / "approvals.json").read_text()), [])
+        self.assertEqual(json.loads((self.case / "approvals.json").read_text(encoding="utf-8")), [])
         self.assertEqual(len(ignore_list("demo", self.store)["ignore_regions"]), 1)
         self.assertEqual(result["meta"]["viewport"], {"width": 256, "height": 256})
         self.assertEqual(self.compare()["status"], "pass")

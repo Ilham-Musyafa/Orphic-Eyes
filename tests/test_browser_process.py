@@ -20,7 +20,7 @@ class BrowserProcessTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="oe_cleanup_") as folder:
             profile = Path(folder) / "profile"
             profile.mkdir()
-            (profile / "Local State").write_text("browser state")
+            (profile / "Local State").write_text("browser state", encoding="utf-8")
             original = shutil.rmtree
             attempts = 0
 
@@ -74,12 +74,12 @@ class BrowserProcessTests(unittest.TestCase):
                 while not ready.exists() and time.monotonic() < deadline:
                     time.sleep(0.01)
                 self.assertTrue(ready.exists(), "renderer did not start")
-                renderer = int(ready.read_text())
+                renderer = int(ready.read_text(encoding="utf-8"))
                 stop_browser(process)
                 deadline = time.monotonic() + 1
                 while time.monotonic() < deadline:
                     try:
-                        state = Path(f"/proc/{renderer}/stat").read_text().split()[2]
+                        state = Path(f"/proc/{renderer}/stat").read_text(encoding="utf-8").split()[2]
                     except FileNotFoundError:
                         break
                     if state == "Z":  # Awaiting the system reaper; cannot write to a profile.

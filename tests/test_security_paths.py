@@ -23,9 +23,9 @@ class FileRootTests(unittest.TestCase):
         for folder in (self.root, self.home / ".hermes", self.home / ".ssh", self.root / ".git"):
             folder.mkdir(parents=True)
         self.page = self.root / "index.html"
-        self.page.write_text("<p>ok</p>")
+        self.page.write_text("<p>ok</p>", encoding="utf-8")
         self.outside = self.base / "outside.html"
-        self.outside.write_text("<p>no</p>")
+        self.outside.write_text("<p>no</p>", encoding="utf-8")
         patcher = patch.object(Path, "home", return_value=self.home)
         patcher.start()
         self.addCleanup(patcher.stop)
@@ -43,7 +43,7 @@ class FileRootTests(unittest.TestCase):
     def test_hermes_home_and_ssh_refused_even_inside_root(self):
         for folder in (".hermes", ".ssh"):
             secret = self.home / folder / "config.html"
-            secret.write_text("x")
+            secret.write_text("x", encoding="utf-8")
             error = capture.confine_file_url(secret.as_uri(), self.home,
                                              hermes_home=self.home / ".hermes")
             self.assertIsNotNone(error)
@@ -51,9 +51,9 @@ class FileRootTests(unittest.TestCase):
 
     def test_dotfiles_and_env_refused(self):
         for name in (".env", "prod.env"):
-            (self.root / name).write_text("SECRET=1")
+            (self.root / name).write_text("SECRET=1", encoding="utf-8")
             self.assertIsNotNone(self.check(self.root / name))
-        (self.root / ".git" / "config").write_text("x")
+        (self.root / ".git" / "config").write_text("x", encoding="utf-8")
         self.assertIn("dot", self.check(self.root / ".git" / "config"))
 
     @unittest.skipUnless(hasattr(os, "symlink"), "symlinks unavailable")
@@ -66,7 +66,7 @@ class FileRootTests(unittest.TestCase):
         self.assertIn("file_root", self.check(link))
         folder_link = self.root / "linked"
         folder_link.symlink_to(self.home / ".ssh", target_is_directory=True)
-        (self.home / ".ssh" / "id.html").write_text("x")
+        (self.home / ".ssh" / "id.html").write_text("x", encoding="utf-8")
         self.assertIsNotNone(self.check(folder_link / "id.html"))
 
     def test_missing_file_and_directory_refused(self):

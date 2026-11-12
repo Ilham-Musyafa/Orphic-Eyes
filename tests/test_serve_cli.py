@@ -27,7 +27,7 @@ class ServeCLITests(unittest.TestCase):
             root = Path(temporary)
             case = root / "named"
             case.mkdir()
-            (case / "report.html").write_text("<html>report</html>")
+            (case / "report.html").write_text("<html>report</html>", encoding="utf-8")
             result = subprocess.run([sys.executable, "-B", "-m", "engine.cli", "serve", "--store", str(root),
                                      "--name", "named", "--timeout", "0.15"],
                                     capture_output=True, text=True, timeout=5)
@@ -63,7 +63,7 @@ image.onload = () => {
   catch (error) { document.body.append('PIXELS_BLOCKED'); }
 };
 image.src = 'baseline.png';
-</script></body>''')
+</script></body>''', encoding="utf-8")
             with ReportServer(root) as server, tempfile.TemporaryDirectory(prefix="oe_ch_") as profile:
                 # Assert the real canvas read independently of Chromium CLI
                 # shutdown and inherited stdout pipes (--dump-dom can stall).

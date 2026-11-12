@@ -28,7 +28,7 @@ def main():
         assert accepted["status"] == "pass", accepted
         print("accept: pass")
         case = Path(folder) / "manual"
-        report = json.loads((case / "report.json").read_text())
+        report = json.loads((case / "report.json").read_text(encoding="utf-8"))
         assert report["note"] == "baseline_accepted" and not report["boxes"]
         assert all(value == 0 for value in report["summary"].values())
         assert report["images"] == {"before": "baseline.png", "after": "baseline.png", "diff": None}

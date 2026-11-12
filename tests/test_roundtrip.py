@@ -84,7 +84,7 @@ class RequestTests(unittest.TestCase):
     def compare(self, requests):
         result = compare("case", "http://localhost", self.root, requests=requests)
         self.assertNotEqual(result["status"], "error", result)
-        self.assertEqual(json.loads((self.case / "report.json").read_text()), result)
+        self.assertEqual(json.loads((self.case / "report.json").read_text(encoding="utf-8")), result)
         return result
 
     def test_move_done(self):
@@ -172,12 +172,12 @@ class RequestTests(unittest.TestCase):
     def test_cli_requests_file_and_invalid_file(self):
         from engine.cli import main
         path = self.root / "requests.json"
-        path.write_text(json.dumps([self.request("revert")]))
+        path.write_text(json.dumps([self.request("revert")]), encoding="utf-8")
         argv = ["compare", "case", "http://localhost", "--store", str(self.root), "--requests", str(path)]
         with contextlib.redirect_stdout(io.StringIO()) as output:
             self.assertEqual(main(argv), 0)
         self.assertTrue(json.loads(output.getvalue())["requests_ok"])
-        path.write_text("null")
+        path.write_text("null", encoding="utf-8")
         with contextlib.redirect_stdout(io.StringIO()) as output, contextlib.redirect_stderr(io.StringIO()) as error:
             self.assertEqual(main(argv), 3)
         self.assertEqual(output.getvalue(), "")
@@ -287,11 +287,11 @@ class RequestTests(unittest.TestCase):
         folder.unlink()
         folder.mkdir()
         sentinel = external / "sentinel"
-        sentinel.write_text("keep")
+        sentinel.write_text("keep", encoding="utf-8")
         (folder / "old.png").symlink_to(sentinel)
         with self.assertRaises(ValueError):
             validate_crops(self.case)
-        self.assertEqual(sentinel.read_text(), "keep")
+        self.assertEqual(sentinel.read_text(encoding="utf-8"), "keep")
 
     def test_shift_hint_minus_30(self):
         self.before = Image.new("RGB", (400, 300), "white")
@@ -304,7 +304,7 @@ class RequestTests(unittest.TestCase):
         self.assertNotEqual(result["status"], "error", result)
         shifts = [box["shift"] for box in result["boxes"] if "shift" in box]
         self.assertIn({"dx": -30, "dy": 0}, shifts)
-        self.assertEqual(json.loads((self.case / "report.json").read_text()), result)
+        self.assertEqual(json.loads((self.case / "report.json").read_text(encoding="utf-8")), result)
 
     def test_flat_diff_has_no_shift_hint(self):
         self.before = Image.new("RGB", (400, 300), "white")
@@ -340,7 +340,7 @@ class ViewportTests(unittest.TestCase):
                 self.assertEqual(result["meta"]["viewport"]["preset"], preset)
                 result = json.loads(tools.handle_accept({"name": preset}))
                 self.assertEqual(result["viewport"]["preset"], preset)
-                state = json.loads((tools.resolve_data_dir() / preset / tools.STATE_FILE).read_text())
+                state = json.loads((tools.resolve_data_dir() / preset / tools.STATE_FILE).read_text(encoding="utf-8"))
                 self.assertEqual(state["viewport_preset"], preset)
 
     def test_preset_conflicts_and_invalid_values(self):

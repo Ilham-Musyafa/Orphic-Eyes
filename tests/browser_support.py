@@ -35,7 +35,7 @@ def probe_browser(executable):
                 if process.poll() is not None:
                     return f"No usable system browser: {executable} exited {process.returncode} during headless startup; check sandbox/launch permissions"
                 try:
-                    port = int((Path(profile) / "DevToolsActivePort").read_text().splitlines()[0])
+                    port = int((Path(profile) / "DevToolsActivePort").read_text(encoding="utf-8").splitlines()[0])
                     connection = http.client.HTTPConnection("127.0.0.1", port, timeout=0.2)
                     try:
                         connection.request("GET", "/json/version")

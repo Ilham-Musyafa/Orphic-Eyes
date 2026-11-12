@@ -31,7 +31,7 @@ class ContractTests(unittest.TestCase):
         self.baseline()
         self.call(tools.handle_compare, {})
         case = tools.resolve_data_dir() / "default"
-        report = json.loads((case / "report.json").read_text())
+        report = json.loads((case / "report.json").read_text(encoding="utf-8"))
         hostile = '</script><script>alert("x")</script><!-- \\ \u2028\u2029'
         report["name"] = hostile
         report["request_results"] = [{"why": hostile}]
@@ -58,12 +58,12 @@ class ContractTests(unittest.TestCase):
         case = tools.resolve_data_dir() / "default"
         template = self.home / "template.html"
         output = case / "report.html"
-        output.write_text("previous output")
+        output.write_text("previous output", encoding="utf-8")
         for count in (0, 2):
-            template.write_text("<!--ORPHIC_REPORT_JSON-->" * count)
+            template.write_text("<!--ORPHIC_REPORT_JSON-->" * count, encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "exactly one"):
                 write_report_html(case, template)
-            self.assertEqual(output.read_text(), "previous output")
+            self.assertEqual(output.read_text(encoding="utf-8"), "previous output")
 
     def test_compare_and_accept_embed_only_with_default_template(self):
         self.baseline(viewport="mobile")
@@ -74,7 +74,7 @@ class ContractTests(unittest.TestCase):
                 self.assertTrue(result["success"], result)
                 self.assertEqual(result["paths"]["html"], str(case / "report.html"))
                 self.assertEqual(self.embedded(case / "report.html"),
-                                 json.loads((case / "report.json").read_text()))
+                                 json.loads((case / "report.json").read_text(encoding="utf-8")))
 
     def test_html_rejects_hard_link_output(self):
         import os
@@ -82,12 +82,12 @@ class ContractTests(unittest.TestCase):
         self.call(tools.handle_compare, {})
         case = tools.resolve_data_dir() / "default"
         target = self.home / "protected.html"
-        target.write_text("keep")
+        target.write_text("keep", encoding="utf-8")
         (case / "report.html").unlink(missing_ok=True)
         os.link(target, case / "report.html")
         with self.assertRaisesRegex(ValueError, "without links"):
             write_report_html(case, test_plugin.FIXTURES / "report_embed.html")
-        self.assertEqual(target.read_text(), "keep")
+        self.assertEqual(target.read_text(encoding="utf-8"), "keep")
 
     def test_request_messages(self):
         self.baseline()
@@ -109,7 +109,7 @@ class ContractTests(unittest.TestCase):
                 self.assertTrue(result["success"])
                 raw["message"] = "Old visual text"
                 write_report(raw, case / "report.json")
-                self.assertEqual(json.loads((case / "report.json").read_text())["message"], expected)
+                self.assertEqual(json.loads((case / "report.json").read_text(encoding="utf-8"))["message"], expected)
 
     def test_no_requests_keeps_existing_message(self):
         self.baseline()
@@ -128,7 +128,7 @@ class ContractTests(unittest.TestCase):
                         for child in (case / "crops").iterdir():
                             child.unlink()
                         (case / "crops").rmdir()
-                    old_time = json.loads((case / "metadata.json").read_text())["created_at"]
+                    old_time = json.loads((case / "metadata.json").read_text(encoding="utf-8"))["created_at"]
                     if cli:
                         with contextlib.redirect_stdout(io.StringIO()):
                             self.assertEqual(main(["accept", "default", "--store", str(case.parent)]), 0)
@@ -137,7 +137,7 @@ class ContractTests(unittest.TestCase):
                         self.assertTrue(result["success"], result)
                         self.assertEqual(result["paths"]["report"], str(case / "report.json"))
                         self.assertIsNone(result["paths"]["diff"])
-                    report = json.loads((case / "report.json").read_text())
+                    report = json.loads((case / "report.json").read_text(encoding="utf-8"))
                     self.assertEqual(report["schema_version"], 1)
                     self.assertEqual(report["status"], "pass")
                     self.assertEqual(report["note"], "baseline_accepted")
@@ -147,7 +147,7 @@ class ContractTests(unittest.TestCase):
                     self.assertEqual(report["images"], {"before": "baseline.png", "after": "baseline.png", "diff": None})
                     self.assertEqual(report["meta"]["viewport"], {"width": 390, "height": 844, "preset": "mobile"})
                     self.assertNotEqual(report["meta"]["created_at"], old_time)
-                    self.assertEqual(json.loads((case / "approvals.json").read_text()), [])
+                    self.assertEqual(json.loads((case / "approvals.json").read_text(encoding="utf-8")), [])
                     self.assertFalse((case / "diff.png").exists())
                     self.assertFalse(list((case / "crops").glob("*")))
                     self.assertEqual(self.call(tools.handle_compare, {})["status"], "pass")

@@ -98,7 +98,7 @@ class PluginTests(unittest.TestCase):
         ctx = FakeContext()
         plugin.register(ctx)
         # JSON is valid YAML 1.2; parse this simple list without adding PyYAML.
-        manifest = (ROOT / "plugin.yaml").read_text()
+        manifest = (ROOT / "plugin.yaml").read_text(encoding="utf-8")
         block = manifest.split("provides_tools:\n", 1)[1].split("provides_hooks:", 1)[0]
         names = {line.strip()[2:] for line in block.splitlines() if line.strip().startswith("- ")}
         self.assertEqual(set(ctx.tools), names)
@@ -171,7 +171,7 @@ assert 'engine' not in sys.modules
         # A root that is a file is an actual OS failure, not just a mocked ACL.
         other = self.home / "blocked"
         other.mkdir()
-        (other / "orphic-eyes").write_text("blocked")
+        (other / "orphic-eyes").write_text("blocked", encoding="utf-8")
         with patch.dict(os.environ, {"HERMES_HOME": str(other)}):
             for handler, args in zip(HANDLERS, arguments):
                 self.assertFalse(self.call(handler, args)["success"])
@@ -212,9 +212,9 @@ assert 'engine' not in sys.modules
         self.baseline()
         self.call(tools.handle_compare, {"url": "http://localhost:4000/after"})
         state_file = tools.resolve_data_dir() / "default" / tools.STATE_FILE
-        self.assertEqual(json.loads(state_file.read_text())["url"], "http://localhost:3000/")
+        self.assertEqual(json.loads(state_file.read_text(encoding="utf-8"))["url"], "http://localhost:3000/")
         self.call(tools.handle_accept, {})
-        self.assertEqual(json.loads(state_file.read_text())["url"], "http://localhost:4000/after")
+        self.assertEqual(json.loads(state_file.read_text(encoding="utf-8"))["url"], "http://localhost:4000/after")
         with patch("engine.capture.capture", wraps=importlib.import_module("engine.capture").capture) as capture:
             result = self.call(tools.handle_compare, {})
             self.assertTrue(result["success"], result)
@@ -284,10 +284,10 @@ assert 'engine' not in sys.modules
         state = tools.resolve_data_dir() / "default" / tools.STATE_FILE
         state.unlink()
         other = self.home / "other.json"
-        other.write_text('{"url":"http://localhost"}')
+        other.write_text('{"url":"http://localhost"}', encoding="utf-8")
         os.link(other, state)
         self.assertFalse(self.call(tools.handle_baseline, {"url": "http://localhost"})["success"])
-        self.assertEqual(other.read_text(), '{"url":"http://localhost"}')
+        self.assertEqual(other.read_text(encoding="utf-8"), '{"url":"http://localhost"}')
 
     def test_no_browser_returns_actionable_error(self):
         with patch("engine.store.detect_browser", return_value=None):
@@ -357,7 +357,7 @@ class PluginBrowserTests(unittest.TestCase):
         self.assertTrue((folder / "diff.png").is_file())
         from engine.report_html import DEFAULT_TEMPLATE
         self.assertEqual((folder / "report.html").is_file(), DEFAULT_TEMPLATE.is_file())
-        report = json.loads((folder / "report.json").read_text())
+        report = json.loads((folder / "report.json").read_text(encoding="utf-8"))
         self.assertEqual(report["status"], "check")
 
 

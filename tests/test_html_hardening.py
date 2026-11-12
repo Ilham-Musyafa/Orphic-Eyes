@@ -28,7 +28,7 @@ class HtmlFailureTests(unittest.TestCase):
         self.assertEqual(result["schema_version"], 1)
         self.assertEqual(result["summary"]["changed_px"], 400)
         self.assertEqual(len(result["boxes"]), 1)
-        persisted = json.loads((self.case / "report.json").read_text())
+        persisted = json.loads((self.case / "report.json").read_text(encoding="utf-8"))
         self.assertEqual(persisted["status"], result["status"])
         self.assertEqual(persisted["summary"], result["summary"])
         self.assertNotIn("html_error", persisted)
@@ -82,7 +82,7 @@ class HtmlFailureTests(unittest.TestCase):
         self.assertEqual(result["schema_version"], 1)
         self.assertEqual(result["summary"]["changed_px"], 400)
         self.assertTrue(result["html_error"])
-        self.assertEqual(json.loads((self.case / "report.json").read_text())["status"], "check")
+        self.assertEqual(json.loads((self.case / "report.json").read_text(encoding="utf-8"))["status"], "check")
 
     def test_real_template_success_keeps_compare_valid(self):
         result = self.compare_valid()
@@ -92,5 +92,5 @@ class HtmlFailureTests(unittest.TestCase):
         self.assertNotIn("<!--ORPHIC_REPORT_JSON-->", page)
         self.assertEqual(page.count(tag), 1)
         embedded = json.loads(page.split(tag, 1)[1].split("</script>", 1)[0])
-        self.assertEqual(embedded, json.loads((self.case / "report.json").read_text()))
+        self.assertEqual(embedded, json.loads((self.case / "report.json").read_text(encoding="utf-8")))
 

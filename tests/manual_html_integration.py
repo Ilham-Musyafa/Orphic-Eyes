@@ -38,7 +38,7 @@ def main():
     assert "html_error" not in result, result
     case = folder / "real"
     raw, report = embedded(case / "report.html")
-    assert report == json.loads((case / "report.json").read_text())
+    assert report == json.loads((case / "report.json").read_text(encoding="utf-8"))
     paths = list(report["images"].values())
     for item in report["crops"]["items"]:
         for side in ("before", "after"):

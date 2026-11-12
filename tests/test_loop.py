@@ -71,9 +71,9 @@ class LoopTests(unittest.TestCase):
             self.assertEqual(previous.getpixel((45, 75)), (0, 0, 255))
         for result in (first, second):
             self.assertNotIn("SECRET_QUERY", json.dumps(result))
-            self.assertNotIn("SECRET_QUERY", Path(result["paths"]["round"]).read_text())
+            self.assertNotIn("SECRET_QUERY", Path(result["paths"]["round"]).read_text(encoding="utf-8"))
             self.assertTrue(Path(result["paths"]["prompt"]).is_file())
-            self.assertEqual(json.loads(Path(result["paths"]["report"]).read_text())["schema_version"], 1)
+            self.assertEqual(json.loads(Path(result["paths"]["report"]).read_text(encoding="utf-8"))["schema_version"], 1)
 
     def test_default_max_rounds_and_stopped_session_does_not_capture_again(self):
         for number in range(1, 4):
@@ -178,10 +178,10 @@ class LoopTests(unittest.TestCase):
             self.assertEqual(result["status"], "error")
 
     def test_unsafe_loop_directory_and_busy_lock_are_preserved(self):
-        (self.case / ".loop-lock").write_text("other process")
+        (self.case / ".loop-lock").write_text("other process", encoding="utf-8")
         result = loop_step("case", "http://127.0.0.1/", self.root, allow_local=True)
         self.assertIn("busy", result["error"])
-        self.assertEqual((self.case / ".loop-lock").read_text(), "other process")
+        self.assertEqual((self.case / ".loop-lock").read_text(encoding="utf-8"), "other process")
         (self.case / ".loop-lock").unlink()
         outside = self.root / "outside"
         outside.mkdir()

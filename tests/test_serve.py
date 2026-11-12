@@ -25,8 +25,8 @@ class ReportServerTests(unittest.TestCase):
         self.root.mkdir()
         self.case = self.root / "sample"
         self.case.mkdir()
-        (self.case / "report.html").write_text('<html><img src="baseline.png"></html>')
-        (self.case / "report.json").write_text('{"schema_version":1}')
+        (self.case / "report.html").write_text('<html><img src="baseline.png"></html>', encoding="utf-8")
+        (self.case / "report.json").write_text('{"schema_version":1}', encoding="utf-8")
         Image.new("RGB", (4, 4), "red").save(self.case / "baseline.png")
 
     def request(self, server, path, method="GET", headers=None):
@@ -57,8 +57,8 @@ class ReportServerTests(unittest.TestCase):
             self.assertEqual((status, content), (200, b""))
 
     def test_no_listings_hidden_files_arbitrary_files_or_traversal(self):
-        (self.root.parent / "report.html").write_text("OUTSIDE_SECRET")
-        (self.case / "private.txt").write_text("PRIVATE_SECRET")
+        (self.root.parent / "report.html").write_text("OUTSIDE_SECRET", encoding="utf-8")
+        (self.case / "private.txt").write_text("PRIVATE_SECRET", encoding="utf-8")
         with ReportServer(self.root) as server:
             for path in ("/sample/", "/missing/", "/sample/private.txt", "/.env", "/.env.local",
                          "/.orphic-server.json", "/../report.html", "/%2e%2e/report.html",
@@ -120,7 +120,7 @@ class ReportServerTests(unittest.TestCase):
     def test_latest_round_and_bad_names(self):
         round_folder = self.case / "loop" / "round-001"
         round_folder.mkdir(parents=True)
-        (round_folder / "report.html").write_text("round one")
+        (round_folder / "report.html").write_text("round one", encoding="utf-8")
         os.utime(round_folder / "report.html", ns=(time.time_ns() + 1000000, time.time_ns() + 1000000))
         self.assertEqual(latest_report(self.root, "sample"), round_folder / "report.html")
         for name in ("../outside", "sample/loop", ".hidden", "missing"):
@@ -138,14 +138,14 @@ class ReportServerTests(unittest.TestCase):
                 result = capture_pair("http://127.0.0.1/a", "http://127.0.0.1/b", self.root, name="online", allow_local=True)
                 self.assertEqual(result["report_url"], server.base_url + "/online/report.html")
                 self.assertEqual(self.request(server, "/online/report.html")[0], 200)
-                persisted = json.loads(Path(result["paths"]["report"]).read_text())
+                persisted = json.loads(Path(result["paths"]["report"]).read_text(encoding="utf-8"))
                 self.assertNotIn("report_url", persisted)
 
     def test_invalid_configuration_and_registry_links(self):
         for kwargs in ({"port": True}, {"port": -1}, {"timeout": 0}, {"timeout": float("nan")}):
             with self.assertRaises(ValueError):
                 ReportServer(self.root, **kwargs)
-        (self.root / REGISTRY).write_text("unrecognized")
+        (self.root / REGISTRY).write_text("unrecognized", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "Invalid report server registry"):
             ReportServer(self.root)
 

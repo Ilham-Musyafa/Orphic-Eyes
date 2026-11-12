@@ -12,6 +12,13 @@ Config: both keys live under `plugins.entries.orphic-eyes.settings` (the subtree
 
 Tests: new `tests/test_security_env.py`, `test_security_paths.py`, `test_security_network.py` (22 tests, one reads a real Hermes config.yaml in a subprocess). Existing tests that passed `allow_local` as a tool argument now set it via config; the metadata-host assertion now expects "always blocked". Full suite on Linux Chromium: 211 passed, 0 skipped. `hermes plugins validate . --install-deps` (hermes-agent main 565b04b): passed, config schema shape valid. Windows/Edge not re-run here.
 
+### Follow-up: Windows test fixes (tests only)
+
+6 tests failed on Windows 11 / Python 3.14 (also on a0411b9, so pre-existing, not product bugs). Fixed in tests only:
+- `test_private_loopback_metadata_and_obscure_numeric_forms`: every host must still be refused (`validate_url` returns an error string). For the obscure numeric hosts `127.1`, `2130706433`, `0177.0.0.1`, `0x7f000001` the error may be "allow_local" or "could not be resolved" (the Windows resolver does not expand these forms). All other hosts keep the strict "allow_local" check; 169.254.169.254 and [fe80::1] keep "always blocked". No host removed.
+- `encoding="utf-8"` added to every `Path.read_text()`/`write_text()` in tests/ that lacked one (Windows defaults to cp1252 → UnicodeDecodeError on the UTF-8 report HTML). Existing explicit `encoding="ascii"` calls left as they are.
+- Linux: 210 passed, 1 skipped (Hermes not installed in this runner), 0 failed. `hermes plugins validate` and Windows were not re-run in this runner.
+
 ## Current task: Final pre-demo audit (fix/final-audit)
 
 Branch: `fix/final-audit` from release/hackathon after merging origin/fix/test-reliability (5736938) → `9cb2ef8` and origin/docs/roadmap (cad0ea2) → `82f009e`. Both merge commits had a HANDOFF-only conflict; both sides were kept and no line from either side was lost.

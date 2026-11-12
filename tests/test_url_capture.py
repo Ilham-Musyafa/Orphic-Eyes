@@ -26,6 +26,7 @@ from engine.url_capture import BrowserNotFound, CaptureError, CaptureTimeout, va
 
 url_capture = importlib.import_module("engine.url_capture")
 PUBLIC = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 80))]
+OBSCURE_NUMERIC_HOSTS = ("127.1", "2130706433", "0177.0.0.1", "0x7f000001")
 
 
 class URLValidationTests(unittest.TestCase):
@@ -52,8 +53,17 @@ class URLValidationTests(unittest.TestCase):
                      "[::ffff:127.0.0.1]"):
             with self.subTest(host=host):
                 # Link-local/metadata hosts are refused outright (even with allow_local).
-                expected = "always blocked" if host in ("169.254.169.254", "[fe80::1]") else "allow_local"
-                self.assertIn(expected, validate_url("http://" + host + "/"))
+                error = validate_url("http://" + host + "/")
+                # Every host here must be refused, whatever the platform.
+                self.assertIsInstance(error, str)
+                if host in ("169.254.169.254", "[fe80::1]"):
+                    self.assertIn("always blocked", error)
+                elif host in OBSCURE_NUMERIC_HOSTS:
+                    # Shorthand/decimal/octal/hex IPv4 forms: some resolvers (e.g. Windows)
+                    # do not expand them, so the refusal may come from resolution instead.
+                    self.assertTrue("allow_local" in error or "could not be resolved" in error, error)
+                else:
+                    self.assertIn("allow_local", error)
 
     def test_public_hostname_resolving_to_private_or_mixed_addresses_is_blocked(self):
         local = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.0.0.1", 80))]
@@ -163,7 +173,7 @@ class CaptureFailureTests(unittest.TestCase):
             self.assertEqual(result["status"], "check", result)
             self.assertEqual(result["summary"]["box_count"], 1)
             self.assertEqual(result["size"], {"width": 1440, "height": 900})
-            persisted = json.loads(Path(result["paths"]["report"]).read_text())
+            persisted = json.loads(Path(result["paths"]["report"]).read_text(encoding="utf-8"))
             self.assertEqual(persisted, {key: value for key, value in result.items()
                                         if key not in ("paths", "report_url", "serve_hint")})
             self.assertEqual(persisted["schema_version"], 1)
@@ -192,10 +202,10 @@ class CaptureFailureTests(unittest.TestCase):
             self.assertEqual(list(Path(folder).iterdir()), [])
             case = Path(folder) / "urls"
             case.mkdir()
-            (case / "existing.txt").write_text("preserve")
+            (case / "existing.txt").write_text("preserve", encoding="utf-8")
             result = capture_pair("http://127.0.0.1/a", "http://127.0.0.1/b", folder, allow_local=True)
             self.assertIn("fresh name", result["error"])
-            self.assertEqual((case / "existing.txt").read_text(), "preserve")
+            self.assertEqual((case / "existing.txt").read_text(encoding="utf-8"), "preserve")
 
     def test_pair_rejects_target_redirect_inside_store(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -360,12 +370,12 @@ class URLBrowserTests(unittest.TestCase):
             self.assertEqual({key: result["boxes"][0][key] for key in ("x", "y", "w", "h")},
                              {"x": 40, "y": 80, "w": 60, "h": 40})
             report_path = Path(result["paths"]["report"])
-            report = json.loads(report_path.read_text())
-            self.assertNotIn("SECRET_QUERY", report_path.read_text())
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertNotIn("SECRET_QUERY", report_path.read_text(encoding="utf-8"))
             for path in report["images"].values():
                 self.assertTrue((report_path.parent / path).is_file())
             if "html" in result["paths"]:
-                html = Path(result["paths"]["html"]).read_text()
+                html = Path(result["paths"]["html"]).read_text(encoding="utf-8")
                 embedded = html.split('<script type="application/json" id="orphic-report">', 1)[1].split('</script>', 1)[0]
                 self.assertEqual(json.loads(embedded), report)
                 self.assertNotIn("SECRET_QUERY", html)

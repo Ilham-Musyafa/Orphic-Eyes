@@ -74,13 +74,13 @@ class URLPluginBrowserTests(unittest.TestCase):
             self.assertEqual(result["boxes"][0]["bbox"], {"x": 40, "y": 80, "w": 60, "h": 40})
             self.assertLess(len(json.dumps(result).encode()), 4000)
             report_path = Path(result["paths"]["report"])
-            report = json.loads(report_path.read_text())
-            self.assertNotIn("SECRET_QUERY", report_path.read_text())
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertNotIn("SECRET_QUERY", report_path.read_text(encoding="utf-8"))
             self.assertEqual(report["images"], {"before": "baseline.png", "after": "current.png", "diff": "diff.png"})
             for path in report["images"].values():
                 self.assertTrue((report_path.parent / path).is_file())
             if "html" in result["paths"]:
-                html = Path(result["paths"]["html"]).read_text()
+                html = Path(result["paths"]["html"]).read_text(encoding="utf-8")
                 embedded = html.split('<script type="application/json" id="orphic-report">', 1)[1].split('</script>', 1)[0]
                 self.assertEqual(json.loads(embedded), report)
                 self.assertNotIn("SECRET_QUERY", html)
